@@ -1,0 +1,12 @@
+body {
+  margin: 0;
+}
+
+.layout {
+  display: flex;
+}
+
+.page {
+  width: 83vw;
+  height: 100vh;
+}
