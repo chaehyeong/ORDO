@@ -13,9 +13,9 @@ import user_icon from '../assets/user_icon.png';
 function Sidebar() {
     return (
         <div className='sidebar'>
-            <div className='slogo'>
-                <img className='slogo1' src={logo1} alt='logo1'/>
-                <img className='slogo2' src={logo2} alt='logo2'/>
+            <div className='side-logo'>
+                <img className='side-logo1' src={logo1} alt='logo1'/>
+                <img className='side-logo2' src={logo2} alt='logo2'/>
             </div>
             <div className='index'>
                 <img className='image' src={home_icon} alt='home_icon'/>

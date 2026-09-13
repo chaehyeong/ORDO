@@ -6,9 +6,9 @@ import logo2 from '../assets/logo2.png';
 function MainPage() {
     return (
         <div>
-            <div className='mlogo'>
-                <img className='mlogo1' src={logo1}/>
-                <img className='mlogo2' src={logo2}/>
+            <div className='main-logo'>
+                <img className='main-logo1' src={logo1}/>
+                <img className='main-logo2' src={logo2}/>
             </div>
             <div>
                 <div className='slogan'>ORDO와 함께하는<br/>대학생활의 모든 순간</div>

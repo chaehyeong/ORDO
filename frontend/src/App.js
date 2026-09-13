@@ -7,6 +7,7 @@ import Calendar from './pages/Calendar';
 import TimeTable from './pages/TimeTable';
 import Degree from './pages/Degree';
 import MyPage from './pages/MyPage';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css'
 
 function App() {

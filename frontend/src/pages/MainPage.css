@@ -1,12 +1,12 @@
-.mlogo {
+.main-logo {
     display: flex;
     margin: 6vh 4vw 2vh 4vw;
 }
-.mlogo1 {
+.main-logo1 {
     width: 5vw;
     margin-right: 2vw;
 }
-.mlogo2 {
+.main-logo2 {
     width: 10vw;
 }
 
