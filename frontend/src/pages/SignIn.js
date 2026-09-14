@@ -32,6 +32,9 @@ function SignIn() {
                             <Form.Control type="password" placeholder="비밀번호를 입력하세요." />
                         </Form.Group>
                     </Form>
+                    <Form.Group className="mb-3" controlId="formBasicCheckbox">
+                            <Form.Check type="checkbox" label="로그인 상태 유지" />
+                        </Form.Group>
                     <div className="d-grid gap-2">
                         <Button id='login-btn'><NavLink className='char' to='/HomePage'>로그인</NavLink></Button>
                     </div>
