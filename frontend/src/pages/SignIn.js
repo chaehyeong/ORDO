@@ -33,13 +33,14 @@ function SignIn() {
                         </Form.Group>
                     </Form>
                     <Form.Group className="mb-3" controlId="formBasicCheckbox">
-                            <Form.Check type="checkbox" label="로그인 상태 유지" />
-                        </Form.Group>
+                        <Form.Check type="checkbox" label="로그인 상태 유지" />
+                    </Form.Group>
+                    {/* 로그인 누르면 바로 홈 화면으로 감 */}
                     <div className="d-grid gap-2">
                         <Button id='login-btn'><NavLink className='char' to='/HomePage'>로그인</NavLink></Button>
                     </div>
                     <div className='option'>
-                        <NavLink className='option1' to='#'>비밀번호 찾기</NavLink>
+                        <NavLink className='option1' to='#'>비밀번호 찾기</NavLink> {/* 안 눌러지는거 맞음. 가짜임 */}
                         <span> | </span>
                         <NavLink className='option2' to='/SignUp'>회원가입</NavLink>
                     </div>
@@ -50,6 +51,7 @@ function SignIn() {
                     <div></div>
                 </div>
                 <div className='form2'>
+                    {/* 인포21로 넘어감 */}
                     <div className="d-grid gap-2">
                         <Button id='info21-btn'><a href='https://info21.khu.ac.kr/com/LoginCtr/login.do?sso=ok'>경희대학교 통합 로그인</a></Button>
                     </div>

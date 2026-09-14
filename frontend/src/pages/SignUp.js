@@ -37,6 +37,7 @@ function SignUp() {
                             <Form.Label>비밀번호 확인</Form.Label>
                             <Form.Control type="password" placeholder="비밀번호를 다시 입력하세요." />
                         </Form.Group>
+                        {/* 회원가입 누르면 로그인 화면으로 넘어감 */}
                         <div className="d-grid gap-2">
                             <Button id='login-btn'><NavLink className='char' to='/SignIn'>회원가입</NavLink></Button>
                         </div>
