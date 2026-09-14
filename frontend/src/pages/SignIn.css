@@ -1,7 +1,14 @@
+.body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
 .signin {
     width: 500px;
-    height: 80vh;
-    margin: 10vh auto;
+    height: auto;
+    margin: 5vh auto;
     border: 1px solid rgba(0, 0, 0, 0.75);
     border-radius: 50px;
     background-color: white;
@@ -16,7 +23,7 @@
     margin: 2% auto;
 }
 
-.form {
+.form1 {
     width: 470px;
     margin: auto;
     padding: 24px;
@@ -25,14 +32,24 @@
 }
 #login-btn {
     background-color: #1B1E3E;
+    border-color: #1B1E3E;
 }
 #login-btn > .char {
     color: white;
 }
-.fake-btn {
-    display: block;
-    margin-top: 1rem;
-    color: #1E1E1E;
+
+.option {
+    display: block; 
+    margin: 1rem auto 0 auto;
+    text-align: center;
+}
+.option > span {
+    margin-left: 5%;
+    margin-right: 5%;
+}
+.option1, .option2 {
+    color: #2C2C2C;
+    text-decoration: none;
 }
 
 .line {
@@ -45,10 +62,24 @@
 .line div {
     flex-grow: 1; 
     border-top: 1px solid #39393980; 
-    margin: 10px;
+    margin: 0 10px;
 }
 .text {
     color: #00000080;
     white-space: nowrap; 
     font-weight: bold;
+}
+
+.form2 {
+    width: 470px;
+    margin: auto;
+    padding: 0 24px 5% 24px;
+}
+#info21-btn {
+    background-color: #CDCDCD;
+    border-color: #CDCDCD;
+}
+#info21-btn > a {
+    color: #2C2C2C;
+    text-decoration: none;
 }
