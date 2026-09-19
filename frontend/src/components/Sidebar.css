@@ -1,5 +1,5 @@
 .sidebar{
-    background-color: #E5E5E5;
+    background-color: #CFECE7;
     width: 17vw;
     height: 100vh;
 }
@@ -24,9 +24,9 @@
     grid-template-columns: 4fr 10fr;
     margin: 1vw;
     padding: 1.5vw;
-    border: 2px solid #E5E5E5;
+    border: 2px solid #CFECE7;
     border-radius: 10px;
-    background-color: #E5E5E5;
+    background-color: #CFECE7;
 }
 .index:has(.char.active) {
     border: 1px solid #909395;

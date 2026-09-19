@@ -9,4 +9,15 @@ body {
 .page {
   width: 83vw;
   height: 100vh;
+  padding: 2%;
+}
+
+.box {
+  border: 1px solid rgba(0, 0, 0, 0.75);
+  border-radius: 20px;
+  padding: 2%;
+}
+
+.title {
+  font-weight: 600;
 }
