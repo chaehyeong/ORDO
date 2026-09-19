@@ -37,6 +37,19 @@ function SignUp() {
                             <Form.Label>비밀번호 확인</Form.Label>
                             <Form.Control type="password" placeholder="비밀번호를 다시 입력하세요." />
                         </Form.Group>
+                        <Form.Group className="mb-3" controlId="formBasicMajor">
+                            <Form.Label>학과</Form.Label>
+                            <Form.Select aria-label="Default select example">
+                                <option>학과를 선택하세요.</option>
+                                <option value="1">시각디자인학과</option>
+                                <option value="2">인공지능학과</option>
+                                <option value="3">컴퓨터공학과</option>
+                            </Form.Select>
+                        </Form.Group>
+                        <Form.Group className="mb-3" controlId="formBasicNum">
+                            <Form.Label>학번</Form.Label>
+                            <Form.Control type="number" placeholder="학번을 입력하세요." />
+                        </Form.Group>
                         {/* 회원가입 누르면 로그인 화면으로 넘어감 */}
                         <div className="d-grid gap-2">
                             <Button id='login-btn'><NavLink className='char' to='/SignIn'>회원가입</NavLink></Button>
