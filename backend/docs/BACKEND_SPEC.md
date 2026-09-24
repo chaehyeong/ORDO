@@ -68,7 +68,7 @@ com.ordo
 ```
 
 각 도메인 안: `controller / service / repository / domain(엔티티·enum) / dto`.
-기존 `com.ordo.config.SecurityConfig`, `com.ordo.controller.HealthController` 는 `global` 아래로 옮긴다.
+`global` 패키지는 T0에서 구현 완료. 공용 파일이므로 수정하면 상대에게 알린다.
 
 ### 2.2 build.gradle 에 추가할 의존성
 
@@ -213,7 +213,8 @@ enum Classification {             // 이수구분 (학교 코드)
 ## 4. API 명세
 
 공통: prefix `/api`, JSON, 인증 필요한 API는 `Authorization: Bearer {accessToken}`.
-**인증 없이 허용**: `/api/auth/signup`, `/api/auth/login`, `/api/auth/refresh`, `/api/health`, `GET /api/catalog/**`, `/swagger-ui/**`, `/v3/api-docs/**`.
+**인증 없이 허용**: `/api/auth/signup`, `/api/auth/login`, `/api/auth/refresh`, `/api/health`, `GET /api/catalog/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/error`(서버 오류가 401로 가려지지 않게).
+토큰 없음·잘못됨 → 401 `UNAUTHORIZED`, 만료 → 401 `EXPIRED_TOKEN`. `GET /api/health` → `{ "success": true, "data": { "status": "ok" }, "error": null }`.
 
 ### 4.1 인증 `auth`
 
@@ -227,12 +228,12 @@ enum Classification {             // 이수구분 (학교 코드)
 ```json
 // POST /api/auth/signup  요청
 {                                   // 프론트 SignUp.js 입력칸 기준 (이름·전화번호·이메일·비밀번호·학과·학번)
-  "name": "이하은",
-  "phone": "010-1234-5678",
-  "email": "haeun@khu.ac.kr",
-  "password": "ordo1234!",          // 8~64자, 영문+숫자 포함. '비밀번호 확인'은 프론트에서만 비교
-  "majorId": 35,
-  "studentNumber": "2026105632",    // 10자리 숫자
+  "name": "이하은",                  // 필수, 30자 이하
+  "phone": "010-1234-5678",         // 선택, 20자 이하 (형식 검사 없음)
+  "email": "haeun@khu.ac.kr",       // 필수
+  "password": "ordo1234!",          // 필수, 8~64자, 영문+숫자 포함. '비밀번호 확인'은 프론트에서만 비교
+  "majorId": 35,                    // 필수
+  "studentNumber": "2026105632",    // 필수, 10자리 숫자 (문자열)
   "admissionYear": null,            // 선택. 비우면 학번 앞 4자리(2026)로 서버가 채움
   "nickname": null,                 // 선택
   "currentSemester": null           // 선택
@@ -243,6 +244,7 @@ enum Classification {             // 이수구분 (학교 코드)
     "user": { "id": 1, "name": "이하은", "nickname": "하은" } }, "error": null }
 
 // 가입 규칙: 학번 앞 4자리가 입학년도. 입학년도에 해당 전공의 졸업요건 행이 없으면 MAJOR_NOT_FOUND.
+//            융합전공(convergence=true)은 주전공으로 가입 불가 → MAJOR_NOT_FOUND. 이메일 중복 → 409 EMAIL_DUPLICATED.
 //            프론트 학과 목록은 지금 하드코딩(3개) → GET /api/catalog/majors 로 교체 필요 (프론트 담당과 협의)
 // '로그인 상태 유지'를 체크하지 않으면 프론트가 refreshToken 을 저장하지 않으면 됨 (서버 동작은 동일)
 // '경희대학교 통합 로그인' 버튼은 info21 링크일 뿐, 백엔드 연동 대상 아님
@@ -250,6 +252,8 @@ enum Classification {             // 이수구분 (학교 코드)
 { "email": "haeun@khu.ac.kr", "password": "ordo1234!" }
 // POST /api/auth/refresh, /api/auth/logout  요청
 { "refreshToken": "eyJ..." }
+// refresh: 쓴 refresh 토큰은 삭제되므로 다음에는 새로 받은 refreshToken 을 써야 한다 (재사용 → 401 INVALID_REFRESH_TOKEN)
+// logout 응답: 200, data = null
 ```
 
 ### 4.2 내 정보 `user`
@@ -260,6 +264,10 @@ enum Classification {             // 이수구분 (학교 코드)
 | PATCH | /api/users/me | 🔒 프로필 수정(보낸 필드만 변경): name, nickname, studentNumber, phone, admissionYear, majorId, currentSemester, profileImageUrl |
 | PATCH | /api/users/me/settings | 🔒 `{ "notificationEnabled": false }` |
 | GET | /api/users/me/summary | 🔒 마이페이지 요약 |
+
+- PATCH 두 API의 응답 data 는 `GET /api/users/me` 와 같은 형태(수정 후 값).
+- 보낸 필드만 변경: 생략하거나 null 이면 그대로 둔다(값을 비우는 기능은 없음).
+- `majorId`·`admissionYear` 를 바꾸면 가입과 같은 규칙으로 확인 → 안 맞으면 `MAJOR_NOT_FOUND`.
 
 ```json
 // GET /api/users/me
@@ -473,10 +481,10 @@ enum Classification {             // 이수구분 (학교 코드)
 
 | 순서 | 작업 | 담당 | 완료 조건 |
 |---|---|---|---|
-| T0 | 공통 기반 (의존성·yml·global 패키지·JWT·CORS·Swagger·Flyway 적용) | 한 명이 먼저, 하루 안에 main에 머지 | 서버 부팅 시 V1·V2 적용, `/api/health` 200, `/swagger-ui/index.html` 열림, 토큰 없이 🔒 API 호출 시 401 JSON |
-| T1 | auth (가입·로그인·재발급·로그아웃) | A | Swagger에서 가입→로그인→🔒API→refresh→logout 흐름 동작 |
-| T2 | user (me 조회·수정·settings) | A | |
-| T3 | catalog 엔티티 + 조회 API | B | 회원가입에 쓸 전공 목록이 학번별로 나옴 |
+| T0 ✅ | 공통 기반 (의존성·yml·global 패키지·JWT·CORS·Swagger·Flyway 적용) | 한 명이 먼저, 하루 안에 main에 머지 | 서버 부팅 시 V1·V2 적용, `/api/health` 200, `/swagger-ui/index.html` 열림, 토큰 없이 🔒 API 호출 시 401 JSON |
+| T1 ✅ | auth (가입·로그인·재발급·로그아웃) | A | Swagger에서 가입→로그인→🔒API→refresh→logout 흐름 동작 |
+| T2 ✅ | user (me 조회·수정·settings) | A (T1과 함께) | |
+| T3 | catalog 엔티티 + 조회 API | B | 회원가입에 쓸 전공 목록이 학번별로 나옴. `College`·`Major` 엔티티와 `MajorRepository`(가입 검증용 `findSelectable`)는 T1에서 먼저 생성됨 → 이어서 작업 |
 | T4 | schedule CRUD | A | 기간 조회 정렬·권한(남의 일정 404)·시간 검증 |
 | T5 | timetable CRUD | A | 겹침 409, 현재 학기 기본값 |
 | T6 | completed-courses CRUD + 이수구분 자동판별 | B | CSE204 입력 시 컴공 학생은 MAJOR_REQUIRED 자동 |
