@@ -1,28 +1,30 @@
 spring:
   application:
     name: ordo
+  # 비밀값(DB 비밀번호, JWT 키)은 git에 올리지 않는 application-local.yml 에 둔다. 없으면 아래 기본값 사용.
+  config:
+    import: optional:application-local.yml
 
-  # ── MySQL 연결 ──────────────────────────────────────────────
-  # createDatabaseIfNotExist=true  : ordo DB가 없으면 자동 생성
-  # characterEncoding=UTF-8 + utf8mb4 : 한글/이모지 안 깨지게
   datasource:
     url: jdbc:mysql://localhost:3306/ordo?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
-    username: root
-    password: ${DB_PASSWORD:1234}   # ← 설치 때 정한 root 비밀번호로 바꾸세요 (또는 환경변수 DB_PASSWORD)
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:1234}
   jpa:
     hibernate:
-      ddl-auto: update      # 엔티티로 테이블 자동 생성/수정 (초기 개발용)
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
-    show-sql: true
-
-  # Flyway는 2단계(스키마 확정)에서 켭니다. 지금은 ddl-auto로 개발.
+      ddl-auto: none          # 스키마는 Flyway가 관리. 엔티티로 테이블을 만들거나 고치지 않는다.
+    open-in-view: false
+    properties.hibernate.format_sql: true
   flyway:
-    enabled: false
+    enabled: true
+    out-of-order: true        # 두 사람이 번호대를 나눠 쓰므로 필요
+  jackson:
+    time-zone: Asia/Seoul
+    serialization.write-dates-as-timestamps: false
 
-server:
-  port: 8080
+app:
+  jwt:
+    secret: ${JWT_SECRET:local-dev-secret-key-must-be-at-least-32-bytes!!}
+    access-token-validity-seconds: 3600       # 1시간
+    refresh-token-validity-seconds: 1209600   # 14일
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
