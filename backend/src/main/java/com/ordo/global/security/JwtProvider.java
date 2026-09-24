@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 import javax.crypto.SecretKey;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +21,9 @@ public class JwtProvider {
     private static final String REFRESH = "refresh";
 
     private final SecretKey key;
+    @Getter
     private final long accessTokenValiditySeconds;
+    @Getter
     private final long refreshTokenValiditySeconds;
 
     public JwtProvider(@Value("${app.jwt.secret}") String secret,
