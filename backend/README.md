@@ -38,21 +38,30 @@ Java 17 · Spring Boot 3.3.5 · Gradle · MySQL 8.
 1. IntelliJ 실행 → **Open** → 이 `ordo` 폴더 선택
 2. 오른쪽 아래에 "Gradle 로딩중…" 이 끝날 때까지 대기 (처음엔 라이브러리 내려받느라 몇 분 걸립니다 — 인터넷 필요)
 
-> 💡 `gradlew` 파일은 IntelliJ가 처음 열 때 자동 생성합니다.
-> 터미널에서 직접 쓰고 싶으면 IntelliJ 하단 Terminal에서 `gradle wrapper` 를 한 번 실행하세요.
+> 💡 터미널에서는 `gradlew.bat bootRun`(Windows) / `./gradlew bootRun`(Mac) 으로 실행할 수 있습니다.
+> 처음 한 번은 Gradle 8.10.2 를 내려받느라 시간이 걸립니다.
 
 ---
 
-## 3. MySQL 비밀번호 맞추기
+## 3. 비밀값 넣기 (application-local.yml)
 
-`src/main/resources/application.yml` 을 열어 **password** 를 설치 때 정한 root 비밀번호로 바꿉니다.
+⚠️ **`application.yml` 에는 비밀번호를 쓰지 마세요.** 그 파일은 git 에 올라갑니다.
+
+`src/main/resources/application-local.yml` 파일을 만들고 아래처럼 적습니다.
+이 파일은 `.gitignore` 에 들어 있어 git 에 올라가지 않습니다.
 
 ```yaml
-    password: ${DB_PASSWORD:여기에_내_비밀번호}
+spring:
+  datasource:
+    password: '설치 때 정한 MySQL root 비밀번호'
+
+app:
+  jwt:
+    secret: '32자 이상 아무 랜덤 문자열'
 ```
 
-- DB(`ordo`)는 첫 실행 때 자동 생성되니 직접 만들 필요 없습니다.
-- 비밀번호를 코드에 안 넣고 싶으면 환경변수 `DB_PASSWORD` 로 줘도 됩니다.
+- DB(`ordo`)와 테이블은 첫 실행 때 자동 생성(Flyway)되니 직접 만들 필요 없습니다.
+- 파일 대신 환경변수 `DB_PASSWORD`, `JWT_SECRET` 으로 줘도 됩니다.
 
 ---
 
@@ -61,7 +70,8 @@ Java 17 · Spring Boot 3.3.5 · Gradle · MySQL 8.
 1. `src/main/java/com/ordo/OrdoApplication.java` 열기 → 왼쪽 ▶ (Run) 클릭
 2. 콘솔에 `Started OrdoApplication ...` 이 뜨면 성공
 3. 브라우저에서 **http://localhost:8080/api/health** 접속
-   → `{"status":"ok","service":"ordo"}` 가 보이면 서버·DB 연결 성공 🎉
+   → `{"success":true,"data":{"status":"ok"},"error":null}` 가 보이면 서버·DB 연결 성공 🎉
+4. API 문서(Swagger): **http://localhost:8080/swagger-ui/index.html**
 
 ---
 
@@ -72,11 +82,11 @@ ordo/
 ├── build.gradle                 # 라이브러리·빌드 설정
 ├── src/main/java/com/ordo/
 │   ├── OrdoApplication.java      # 시작점
-│   ├── config/SecurityConfig.java   # (지금은 전체 허용) 보안 설정
-│   └── controller/HealthController.java  # /api/health 확인용 API
+│   └── global/                   # 공통: 응답 형식·에러·JWT 보안·CORS·Swagger (자세한 구조는 docs/BACKEND_SPEC.md 2.1)
 ├── src/main/resources/
-│   ├── application.yml            # DB·서버 설정
-│   └── db/migration/              # (2단계) Flyway 마이그레이션 자리
+│   ├── application.yml            # DB·서버 설정 (비밀값 없음)
+│   ├── application-local.yml      # 내 PC 비밀값 (git 제외, 직접 만듦)
+│   └── db/migration/              # Flyway: V1 스키마, V2 시드 (수정 금지)
 └── src/test/...
 ```
 
