@@ -4,7 +4,7 @@ function Home() {
     return (
         <div className="layout">
             <Sidebar />
-            <div className='page'>
+            <div className="page">
                 홈 화면
             </div>
         </div>
