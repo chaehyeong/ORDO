@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-09-24
+> 최종 갱신: 2026-09-28
 
 ---
 
@@ -316,6 +316,12 @@ enum Classification {             // 이수구분 (학교 코드)
   "done": false, "alarmMinutesBefore": 1440, "type": "TODO" }   // type: startTime 있으면 EVENT, 없으면 TODO
 ```
 
+- 기간 조회: `from`·`to` 필수(없으면 `INVALID_INPUT`), 양 끝 포함 62일까지(예: 10-01~12-01). 넘거나 `from > to` 면 `INVALID_TIME_RANGE`. `category` 생략·빈 값이면 전체.
+- PATCH 는 4.2 와 같은 규칙: 생략·null 이면 그대로, **값을 비우는 기능은 없음**(알람 끄기·시간 지우기는 삭제 후 재생성). 바꾼 뒤의 값으로 3.3 시간 규칙을 다시 검사.
+- `alarmMinutesBefore` 가 3.3 목록 밖의 값이면 `INVALID_INPUT`.
+- `PATCH /{id}/done` 은 값을 뒤집지 않고 보낸 `done` 값으로 설정한다(여러 번 보내도 결과 같음).
+- 남의 일정 → `SCHEDULE_NOT_FOUND`(404). 시간은 JSON `"HH:mm"`(응답 DTO 의 `@JsonFormat`).
+
 ### 4.5 시간표 `timetable`
 
 | 메서드 | 경로 | 설명 |
@@ -485,7 +491,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | T1 ✅ | auth (가입·로그인·재발급·로그아웃) | A | Swagger에서 가입→로그인→🔒API→refresh→logout 흐름 동작 |
 | T2 ✅ | user (me 조회·수정·settings) | A (T1과 함께) | |
 | T3 | catalog 엔티티 + 조회 API | B | 회원가입에 쓸 전공 목록이 학번별로 나옴. `College`·`Major` 엔티티와 `MajorRepository`(가입 검증용 `findSelectable`)는 T1에서 먼저 생성됨 → 이어서 작업 |
-| T4 | schedule CRUD | A | 기간 조회 정렬·권한(남의 일정 404)·시간 검증 |
+| T4 ✅ | schedule CRUD | A | 기간 조회 정렬·권한(남의 일정 404)·시간 검증 |
 | T5 | timetable CRUD | A | 겹침 409, 현재 학기 기본값 |
 | T6 | completed-courses CRUD + 이수구분 자동판별 | B | CSE204 입력 시 컴공 학생은 MAJOR_REQUIRED 자동 |
 | T7 | progress 계산 + 단위 테스트 | B | 5장 테스트 케이스 전부 통과 |
