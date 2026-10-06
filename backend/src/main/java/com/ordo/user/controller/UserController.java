@@ -4,6 +4,7 @@ import com.ordo.global.common.ApiResponse;
 import com.ordo.global.security.LoginUser;
 import com.ordo.user.dto.UserResponse;
 import com.ordo.user.dto.UserSettingsRequest;
+import com.ordo.user.dto.UserSummaryResponse;
 import com.ordo.user.dto.UserUpdateRequest;
 import com.ordo.user.service.UserService;
 import jakarta.validation.Valid;
@@ -24,6 +25,11 @@ public class UserController {
     @GetMapping
     public ApiResponse<UserResponse> getMe(@LoginUser Long userId) {
         return ApiResponse.ok(userService.getMe(userId));
+    }
+
+    @GetMapping("/summary")
+    public ApiResponse<UserSummaryResponse> getSummary(@LoginUser Long userId) {
+        return ApiResponse.ok(userService.getSummary(userId));
     }
 
     @PatchMapping
