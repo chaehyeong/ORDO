@@ -73,6 +73,9 @@ app:
    → `{"success":true,"data":{"status":"ok"},"error":null}` 가 보이면 서버·DB 연결 성공 🎉
 4. API 문서(Swagger): **http://localhost:8080/swagger-ui/index.html**
 
+> ⚠️ 테스트·실행이 `ClassNotFoundException` 으로 실패하면: 프로젝트 경로에 한글이 있고 `JAVA_HOME` 이 JDK 21 이상일 때 생기는 문제입니다.
+> 환경 변수 `JAVA_HOME` 을 JDK 17 로 바꾸고 터미널·IntelliJ 를 다시 켜세요.
+
 ---
 
 ## 폴더 구조
