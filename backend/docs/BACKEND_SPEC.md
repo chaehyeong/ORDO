@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-10-06 (T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable 세부 규칙 추가)
+> 최종 갱신: 2026-10-06 (T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable 세부 규칙, e캠퍼스 연동 추가)
 
 ---
 
@@ -16,8 +16,8 @@
 | 백엔드 | Java 17 · Spring Boot 3.3.5 · Spring Data JPA · Spring Security(JWT) · MySQL 8 · Flyway · Gradle |
 | 프론트 | 별도 웹 프론트엔드 → 백엔드는 **REST API(JSON)만** 제공 |
 | 팀 | 백엔드 2명 (각자 AI로 코딩) — 분업은 8장 |
-| MVP 범위 | ① 회원/로그인 ② 홈 ③ 캘린더·일정·할 일 ④ 시간표 ⑤ 학사관리(이수현황) ⑥ 마이페이지 |
-| 나중에 | 카카오 로그인·카톡 알림, AI 추천, 졸업 시뮬레이션, 마이크로디그리, e캠퍼스 연동, STT |
+| MVP 범위 | ① 회원/로그인 ② 홈 ③ 캘린더·일정·할 일(+ e캠퍼스 과제 마감 읽기) ④ 시간표 ⑤ 학사관리(이수현황) ⑥ 마이페이지 |
+| 나중에 | 카카오 로그인·카톡 알림, AI 추천, 졸업 시뮬레이션, 마이크로디그리, STT |
 
 **이미 준비된 것 (새로 만들지 말 것)**
 
@@ -38,11 +38,11 @@
 | 랜딩 | 서비스 소개, 로그인/회원가입 버튼 | 없음 |
 | 로그인·회원가입 | 가입: 이름·전화번호·이메일·비밀번호(+확인)·학과·학번 / 로그인: 이메일·비밀번호·'로그인 상태 유지' 체크 (프론트 `SignUp.js`, `SignIn.js`) | `POST /api/auth/*`, `GET /api/catalog/majors?admissionYear=` (학번 앞 4자리로 조회) |
 | **홈** | "안녕하세요 (닉네임)님", 주간일정(요일·날짜·카테고리 점), 오늘일정 타임라인(시간·제목·장소·카테고리), AI 오르도 추천 카드, 졸업 진행률(78%, 102/130, 남은 학점), 오늘 할 일 | `GET /api/home` |
-| 캘린더 | 연/월 선택, 오늘 버튼, 월 달력, +일정추가, 날짜 클릭 → 그날 일정 상세·추가·삭제 | `GET/POST/PATCH/DELETE /api/schedules` |
+| 캘린더 | 연/월 선택, 오늘 버튼, 월 달력, +일정추가, 날짜 클릭 → 그날 일정 상세·추가·삭제, e캠퍼스 과제 마감 표시 | `GET/POST/PATCH/DELETE /api/schedules`, `GET /api/ecampus/events` |
 | 일정(할 일) 추가 폼 | 제목, 카테고리, 날짜, 시작~종료 시간, 알람 | `POST /api/schedules` |
 | 시간표 | 학기 선택(2026년 2학기), 시간표 편집, 월~금 09:00~19:00 격자 | `/api/timetables` |
 | 학사관리 | 학점 취득 현황(총 18/130, 13.8%, 영역 그룹별 도넛), 졸업까지 필요한 학점, 영역별 이수현황(필수교양·전공기초·전공필수·전공선택·기타·전체), 마이크로디그리(데이터 없음·보류) | `GET /api/academic/progress`, `/api/academic/completed-courses` |
-| 마이페이지 | 프로필(이름·학과·입학년도/학년·학번·이메일·연락처·사진), 정보 수정, 이번 학기 수강과목 수·과제 수, 학점 현황, 알림 on/off, 로그아웃 | `/api/users/me`, `/api/users/me/summary`, `/api/auth/logout` |
+| 마이페이지 | 프로필(이름·학과·입학년도/학년·학번·이메일·연락처·사진), 정보 수정, 이번 학기 수강과목 수·과제 수, 학점 현황, 알림 on/off, e캠퍼스 연결, 로그아웃 | `/api/users/me`, `/api/users/me/summary`, `/api/auth/logout` |
 
 ---
 
@@ -64,7 +64,8 @@ com.ordo
 ├── academic        이수내역 CRUD, 이수현황 계산
 ├── schedule        일정·할 일
 ├── timetable       시간표
-└── home            홈 화면 집계
+├── home            홈 화면 집계
+└── ecampus         e캠퍼스(Canvas) 캘린더 피드 연동
 ```
 
 각 도메인 안: `controller / service / repository / domain(엔티티·enum) / dto`.
@@ -154,6 +155,7 @@ app:
 | COMPLETED_COURSE_NOT_FOUND | 404 | |
 | CLASSIFICATION_REQUIRED | 400 | 교과목 자동판별 불가인데 이수구분 미입력 |
 | DISTRIBUTION_AREA_REQUIRED | 400 | 배분이수인데 영역(1~5) 미입력 |
+| ECAMPUS_FEED_UNAVAILABLE | 502 | e캠퍼스 피드를 받지 못했고 예전에 받은 것도 없음 (주소 재등록 안내) |
 
 ---
 
@@ -193,7 +195,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | general_education_requirements | 기준정보(읽기) | 2026만 존재: 필수 17 / 배분 9(3영역 이상) / 자유 3 / 합계 29 |
 | general_education_required_courses | 기준정보(읽기) | 교양 필수과목 6개(인간의가치탐색, 세계와시민, 빅뱅에서문명까지, 성찰과표현, 주제연구, 대학영어) |
 | courses | 기준정보(읽기) | 2026 전공 교과목. **학수번호가 학과마다 중복**(예: 미분적분학 AMTH1009가 32개 학과) → 반드시 `(unit_name, course_code)` 로 조회 |
-| users | 사용자 | email 유일, BCrypt password, name, nickname, student_number, phone, admission_year, major_id, current_semester, notification_enabled |
+| users | 사용자 | email 유일, BCrypt password, name, nickname, student_number, phone, admission_year, major_id, current_semester, notification_enabled, ecampus_feed_token(V10, 4.8) |
 | refresh_tokens | 인증 | token 유일, 만료일. 로그아웃·재발급 시 삭제 |
 | schedules | 사용자 | schedule_date, start_time/end_time(NULL 가능), category, done, alarm_minutes_before |
 | timetable_entries | 사용자 | academic_year + term, day_of_week(1=월…7=일), start_time~end_time |
@@ -275,7 +277,7 @@ enum Classification {             // 이수구분 (학교 코드)
   "studentNumber": "2026105632", "phone": "010-1234-5678", "profileImageUrl": null,
   "admissionYear": 2026, "currentSemester": 1, "grade": 1,
   "major": { "id": 35, "displayName": "시각디자인학과", "collegeName": "예술·디자인대학" },
-  "notificationEnabled": true }
+  "notificationEnabled": true, "ecampusConnected": false }   // ecampusConnected: 4.8 피드 등록 여부
 
 // GET /api/users/me/summary
 { "term": { "year": 2026, "term": "SECOND", "label": "2026년 2학기" },
@@ -480,6 +482,32 @@ enum Classification {             // 이수구분 (학교 코드)
 - `week.categories`: 그날의 일정 카테고리(중복 제거) + 그 요일에 시간표 수업이 있으면 `LECTURE`.
 - `recommendation`(MVP는 규칙 기반): 오늘~7일 이내, `done=false` 인 `ASSIGNMENT` 중 가장 마감이 가까운 것 → `"오늘은 {제목} 과제가 마감 {D}일 전이에요!"` (D=0이면 "오늘 마감이에요!"). 없으면 null. **3차에 LLM으로 교체**.
 
+
+### 4.8 e캠퍼스 과제 마감 `ecampus`
+
+e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** 를 사용자가 등록하면 과제 마감을 읽기 전용으로 보여준다. 학교 비밀번호는 받지 않는다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| PUT | /api/ecampus/feed | 🔒 피드 주소 등록·변경 `{ "feedUrl": "https://khcanvas.khu.ac.kr/feeds/calendars/user_….ics" }` → 204 |
+| DELETE | /api/ecampus/feed | 🔒 연결 해제 → 204 |
+| GET | /api/ecampus/events?from=2026-10-01&to=2026-10-31 | 🔒 기간 안의 과제 마감 |
+
+```json
+// GET /api/ecampus/events 응답 data
+{ "connected": true, "syncedAt": "2026-10-06T19:30:00",
+  "events": [ { "id": "event-assignment-123", "title": "중간 레포트", "courseName": "디자인씽킹 01분반",
+                "date": "2026-10-18", "time": null, "url": "https://khcanvas.khu.ac.kr/calendar?…" } ] }
+// 연결 안 했으면 { "connected": false, "syncedAt": null, "events": [] } (오류 아님)
+```
+
+- 주소는 정확히 `https://khcanvas.khu.ac.kr/feeds/calendars/user_{영숫자}.ics` 만 허용(그 외 `INVALID_INPUT`). DB(`users.ecampus_feed_token`, V10)에는 `user_…` 토큰만 저장하고, 서버가 고정 주소에 붙여 요청한다(다른 서버로 요청 불가). 토큰은 비밀값이라 응답·로그에 내보내지 않는다. `GET /api/users/me` 의 `ecampusConnected` 로 연결 여부만 알려준다.
+- 동기화: 조회할 때 마지막으로 받은 지 **10분**이 지났으면 다시 받고 아니면 서버 메모리에 둔 것을 쓴다. 주기적 백그라운드 동기화는 하지 않는다. 등록·해제 시 버린다. 요청 제한 5초·2MB.
+- 다시 받다가 실패하면 예전에 받은 것을 돌려준다(`syncedAt` 이 예전 시각). 받은 적이 없으면 `ECAMPUS_FEED_UNAVAILABLE`(502).
+- `title`·`courseName`: 피드 제목 `과제명 [과목명 분반]` 을 나눈 것(괄호가 없으면 `courseName` null). `time` null = 하루 종일 표시(Canvas 는 23:59 마감을 이렇게 내보냄), 시간이 있으면 한국 시간 `"HH:mm"`.
+- 정렬: 날짜 → 시간 순, 시간 없는 것은 그날 맨 뒤. `from > to` 면 `INVALID_TIME_RANGE`(기간 길이 제한 없음).
+- 피드에 제출 여부가 없어 완료 체크는 없다. 일정(`schedules`)과 섞지 않으며 캘린더 화면이 두 API를 함께 불러 그린다. 홈 반영은 T8에서 정한다.
+
 ---
 
 ## 5. 이수현황 계산 알고리즘 (`AcademicProgressService`)
@@ -524,6 +552,7 @@ enum Classification {             // 이수구분 (학교 코드)
 
 - V1(스키마), V2(시드)는 공동 소유. **이미 적용된 파일은 절대 수정 금지** — 바꿀 게 있으면 새 파일.
 - 새 마이그레이션 번호: **A 담당 V10~V49, B 담당 V50~V89**. 파일명 `V{번호}__{영문_설명}.sql`.
+- 사용 중: `V10__add_ecampus_feed_token.sql`(A, users 에 e캠퍼스 피드 토큰 칸 추가).
 - 로컬 DB가 꼬이면: `DROP DATABASE ordo;` 후 서버 재시작 → Flyway가 V1부터 다시 적용.
 
 ---
@@ -544,6 +573,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | T7 | progress 계산 + 단위 테스트 | B | 5장 테스트 케이스 전부 통과 |
 | T8 | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
 | T9 | users/me/summary | A 또는 B | |
+| T10 ✅ | e캠퍼스 피드 연동 (4.8) | A | 피드 주소 검증, 10분 캐시, 실패 시 예전 데이터, 토큰 비노출 |
 
 ### AI에게 줄 프롬프트 예시 (그대로 복사해서 사용)
 
@@ -594,4 +624,4 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 8 | 다전공·부전공 | MVP 제외 (데이터는 이미 시드에 있음) |
 | 9 | 알림 실제 발송 | 2차: 카카오 로그인 + 카톡 알림 (알림 시각 계산은 `schedule_date + start_time - alarm_minutes_before`) |
 | 10 | 디자인에 남아있는 '과제', '설정' 메뉴 | 회의록 2차대로 삭제 |
-| 11 | e캠퍼스 연동 | 공식 API 없음(LearningX). MVP는 과제 수동 입력, 3차에 iCal 내보내기 가능 여부부터 확인. **학교 비밀번호를 서버에 저장하는 방식은 금지** |
+| 11 | e캠퍼스 연동 | **결정(2026-10-06): MVP 포함.** Canvas 개인 캘린더 피드(.ics) 주소를 사용자가 등록, 캘린더를 열 때 가져오고 10분 캐시, cron 없음 → 4.8. **학교 비밀번호를 서버에 저장하는 방식은 금지** |

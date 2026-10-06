@@ -5,6 +5,7 @@
 > T3 연동 설명 갱신: 2026-10-06 (`feat/catalog`, `feat/auth` 기반)
 > T4 일정 API 추가: 2026-09-28 (백엔드 A)
 > T5 시간표 API 추가: 2026-10-06 (백엔드 A)
+> e캠퍼스 과제 마감 연동 추가: 2026-10-06 (백엔드 A)
 
 ---
 
@@ -18,6 +19,7 @@
 | T3 전공 목록 등 catalog 조회 API | ✅ 구현·전체 테스트 완료 (B) | `feat/catalog` (실제 MySQL 부팅·시드 조회 포함) |
 | T4 일정·할 일 | ✅ 완료 (A) | `feat/schedule` · PR #3 |
 | T5 시간표 | ✅ 완료 (A) | `feat/timetable` (feat/schedule 위에서 작업) |
+| T10 e캠퍼스 과제 마감 연동 | ✅ 완료 (A) | `feat/ecampus` (feat/timetable 위에서 작업) |
 | T8 홈 · T9 마이페이지 요약 | ⏳ 예정 (A) | |
 | T6·T7 이수내역 · 이수현황 계산 | ⏳ 예정 (B) | |
 
@@ -28,6 +30,8 @@
 **T4 검증 (2026-09-28)**: 일정 단위 테스트 11개 통과. 서버를 띄워 일정 API(생성·정렬·기간 제한·시간 검증·남의 일정 404·삭제 등) 31개를 직접 호출해 확인. T3 가 들어간 master 를 합친 뒤 전체 테스트 **65개 통과**(T3 까지 54개 + 일정 11개).
 
 **T5 검증 (2026-10-06)**: 학기 판별·시간표 단위 테스트 12개 추가, 전체 **77개 통과**. 서버를 띄워 시간표 API(겹침 409·딱 붙은 시간 허용·현재 학기 기본값·입력 검증·남의 칸 404·삭제 등) 27개를 직접 호출해 확인.
+
+**T10 검증 (2026-10-06)**: ics 파서·e캠퍼스 서비스 단위 테스트 12개 추가(실제 피드 형식을 본뜬 가짜 데이터), 전체 **89개 통과**. 서버를 띄워 주소 검증(다른 도메인·http·쿼리 붙이기 거부)·연결/해제·가짜 토큰 502·토큰이 응답과 로그에 안 나오는지 등 16개를 직접 호출해 확인.
 
 ---
 
@@ -65,6 +69,7 @@
 | INVALID_TIME_RANGE | 400 | 종료 시간이 시작보다 빠름·같음(일정·시간표), 시작 없이 종료만 있음, 조회 기간 역전·62일 초과 |
 | TIMETABLE_ENTRY_NOT_FOUND | 404 | 없는 시간표 칸, 또는 남의 칸 |
 | TIMETABLE_OVERLAP | 409 | 같은 학기·요일에 시간이 겹치는 칸이 이미 있음 |
+| ECAMPUS_FEED_UNAVAILABLE | 502 | e캠퍼스 피드를 받지 못함 → 주소 재등록 안내 |
 | NOT_FOUND | 404 | 없는 경로·리소스 |
 | INTERNAL_ERROR | 500 | 서버 오류 (백엔드에 알려주세요) |
 
@@ -153,7 +158,7 @@ async function api(path, options = {}) {
   "studentNumber": "2026105632", "phone": "010-1234-5678", "profileImageUrl": null,
   "admissionYear": 2026, "currentSemester": 3, "grade": 2,
   "major": { "id": 35, "displayName": "시각디자인학과", "collegeName": "예술·디자인대학" },
-  "notificationEnabled": true }
+  "notificationEnabled": true, "ecampusConnected": false }   // ecampusConnected: e캠퍼스 피드 등록 여부
 
 // PATCH /api/users/me — 바꿀 것만 보낸다
 { "nickname": "하은", "currentSemester": 3 }
@@ -281,6 +286,30 @@ general-education.data: { admissionYear, basisYear, approximate,
 - 겹침: 같은 학기·요일에서 시간이 겹치면 `TIMETABLE_OVERLAP`. 09:00~10:30 다음 10:30~12:00 처럼 딱 붙는 건 괜찮다.
 - PATCH 로 값을 지울 수는 없다(null = 그대로). 장소·교수·색 지우기는 삭제 후 다시 만든다.
 
+### e캠퍼스 과제 마감 `ecampus` (전부 🔒)
+
+e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자기 e캠퍼스 캘린더 피드 주소** 를 한 번 등록하면 된다(학교 비밀번호는 받지 않음).
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| PUT | /api/ecampus/feed | 피드 주소 등록·변경 `{ "feedUrl": "https://khcanvas.khu.ac.kr/feeds/calendars/user_….ics" }` → **204** |
+| DELETE | /api/ecampus/feed | 연결 해제 → **204** |
+| GET | /api/ecampus/events?from=2026-10-01&to=2026-10-31 | 기간 안의 과제 마감 (읽기 전용) |
+
+```json
+// GET /api/ecampus/events 응답 data
+{ "connected": true, "syncedAt": "2026-10-06T19:30:00",
+  "events": [ { "id": "event-assignment-123", "title": "중간 레포트", "courseName": "디자인씽킹 01분반",
+                "date": "2026-10-18", "time": null, "url": "https://khcanvas.khu.ac.kr/calendar?…" } ] }
+// 연결 안 했으면 { "connected": false, "syncedAt": null, "events": [] } → "e캠퍼스 연결하기" 안내를 띄우면 된다
+```
+
+- **마이페이지 연결 화면**: `GET /api/users/me` 의 `ecampusConnected` 로 연결 여부를 보여주고, 입력칸에 주소를 받아 `PUT`. 안내 문구 예: "e캠퍼스 → 캘린더 → 오른쪽 아래 '캘린더 피드' 를 눌러 나온 주소를 붙여넣으세요". 주소는 앞뒤 공백을 지우고 보낸다. 형식이 다르면 `INVALID_INPUT`.
+- **피드 주소는 비밀번호와 같다**: 주소만 있으면 누구나 그 사람의 일정을 볼 수 있다. 화면에 다시 보여주거나 로그·localStorage 에 남기지 않는다(서버도 응답에 넣지 않음).
+- **캘린더**: 일정 API(`/api/schedules`)와 같은 `from`·`to` 로 함께 불러 합쳐 그린다. 일정과 섞이지 않게 e캠퍼스 표시(아이콘·색)를 따로 두고, 누르면 `url`(e캠퍼스 화면)로 이동. 수정·삭제·완료 체크는 없다(피드에 제출 여부가 없음).
+- `time` 이 null 이면 "그날 23:59 마감"(하루 종일)으로 표시. 정렬은 날짜 → 시간 순, 시간 없는 것은 그날 맨 뒤.
+- 최대 10분 늦게 반영된다(서버가 10분 동안 재사용). e캠퍼스가 응답하지 않으면 예전 데이터를 주고 `syncedAt` 이 예전 시각이다. 받은 적도 없으면 502 `ECAMPUS_FEED_UNAVAILABLE` → "주소를 다시 등록해 보세요".
+
 ---
 
 ## 5. 프론트에 부탁할 수정 (SignUp.js / SignIn.js)
@@ -304,6 +333,7 @@ general-education.data: { admissionYear, basisYear, approximate,
 - 기존 T0~T2 공용 파일 변경: `build.gradle`(springdoc·jjwt), `application.yml`, `global/**` 전체, `ErrorCode`(2.5 전체), `SecurityConfig`(PasswordEncoder, `/error` 허용). 이번 T3 변경은 아래 7장 참고.
 - T4 일정은 공용 파일 변경 없음.
 - T5: 공용 파일 `global/common/Term.java`(학기 enum)·`AcademicTerm.java`(현재 학기 판별, `AcademicTerm.now()`)를 새로 추가했다. T6 이수내역의 `term` 도 이 `Term` 을 써 주세요.
+- T10: Flyway `V10__add_ecampus_feed_token.sql`(users 에 칸 하나), 공용 `ErrorCode` 에 `ECAMPUS_FEED_UNAVAILABLE`, `AGENTS.md` 패키지 목록에 `ecampus` 추가. `User` 에 `ecampusFeedToken` 필드가 생겼다(H2 테스트는 ddl-auto 라 영향 없음).
 - 명세와 다르게/새로 정한 것은 `BACKEND_SPEC.md` 4장·4.1·4.2·8장에 반영해 두었다.
 
 ---
