@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-09-24
+> 최종 갱신: 2026-10-06 (T3 catalog 조회 계약·검증 결과 추가)
 
 ---
 
@@ -294,6 +294,48 @@ enum Classification {             // 이수구분 (학교 코드)
 | GET | /api/catalog/courses?majorId=&q=&classification=&page=0&size=20 | 교과목 검색 (majorId → course_unit 으로 필터, q는 과목명/학수번호 부분일치) |
 | GET | /api/catalog/general-education?admissionYear= | 교양 기본구조 + 필수과목 목록 (없으면 2026, approximate=true) |
 
+**T3 조회 계약**
+
+- 모두 로그인 없이 호출 가능하며 `ApiResponse<T>` 로 감싼다. 아래는 `data` 의 형태이다.
+- `admissionYear`·`majorId` 는 해당 API에서 필수, 양수. `collegeId` 는 선택, 지정하면 양수.
+- 단과대는 이름→id, 전공은 표시명→id 오름차순. 전공은 **해당 입학년도의 졸업요건 행이 있고 융합전공이 아닌 경우만** 반환한다. 일치하는 전공이 없으면 성공 + 빈 배열.
+- 검색의 `majorId` 는 전공 id이며 과목 id나 단과대 id가 아니다. 해당 전공의 `course_unit` 과 정확히 일치하는 과목만 검색한다. 연결된 교육과정이 없는 전공은 성공 + 빈 페이지.
+- `q` 는 최대 100자. 생략·빈 문자열·공백이면 해당 전공의 전체 과목; 그 외에는 앞뒤 공백 제거 후 과목명/학수번호 부분일치, 영문 대소문자 구분 없음. `%`, `_`, `!` 도 일반 문자로 검색한다.
+- `classification` 은 3.1의 enum 이름(대문자), 생략·빈 문자열이면 전체 이수구분. 검색어와 함께 보내면 두 조건을 모두 만족해야 한다.
+- `page` 는 0부터, 기본 0. `size` 는 1~100, 기본 20. 과목명→id 오름차순으로 정렬하며 마지막 페이지 이후는 빈 `content` 를 반환한다.
+- 잘못된 형식·누락된 필수값·범위 초과는 `400 INVALID_INPUT`. 없는 전공 id는 `404 MAJOR_NOT_FOUND`, 없는 전공×입학년도 졸업요건 또는 대체 자료마저 없는 교양 기준은 `404 REQUIREMENT_NOT_FOUND`.
+- 교과목은 **2026 교육과정 편성 자료**다. `openSemester` 는 편성상의 개설학기 표기이며, 특정 학기의 실제 개설·수강신청 가능 여부를 보장하지 않는다.
+
+| API | 응답 data |
+|---|---|
+| colleges | `[{ id, name }]` |
+| majors | `[{ id, displayName, collegeId, collegeName }]` |
+| courses | `{ content: [과목], page, size, totalElements, totalPages }` |
+| requirements | 아래 졸업요건 원본 필드의 객체 |
+| general-education | 아래 교양 기준 필드의 객체 |
+
+과목 필드: `id, collegeName, unitName, courseCode, name, classification, credits, variableCredits, targetGrade, openSemester, track`.
+`courseCode, targetGrade, openSemester, track` 는 null일 수 있다. `variableCredits=true` 인 과목은 학점이 가변적이므로 이수내역 등록 때 사용자가 실제 학점을 확인해야 한다.
+
+졸업요건 원본 필드:
+
+- 식별: `majorId, admissionYear`
+- 단일전공: `totalCredits, basicCredits, requiredCredits, electiveCredits, majorTotalCredits, otherMajorCredits`
+- 다전공: `doubleBasicCredits, doubleRequiredCredits, doubleElectiveCredits, doubleTotalCredits, doubleOtherMajorCredits`
+- 부전공: `minorRequiredCredits, minorElectiveCredits, minorTotalCredits`
+- 부가요건: `swRequirement, englishLectureRequirement, thesisRequirement, topikRequirement, competencyCertification`
+
+원본의 null은 그대로 반환한다. **T7 계산에서의 NULL→0 처리와 다르며**, 이 API는 졸업 가능 판정·이수학점 계산을 하지 않는다. 다전공·부전공은 기존 원본 값 조회만 제공하고 별도 계산은 하지 않는다.
+
+교양 기준 필드:
+
+- `admissionYear`: 요청한 입학년도, `basisYear`: 실제 사용한 기준년도.
+- `approximate`: 요청 연도가 없어 2026으로 대체했으면 true.
+- `requiredCredits, distributionCredits, distributionMinAreas, freeCredits, totalCredits`.
+- `requiredCourses`: `[{ id, groupName, courseName, credits, recommendedGrade, note }]`, 실제 사용한 기준년도에 속하는 목록만 id 순으로 반환. `groupName, recommendedGrade, note` 는 null일 수 있다.
+
+프론트 호출 예시·독립 테스트 실행법은 `docs/FRONTEND_GUIDE.md` 4장 catalog 및 7장 참고.
+
 ### 4.4 일정·할 일 `schedule`
 
 | 메서드 | 경로 | 설명 |
@@ -484,7 +526,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | T0 ✅ | 공통 기반 (의존성·yml·global 패키지·JWT·CORS·Swagger·Flyway 적용) | 한 명이 먼저, 하루 안에 main에 머지 | 서버 부팅 시 V1·V2 적용, `/api/health` 200, `/swagger-ui/index.html` 열림, 토큰 없이 🔒 API 호출 시 401 JSON |
 | T1 ✅ | auth (가입·로그인·재발급·로그아웃) | A | Swagger에서 가입→로그인→🔒API→refresh→logout 흐름 동작 |
 | T2 ✅ | user (me 조회·수정·settings) | A (T1과 함께) | |
-| T3 | catalog 엔티티 + 조회 API | B | 회원가입에 쓸 전공 목록이 학번별로 나옴. `College`·`Major` 엔티티와 `MajorRepository`(가입 검증용 `findSelectable`)는 T1에서 먼저 생성됨 → 이어서 작업 |
+| T3 ✅ | catalog 엔티티 + 조회 API | B | `feat/catalog`에서 5개 조회 API 구현. T3 33개 + 기존 인증·회원 19개 + 실제 MySQL 부팅·시드 조회 2개로 전체 54개 테스트 통과 |
 | T4 | schedule CRUD | A | 기간 조회 정렬·권한(남의 일정 404)·시간 검증 |
 | T5 | timetable CRUD | A | 겹침 409, 현재 학기 기본값 |
 | T6 | completed-courses CRUD + 이수구분 자동판별 | B | CSE204 입력 시 컴공 학생은 MAJOR_REQUIRED 자동 |

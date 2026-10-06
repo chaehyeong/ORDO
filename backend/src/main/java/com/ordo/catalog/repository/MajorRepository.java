@@ -1,11 +1,24 @@
 package com.ordo.catalog.repository;
 
 import com.ordo.catalog.domain.Major;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface MajorRepository extends JpaRepository<Major, Long> {
+
+    @Query("""
+            select m from Major m join fetch m.college
+            where m.convergence = false
+              and (:collegeId is null or m.college.id = :collegeId)
+              and exists (select r.id from GraduationRequirement r
+                          where r.major = m and r.admissionYear = :admissionYear)
+            order by m.displayName, m.id
+            """)
+    List<Major> findAllSelectable(@Param("admissionYear") int admissionYear,
+                                  @Param("collegeId") Long collegeId);
 
     // ponytail: GraduationRequirement 엔티티(B, T3)가 생기면 그 리포지토리의 existsBy... 로 교체
     @Query(value = "SELECT COUNT(*) FROM graduation_requirements WHERE major_id = :majorId AND admission_year = :admissionYear",
