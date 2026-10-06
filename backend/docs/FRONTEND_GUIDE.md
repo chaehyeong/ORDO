@@ -6,6 +6,7 @@
 > T4 일정 API 추가: 2026-09-28 (백엔드 A)
 > T5 시간표 API 추가: 2026-10-06 (백엔드 A)
 > e캠퍼스 과제 마감 연동 추가: 2026-10-06 (백엔드 A)
+> T6·T7 학사관리(이수내역·이수현황) 추가: 2026-10-07 (백엔드 A, B 대신 진행)
 
 ---
 
@@ -21,7 +22,7 @@
 | T5 시간표 | ✅ 완료 (A) | `feat/timetable` (feat/schedule 위에서 작업) |
 | T10 e캠퍼스 과제 마감 연동 | ✅ 완료 (A) | `feat/ecampus` (feat/timetable 위에서 작업) |
 | T8 홈 · T9 마이페이지 요약 | ⏳ 예정 (A) | |
-| T6·T7 이수내역 · 이수현황 계산 | ⏳ 예정 (B) | |
+| T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
@@ -30,6 +31,8 @@
 **T4 검증 (2026-09-28)**: 일정 단위 테스트 11개 통과. 서버를 띄워 일정 API(생성·정렬·기간 제한·시간 검증·남의 일정 404·삭제 등) 31개를 직접 호출해 확인. T3 가 들어간 master 를 합친 뒤 전체 테스트 **65개 통과**(T3 까지 54개 + 일정 11개).
 
 **T5 검증 (2026-10-06)**: 학기 판별·시간표 단위 테스트 12개 추가, 전체 **77개 통과**. 서버를 띄워 시간표 API(겹침 409·딱 붙은 시간 허용·현재 학기 기본값·입력 검증·남의 칸 404·삭제 등) 27개를 직접 호출해 확인.
+
+**T6·T7 검증 (2026-10-07)**: 이수내역·이수현황 단위 테스트 17개 추가(명세 5장 필수 7케이스 포함), 전체 **106개 통과**. 서버를 띄워 실제 시드로 CSE204 자동 판별(컴공 → 전공필수)·분류/영역 누락 거부·bulk 전체 롤백·학기 순 정렬·F 제외·재수강 1회·교양 필수 체크·2025학번 근사·남의 과목 404 등 21개를 직접 호출해 확인.
 
 **T10 검증 (2026-10-06)**: ics 파서·e캠퍼스 서비스 단위 테스트 12개 추가(실제 피드 형식을 본뜬 가짜 데이터), 전체 **89개 통과**. 서버를 띄워 주소 검증(다른 도메인·http·쿼리 붙이기 거부)·연결/해제·가짜 토큰 502·토큰이 응답과 로그에 안 나오는지 등 16개를 직접 호출해 확인.
 
@@ -65,6 +68,10 @@
 | EMAIL_DUPLICATED | 409 | 이미 가입된 이메일 |
 | MAJOR_NOT_FOUND | 404 | 없는 전공 id. 가입·프로필 변경에서는 해당 학번에 없는 전공이나 융합전공 선택도 포함 |
 | REQUIREMENT_NOT_FOUND | 404 | 해당 전공·입학년도 졸업요건이 없거나, 교양 기준과 2026 대체 자료가 모두 없음 |
+| PROFILE_INCOMPLETE | 400 | 입학년도·전공 없이 이수현황 조회 → 마이페이지 정보 수정 안내 |
+| COMPLETED_COURSE_NOT_FOUND | 404 | 없는 이수 과목, 또는 남의 과목 |
+| CLASSIFICATION_REQUIRED | 400 | 자동 판별이 안 되는 과목인데 이수구분 없음 |
+| DISTRIBUTION_AREA_REQUIRED | 400 | 배분이수인데 영역(1~5) 없음 |
 | SCHEDULE_NOT_FOUND | 404 | 없는 일정, 또는 남의 일정 |
 | INVALID_TIME_RANGE | 400 | 종료 시간이 시작보다 빠름·같음(일정·시간표), 시작 없이 종료만 있음, 조회 기간 역전·62일 초과 |
 | TIMETABLE_ENTRY_NOT_FOUND | 404 | 없는 시간표 칸, 또는 남의 칸 |
@@ -286,6 +293,34 @@ general-education.data: { admissionYear, basisYear, approximate,
 - 겹침: 같은 학기·요일에서 시간이 겹치면 `TIMETABLE_OVERLAP`. 09:00~10:30 다음 10:30~12:00 처럼 딱 붙는 건 괜찮다.
 - PATCH 로 값을 지울 수는 없다(null = 그대로). 장소·교수·색 지우기는 삭제 후 다시 만든다.
 
+### 학사관리 `academic` (전부 🔒)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | /api/academic/completed-courses | 내 이수내역 (학년도 → 학기 순) |
+| POST | /api/academic/completed-courses | 1건 등록 → **201** |
+| POST | /api/academic/completed-courses/bulk | 여러 건 등록 `{ "courses": [ … ] }` → **201**, 하나라도 틀리면 전부 저장 안 함 |
+| PATCH | /api/academic/completed-courses/{id} | 수정 — **보낸 필드만** 바뀜 |
+| DELETE | /api/academic/completed-courses/{id} | 삭제 → **204** |
+| GET | /api/academic/progress | 이수현황 계산 결과 (학사관리 화면·홈·마이페이지 학점) |
+
+```json
+// POST /api/academic/completed-courses
+{ "courseCode": "CSE204",   // 선택. 내 전공 교과목이면 이수구분·과목명을 서버가 채움
+  "courseName": "자료구조",  // 자동으로 못 채우면 필수
+  "credits": 3,              // 필수 0~30
+  "classification": null,    // 자동 판별 안 될 때 필수 (교양·일반선택 등). 명세 3.1 의 대문자 이름
+  "distributionArea": null,  // GEN_DISTRIBUTION 이면 1~5 필수
+  "grade": "A+",             // A+ A0 B+ B0 C+ C0 D+ D0 F P NP, 미정이면 null
+  "year": 2026, "term": "FIRST" }
+// 응답 data (목록 원소·수정 응답도 같은 모양): 위 필드 + id, classification 은 실제로 저장된 값
+```
+
+- **과목 추가 화면 흐름**: 과목 검색(`/api/catalog/courses?majorId=`)에서 고르면 `courseCode` 만 보내도 된다. 직접 입력(교양 등)이면 `courseName` + `classification` 을 받는다(배분이수면 영역 1~5 선택도).
+- `progress` 응답 모양은 명세 4.6 예시 그대로. 도넛은 `groups`, 영역별 막대는 `areas`, 교양 필수 체크리스트는 `requiredGeneralCourses`, 부가요건 안내는 `checks`(자동 판정 아님).
+- `approximate: true` 면 "해당 학번 교양 기준이 없어 2026 기준으로 계산했어요" 안내. 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE` → 마이페이지 정보 수정으로 안내.
+- 성적 미정(null)인 과목도 학점에 들어간다(이번 학기 수강 중인 과목). F·NP 는 빠지고, 같은 과목은 가장 최근 것 1번만 센다.
+
 ### e캠퍼스 과제 마감 `ecampus` (전부 🔒)
 
 e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자기 e캠퍼스 캘린더 피드 주소** 를 한 번 등록하면 된다(학교 비밀번호는 받지 않음).
@@ -334,6 +369,7 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 - T4 일정은 공용 파일 변경 없음.
 - T5: 공용 파일 `global/common/Term.java`(학기 enum)·`AcademicTerm.java`(현재 학기 판별, `AcademicTerm.now()`)를 새로 추가했다. T6 이수내역의 `term` 도 이 `Term` 을 써 주세요.
 - T10: Flyway `V10__add_ecampus_feed_token.sql`(users 에 칸 하나), 공용 `ErrorCode` 에 `ECAMPUS_FEED_UNAVAILABLE`, `AGENTS.md` 패키지 목록에 `ecampus` 추가. `User` 에 `ecampusFeedToken` 필드가 생겼다(H2 테스트는 ddl-auto 라 영향 없음).
+- T6·T7(원래 B 담당, A 가 대신 진행): 공용 `Term` 선언 순서를 FIRST·SUMMER·SECOND·WINTER(시간 순)로 바꿔 정렬에 쓴다(DB 는 이름 저장이라 영향 없음). B 의 `CourseRepository` 에 `findFirstByUnitNameAndCourseCodeOrderByIdAsc` 하나 추가. 홈·마이페이지는 `AcademicProgressService.findSummary(userId)` 를 쓴다.
 - 명세와 다르게/새로 정한 것은 `BACKEND_SPEC.md` 4장·4.1·4.2·8장에 반영해 두었다.
 
 ---

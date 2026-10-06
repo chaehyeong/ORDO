@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-10-06 (T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable 세부 규칙, e캠퍼스 연동 추가)
+> 최종 갱신: 2026-10-07 (T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic 세부 규칙, e캠퍼스 연동 추가)
 
 ---
 
@@ -419,6 +419,15 @@ enum Classification {             // 이수구분 (학교 코드)
 2. 아니면 요청의 `classification` 필수 (없으면 `CLASSIFICATION_REQUIRED`).
 3. `classification = GEN_DISTRIBUTION` 이면 `distributionArea` 1~5 필수.
 
+**T6 세부 규칙** (구현하며 정한 것)
+
+- 자동 판별이 안 되는데 `courseName` 도 비었으면 `INVALID_INPUT`. `courseCode`·`courseName` 은 앞뒤 공백 제거, 빈 `courseCode` 는 null.
+- 배분이수가 아닌 과목에 보낸 `distributionArea` 는 버린다(null 저장).
+- 입력 범위: `credits` 0~30, `year` 2000~2100, `term` 필수, `grade` 는 위 목록 또는 null.
+- 과목 객체(목록 원소, POST·PATCH 응답 data): `id, courseCode, courseName, credits, classification, distributionArea, grade, year, term`. 목록은 학년도 → 학기(1학기·여름·2학기·겨울) → 등록 순.
+- `bulk` 는 `courses` 1~100건, 하나라도 실패하면 전부 저장하지 않는다 → 201, data = 과목 객체 배열.
+- PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음)이고, 합친 값으로 자동 판별을 다시 한다. 남의 과목 → `COMPLETED_COURSE_NOT_FOUND`(404).
+
 ```json
 // GET /api/academic/progress 응답 data
 {
@@ -527,6 +536,14 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 10. `graduatable` = 총학점 충족 AND 모든 영역 `earned >= required` AND 배분 영역 수 충족 AND 필수교양 과목 전부 done.
 11. `checks`: 2026 부가요건 텍스트가 있는 항목만 `status: "MANUAL"` 로 안내(자동 판정하지 않음).
 
+**T7 세부 규칙** (구현하며 정한 것)
+
+- 성적 미정(`grade` null)은 인정한다(F·NP 만 제외). 4번은 적힌 순서대로 F·NP 를 먼저 빼고 재수강을 고른다 → 예전에 통과하고 재수강에서 F 면 예전 학점이 남는다(학과 시행세칙 확인 후 조정, 코드에 `ponytail:` 주석).
+- 재수강 판별 키: 학수번호, 없으면 공백을 뺀 과목명. 같은 학기면 나중에 등록한 것.
+- `areas` 의 `OTHER` 는 `required: null`, `areaCount`·`requiredAreaCount` 는 배분이수에만 있다. 요구 학점이 0 이면 `percent` 는 0.0.
+- `checks` 이름: SW기초교육 / 영어강의 / 졸업논문 / TOPIK(외국인) / 졸업능력인증 (값이 있는 것만).
+- 계산은 DB 조회 없는 정적 함수 `AcademicProgressService.calculate(...)` 로 분리 → 졸업 시뮬레이션은 계획 과목을 더해 그대로 부르면 된다.
+
 **반드시 단위 테스트할 케이스**: 빈 이수내역 / F 제외 / 재수강 중복 제거 / NULL 요구학점 / 배분 영역 수 부족 / 2025학번 교양 근사(approximate) / 졸업 가능 케이스.
 
 > 다전공·부전공 계산, 전공 초과학점의 전공선택 인정, 타전공 인정 한도는 **MVP 제외**(9장 미결정).
@@ -569,8 +586,8 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T3 ✅ | catalog 엔티티 + 조회 API | B | `feat/catalog`에서 5개 조회 API 구현. T3 33개 + 기존 인증·회원 19개 + 실제 MySQL 부팅·시드 조회 2개로 전체 54개 테스트 통과 |
 | T4 ✅ | schedule CRUD | A | 기간 조회 정렬·권한(남의 일정 404)·시간 검증 |
 | T5 ✅ | timetable CRUD | A | 겹침 409, 현재 학기 기본값 |
-| T6 | completed-courses CRUD + 이수구분 자동판별 | B | CSE204 입력 시 컴공 학생은 MAJOR_REQUIRED 자동 |
-| T7 | progress 계산 + 단위 테스트 | B | 5장 테스트 케이스 전부 통과 |
+| T6 ✅ | completed-courses CRUD + 이수구분 자동판별 | A (B 대신) | CSE204 입력 시 컴공 학생은 MAJOR_REQUIRED 자동 |
+| T7 ✅ | progress 계산 + 단위 테스트 | A (B 대신) | 5장 테스트 케이스 전부 통과 |
 | T8 | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
 | T9 | users/me/summary | A 또는 B | |
 | T10 ✅ | e캠퍼스 피드 연동 (4.8) | A | 피드 주소 검증, 10분 캐시, 실패 시 예전 데이터, 토큰 비노출 |
