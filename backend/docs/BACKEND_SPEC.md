@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-10-06 (T3 catalog 조회 계약·검증 결과, T4 schedule 세부 규칙 추가)
+> 최종 갱신: 2026-10-06 (T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable 세부 규칙 추가)
 
 ---
 
@@ -55,7 +55,7 @@ com.ordo
 ├── OrdoApplication.java
 ├── global
 │   ├── config      SecurityConfig, JpaConfig(@EnableJpaAuditing), WebConfig(CORS, ArgumentResolver), OpenApiConfig
-│   ├── common      ApiResponse, BaseTimeEntity, HealthController, AcademicTerm(학기 유틸)
+│   ├── common      ApiResponse, BaseTimeEntity, HealthController, Term(학기 enum)·AcademicTerm(현재 학기 판별)
 │   ├── error       ErrorCode, BusinessException, GlobalExceptionHandler
 │   └── security    JwtProvider, JwtAuthenticationFilter, LoginUser(애노테이션), LoginUserArgumentResolver
 ├── auth            회원가입·로그인·토큰
@@ -380,9 +380,14 @@ enum Classification {             // 이수구분 (학교 코드)
   "location": "예405", "professor": "김교수", "color": "#3BB39A" }
 // GET 응답 data
 { "year": 2026, "term": "SECOND", "label": "2026년 2학기",
-  "entries": [ { "id": 3, "courseName": "타이포그래피 I", "dayOfWeek": 2, "startTime": "09:00",
+  "entries": [ { "id": 3, "courseName": "타이포그래피 I", "courseCode": null, "dayOfWeek": 2, "startTime": "09:00",
                  "endTime": "10:30", "location": "예405", "professor": "김교수", "color": "#3BB39A" } ] }
 ```
+- GET: `year`·`term` 중 생략한 값만 현재 학기(3.3) 값으로 채운다. `label` 은 "2026년 1학기 / 2학기 / 여름계절학기 / 겨울계절학기".
+- 칸 객체(`entries` 원소, POST·PATCH 응답 data): `id, courseName, courseCode, dayOfWeek, startTime, endTime, location, professor, color`. 요일 → 시작시간 순.
+- 입력: `year` 2000~2100, `dayOfWeek` 1(월)~7(일), `courseName` 100자, `courseCode` 20자, `location` 100자, `professor` 50자, `color` `#RRGGBB`. 종료 ≤ 시작이면 `INVALID_TIME_RANGE`.
+- 겹침: 같은 학기·요일에서 `start < 다른 칸 end` 이고 `다른 칸 start < end` 이면 `TIMETABLE_OVERLAP`(409). 끝과 시작이 같은 칸은 허용. 수정은 바꾼 뒤의 값으로 검사하고 자기 자신은 제외.
+- PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음). 남의 칸 → `TIMETABLE_ENTRY_NOT_FOUND`(404).
 
 ### 4.6 학사관리 `academic`
 
@@ -534,7 +539,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | T2 ✅ | user (me 조회·수정·settings) | A (T1과 함께) | |
 | T3 ✅ | catalog 엔티티 + 조회 API | B | `feat/catalog`에서 5개 조회 API 구현. T3 33개 + 기존 인증·회원 19개 + 실제 MySQL 부팅·시드 조회 2개로 전체 54개 테스트 통과 |
 | T4 ✅ | schedule CRUD | A | 기간 조회 정렬·권한(남의 일정 404)·시간 검증 |
-| T5 | timetable CRUD | A | 겹침 409, 현재 학기 기본값 |
+| T5 ✅ | timetable CRUD | A | 겹침 409, 현재 학기 기본값 |
 | T6 | completed-courses CRUD + 이수구분 자동판별 | B | CSE204 입력 시 컴공 학생은 MAJOR_REQUIRED 자동 |
 | T7 | progress 계산 + 단위 테스트 | B | 5장 테스트 케이스 전부 통과 |
 | T8 | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
