@@ -526,7 +526,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | T0 ✅ | 공통 기반 (의존성·yml·global 패키지·JWT·CORS·Swagger·Flyway 적용) | 한 명이 먼저, 하루 안에 main에 머지 | 서버 부팅 시 V1·V2 적용, `/api/health` 200, `/swagger-ui/index.html` 열림, 토큰 없이 🔒 API 호출 시 401 JSON |
 | T1 ✅ | auth (가입·로그인·재발급·로그아웃) | A | Swagger에서 가입→로그인→🔒API→refresh→logout 흐름 동작 |
 | T2 ✅ | user (me 조회·수정·settings) | A (T1과 함께) | |
-| T3 ✅ | catalog 엔티티 + 조회 API | B | `feat/catalog`에서 5개 조회 API 구현. 학번별 전공·과목 검색 등 T3 33개 + 기존 인증·회원 19개 테스트 통과. 실제 MySQL 서버 연동 검증은 별도 |
+| T3 ✅ | catalog 엔티티 + 조회 API | B | `feat/catalog`에서 5개 조회 API 구현. T3 33개 + 기존 인증·회원 19개 + 실제 MySQL 부팅·시드 조회 2개로 전체 54개 테스트 통과 |
 | T4 | schedule CRUD | A | 기간 조회 정렬·권한(남의 일정 404)·시간 검증 |
 | T5 | timetable CRUD | A | 겹침 409, 현재 학기 기본값 |
 | T6 | completed-courses CRUD + 이수구분 자동판별 | B | CSE204 입력 시 컴공 학생은 MAJOR_REQUIRED 자동 |

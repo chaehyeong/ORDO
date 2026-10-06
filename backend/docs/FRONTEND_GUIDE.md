@@ -13,13 +13,13 @@
 | T0 공통 기반 (응답 형식·에러·JWT 보안·CORS·Swagger·Flyway) | ✅ 완료 | `feat/global` · PR #1 |
 | T1 회원가입·로그인·토큰 재발급·로그아웃 | ✅ 완료 | `feat/auth` (feat/global 위에서 작업) |
 | T2 내 정보 조회·수정·알림 설정 | ✅ 완료 | `feat/auth` |
-| T3 전공 목록 등 catalog 조회 API | ✅ 구현·독립 테스트 완료 (B) | `feat/catalog` (실제 MySQL 연동 검증은 별도) |
+| T3 전공 목록 등 catalog 조회 API | ✅ 구현·전체 테스트 완료 (B) | `feat/catalog` (실제 MySQL 부팅·시드 조회 포함) |
 | T4 일정 · T5 시간표 · T8 홈 · T9 마이페이지 요약 | ⏳ 예정 (A) | |
 | T6·T7 이수내역 · 이수현황 계산 | ⏳ 예정 (B) | |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
-**T3 검증 (2026-10-06)**: 조회·실제 시드 데이터 테스트 16개, HTTP 응답·입력 검증 17개, 기존 인증·회원 테스트 19개로 총 **52개 통과**. 실제 MySQL 연결 없이 수행했으며, 재현 명령과 범위는 7장 참고.
+**T3 검증 (2026-10-06)**: 조회·실제 시드 데이터 테스트 16개, HTTP 응답·입력 검증 17개, 기존 인증·회원 테스트 19개, 실제 MySQL의 애플리케이션 부팅·초기 데이터 조회 2개로 전체 **54개 통과**. 실행 서버에서도 컴퓨터공학과 교과목 80개와 CSE204 자료구조 조회를 확인했다. 재현 명령과 범위는 7장 참고.
 
 ---
 
@@ -231,11 +231,12 @@ general-education.data: { admissionYear, basisYear, approximate,
 - T3 공용 파일 변경: `build.gradle` 에 테스트용 H2 의존성만 추가. 운영 DB는 기존 MySQL 그대로이며 `application.yml`, `global/**`, V1·V2 마이그레이션, 프론트 코드는 변경하지 않았다.
 - 기존 `MajorRepository.findSelectable` 의 가입 검증 경로는 유지하고, 전공 목록용 조회를 추가했다.
 - 새 테스트는 운영 DB와 분리된 H2 메모리 DB에 테스트 스키마를 만들고, 정해진 소량 데이터 및 기존 V2 시드 전체를 읽어 검증한다. 테스트가 끝나면 메모리 DB는 사라진다.
-- Java 17에서, backend 폴더를 기준으로 실행:
+- MySQL 없이 독립 테스트 52개만 실행하려면 Java 17에서, backend 폴더를 기준으로 실행:
 
 ```powershell
 .\gradlew.bat test --tests "com.ordo.catalog.*" --tests "com.ordo.auth.service.*" --tests "com.ordo.user.service.*" --tests "com.ordo.global.security.*"
 ```
 
-- 위 명령은 MySQL이 필요한 기존 `OrdoApplicationTests` 를 제외한다. **운영용 MySQL에서 V1·V2 적용과 실제 서버 호출까지 검증한 것은 아니다.** 전체 `gradlew.bat test` 와 서버 기동은 기존 README대로 로컬 MySQL 설정 후 별도로 수행한다.
+- 위 명령은 MySQL이 필요한 기존 `OrdoApplicationTests` 를 제외한다. 로컬 MySQL 비밀번호를 README대로 설정한 뒤 `.\gradlew.bat test` 를 실행하면 전체 54개 테스트를 검증한다.
+- 2026-10-06 전체 테스트에서 실제 `jdbc:mysql://localhost:3306/ordo` 연결·Flyway 검증과 단과대 10개, 전공 76개, 교과목 3,036개의 초기 데이터 조회를 확인했다. 프론트 화면 연동 검증은 별도다.
 - Swagger에서 4장의 GET 예시를 호출할 수 있다. 기본 주소는 `http://localhost:8080/swagger-ui/index.html` 이며 서버가 켜져 있어야 한다.
