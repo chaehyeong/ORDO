@@ -3,6 +3,7 @@
 > 프론트 개발자와 백엔드 B 검수용. 기준 문서는 `docs/BACKEND_SPEC.md` 이고, 이 문서는 **지금 바로 쓸 수 있는 API** 와 **프론트에 부탁할 수정**만 모았다.
 > 작성: 2026-09-24 (백엔드 A)
 > T3 연동 설명 갱신: 2026-10-06 (`feat/catalog`, `feat/auth` 기반)
+> T4 일정 API 추가: 2026-09-28 (백엔드 A)
 
 ---
 
@@ -14,12 +15,15 @@
 | T1 회원가입·로그인·토큰 재발급·로그아웃 | ✅ 완료 | `feat/auth` (feat/global 위에서 작업) |
 | T2 내 정보 조회·수정·알림 설정 | ✅ 완료 | `feat/auth` |
 | T3 전공 목록 등 catalog 조회 API | ✅ 구현·전체 테스트 완료 (B) | `feat/catalog` (실제 MySQL 부팅·시드 조회 포함) |
-| T4 일정 · T5 시간표 · T8 홈 · T9 마이페이지 요약 | ⏳ 예정 (A) | |
+| T4 일정·할 일 | ✅ 완료 (A) | `feat/schedule` · PR #3 |
+| T5 시간표 · T8 홈 · T9 마이페이지 요약 | ⏳ 예정 (A) | |
 | T6·T7 이수내역 · 이수현황 계산 | ⏳ 예정 (B) | |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
 **T3 검증 (2026-10-06)**: 조회·실제 시드 데이터 테스트 16개, HTTP 응답·입력 검증 17개, 기존 인증·회원 테스트 19개, 실제 MySQL의 애플리케이션 부팅·초기 데이터 조회 2개로 전체 **54개 통과**. 실행 서버에서도 컴퓨터공학과 교과목 80개와 CSE204 자료구조 조회를 확인했다. 재현 명령과 범위는 7장 참고.
+
+**T4 검증 (2026-09-28)**: 일정 단위 테스트 11개 통과. 서버를 띄워 일정 API(생성·정렬·기간 제한·시간 검증·남의 일정 404·삭제 등) 31개를 직접 호출해 확인. T3 가 들어간 master 를 합친 뒤 전체 테스트 **65개 통과**(T3 까지 54개 + 일정 11개).
 
 ---
 
@@ -53,6 +57,8 @@
 | EMAIL_DUPLICATED | 409 | 이미 가입된 이메일 |
 | MAJOR_NOT_FOUND | 404 | 없는 전공 id. 가입·프로필 변경에서는 해당 학번에 없는 전공이나 융합전공 선택도 포함 |
 | REQUIREMENT_NOT_FOUND | 404 | 해당 전공·입학년도 졸업요건이 없거나, 교양 기준과 2026 대체 자료가 모두 없음 |
+| SCHEDULE_NOT_FOUND | 404 | 없는 일정, 또는 남의 일정 |
+| INVALID_TIME_RANGE | 400 | 종료 시간이 시작보다 빠름·같음, 시작 없이 종료만 있음, 조회 기간 역전·62일 초과 |
 | NOT_FOUND | 404 | 없는 경로·리소스 |
 | INTERNAL_ERROR | 500 | 서버 오류 (백엔드에 알려주세요) |
 
@@ -200,6 +206,40 @@ general-education.data: { admissionYear, basisYear, approximate,
 - 졸업요건 원본의 null은 ‘자료 없음/해당 없음’이다. 이 API만으로 이수현황·졸업 가능 여부를 계산하지 않는다(T7에서 제공 예정).
 - 검색 결과를 사용자의 이수내역에 저장하는 기능은 T6 범위로, 이번 T3에는 포함되지 않는다.
 
+### 일정·할 일 `schedule` (전부 🔒)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | /api/schedules?from=2026-10-01&to=2026-10-31&category= | 기간 조회 (캘린더 월·날짜 상세). data = 아래 객체의 배열 |
+| POST | /api/schedules | 생성 → **201** |
+| GET | /api/schedules/{id} | 한 건 조회 |
+| PATCH | /api/schedules/{id} | 수정 — **보낸 필드만** 바뀜 |
+| DELETE | /api/schedules/{id} | 삭제 → **204** (본문 없음) |
+| PATCH | /api/schedules/{id}/done | 완료 체크 `{ "done": true }` — 뒤집기가 아니라 보낸 값으로 설정 |
+
+```json
+// POST /api/schedules — 일정 추가 폼
+{ "title": "팀플 모임",          // 필수, 100자 이하
+  "category": "PERSONAL",       // 필수: LECTURE(수업) / ASSIGNMENT(과제) / PERSONAL(개인일정)
+  "date": "2026-10-18",         // 필수
+  "startTime": "14:00",         // 선택. 비우면 '할 일'
+  "endTime": "15:30",           // 선택. 넣으면 startTime 필수, startTime 보다 늦어야 함
+  "location": "예405",          // 선택, 100자 이하
+  "memo": null,                 // 선택, 1000자 이하
+  "alarmMinutesBefore": 30 }    // 선택: null(없음) / 10 / 30 / 60 / 1440(하루 전). 그 외 값은 INVALID_INPUT
+
+// 응답 data (생성·조회·수정·완료 공통)
+{ "id": 42, "title": "팀플 모임", "category": "PERSONAL", "date": "2026-10-18",
+  "startTime": "14:00", "endTime": "15:30", "location": "예405", "memo": null,
+  "done": false, "alarmMinutesBefore": 30, "type": "EVENT" }
+```
+
+- `type`: `startTime` 이 있으면 `EVENT`(일정 → 캘린더·홈 타임라인), 없으면 `TODO`(할 일 → 홈 '오늘 할 일' 체크박스).
+- 목록 정렬: 날짜 → 시작시간 순, 시간 없는 할 일은 그날 맨 뒤. `category` 를 생략하거나 비우면 전체.
+- 조회 기간: `from`·`to` 필수, 양 끝 포함 **최대 62일**(예: 10-01~12-01). 달력 앞뒤 주까지 한 번에 받아도 된다.
+- **PATCH 로 값을 지울 수는 없다**(null = 그대로). 알람 끄기, 시간 지우기(일정 → 할 일), 장소·메모 지우기는 삭제 후 다시 만든다.
+- 알람은 저장만 된다. 실제 알림 발송은 2차(카톡).
+
 ---
 
 ## 5. 프론트에 부탁할 수정 (SignUp.js / SignIn.js)
@@ -221,6 +261,7 @@ general-education.data: { admissionYear, basisYear, approximate,
 - 로컬 실행 전 `src/main/resources/application-local.yml` 을 직접 만들어 DB 비밀번호·JWT 키를 넣는다 (README 3장, git 에 안 올라감).
 - `catalog` 의 `College`·`Major` 엔티티와 `MajorRepository` 는 T1에서 먼저 만들었으며, T3는 이를 이어서 구현했다. 기존 가입 검증용 `countGraduationRequirements` 네이티브 쿼리는 그대로 유지했다.
 - 기존 T0~T2 공용 파일 변경: `build.gradle`(springdoc·jjwt), `application.yml`, `global/**` 전체, `ErrorCode`(2.5 전체), `SecurityConfig`(PasswordEncoder, `/error` 허용). 이번 T3 변경은 아래 7장 참고.
+- T4 일정은 공용 파일 변경 없음.
 - 명세와 다르게/새로 정한 것은 `BACKEND_SPEC.md` 4장·4.1·4.2·8장에 반영해 두었다.
 
 ---
