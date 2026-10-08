@@ -11,6 +11,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
 
 import com.ordo.academic.domain.CompletedCourse;
+import com.ordo.academic.dto.CompletedCourseBulkRequest;
+import com.ordo.academic.dto.CompletedCourseBulkRequest.TermRef;
 import com.ordo.academic.dto.CompletedCourseRequest;
 import com.ordo.academic.dto.CompletedCourseResponse;
 import com.ordo.academic.dto.CompletedCourseUpdateRequest;
@@ -95,10 +97,43 @@ class CompletedCourseServiceTest {
     void bulkSavesNothingWhenOneIsInvalid() {
         givenUser();
 
-        assertErrorCode(() -> completedCourseService.createAll(1L, List.of(
+        assertErrorCode(() -> completedCourseService.createAll(1L, new CompletedCourseBulkRequest(List.of(
                 request(null, "자유1", Classification.GEN_FREE, null),
-                request(null, "분류 없음", null, null))), ErrorCode.CLASSIFICATION_REQUIRED);
+                request(null, "분류 없음", null, null)), List.of(new TermRef(2026, Term.FIRST)), null)),
+                ErrorCode.CLASSIFICATION_REQUIRED);
         verify(completedCourseRepository, never()).saveAll(anyList());
+        verify(completedCourseRepository, never()).deleteAll(anyList());  // 판별이 먼저라 지우지도 않음
+    }
+
+    @Test
+    void bulkReplacesOnlyGivenTerms() {
+        givenUser();
+        CompletedCourse sameTerm = course("예전 1학기 과목", 2026, Term.FIRST);
+        CompletedCourse otherTerm = course("작년 과목", 2025, Term.SECOND);
+        given(completedCourseRepository.findByUserId(1L)).willReturn(List.of(sameTerm, otherTerm));
+        given(completedCourseRepository.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
+
+        List<CompletedCourseResponse> saved = completedCourseService.createAll(1L, new CompletedCourseBulkRequest(
+                List.of(request(null, "자유1", Classification.GEN_FREE, null)), List.of(new TermRef(2026, Term.FIRST)), null));
+
+        verify(completedCourseRepository).deleteAll(List.of(sameTerm));
+        assertThat(saved).extracting(CompletedCourseResponse::courseName).containsExactly("자유1");
+    }
+
+    @Test
+    void keepClassificationSkipsMasterOverride() {
+        givenUser();
+        givenMasterCourse("CSE204", "자료구조", Classification.MAJOR_REQUIRED);
+        given(completedCourseRepository.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
+
+        List<CompletedCourseResponse> saved = completedCourseService.createAll(1L, new CompletedCourseBulkRequest(
+                List.of(request("CSE204", null, Classification.MAJOR_ELECTIVE, null),
+                        request("CSE204", "자료구조", null, null)),  // 이수구분이 없으면 평소처럼 판별
+                null, true));
+
+        assertThat(saved).extracting(CompletedCourseResponse::classification)
+                .containsExactly(Classification.MAJOR_ELECTIVE, Classification.MAJOR_REQUIRED);
+        assertThat(saved.get(0).courseName()).isEqualTo("자료구조");  // 과목명은 여전히 마스터로 채움
     }
 
     @Test

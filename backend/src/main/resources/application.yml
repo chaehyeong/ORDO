@@ -4,6 +4,12 @@ spring:
   # 비밀값(DB 비밀번호, JWT 키)은 git에 올리지 않는 application-local.yml 에 둔다. 없으면 아래 기본값 사용.
   config:
     import: optional:application-local.yml
+  # 파일 가져오기(T12): 5MB 까지, 디스크 임시파일 없이 메모리에서만 처리
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+      file-size-threshold: 6MB
 
   datasource:
     url: jdbc:mysql://localhost:3306/ordo?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
