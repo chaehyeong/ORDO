@@ -12,10 +12,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-/** 확장자가 아니라 파일 앞부분 바이트로 형식을 정한다. xlsx·csv·txt·pdf 가 아니면 "엑셀로 저장" 안내로 거절 */
+/**
+ * 확장자가 아니라 파일 앞부분 바이트로 형식을 정한다. xlsx·csv·txt 가 아니면 "엑셀로 저장" 안내로 거절.
+ * PDF 도 거절한다: 글자는 읽히지만 표 구조(2줄 칸·세로 병합·빈 칸)가 사라져 정확히 읽을 수 없다(명세 9장 19).
+ */
 final class FileFormatDetector {
 
-    enum Format { XLSX, PDF, CSV, TXT }
+    enum Format { XLSX, CSV, TXT }
 
     /** text 는 CSV·TXT 일 때만 (디코딩한 내용) */
     record Detected(Format format, String text) {
@@ -33,10 +36,8 @@ final class FileFormatDetector {
             }
             throw unsupported();  // docx·hwpx·ozd 등 다른 압축 파일
         }
-        if (startsWith(bytes, '%', 'P', 'D', 'F', '-')) {
-            return new Detected(Format.PDF, null);
-        }
-        if (startsWith(bytes, 0xD0, 0xCF, 0x11, 0xE0)    // OLE2: 옛 xls, hwp, doc
+        if (startsWith(bytes, '%', 'P', 'D', 'F', '-')
+                || startsWith(bytes, 0xD0, 0xCF, 0x11, 0xE0)    // OLE2: 옛 xls, hwp, doc
                 || startsWith(bytes, 0x89, 'P', 'N', 'G') || startsWith(bytes, 0xFF, 0xD8, 0xFF)
                 || startsWith(bytes, 'G', 'I', 'F', '8') || startsWith(bytes, 'B', 'M')
                 || (startsWith(bytes, 'R', 'I', 'F', 'F') && bytes.length > 12 && bytes[8] == 'W')) {

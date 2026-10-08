@@ -162,7 +162,7 @@ app:
 | KAKAO_AUTH_FAILED | 400 | 인가코드 틀림·만료, redirectUri 불일치 (T11) |
 | KAKAO_SCOPE_REQUIRED | 400 | '카카오톡 메시지 전송' 동의 안 함 (T11) |
 | KAKAO_UNAVAILABLE | 502 | 카카오 서버 오류·시간 초과 (T11) |
-| IMPORT_UNSUPPORTED_FORMAT | 400 | xlsx·csv·txt·pdf 가 아님 → "엑셀(xlsx)로 저장해서 올려주세요" (T12) |
+| IMPORT_UNSUPPORTED_FORMAT | 400 | xlsx·csv·txt 가 아님(pdf 포함) → "엑셀(xlsx)로 저장해서 올려주세요" (T12) |
 | IMPORT_TOO_LARGE | 400 | 업로드 5MB 초과 (T12) |
 | IMPORT_UNRECOGNIZED | 400 | 수강신청확인서·전체 성적 보기가 아니거나 표를 못 찾음 (T12) |
 | IMPORT_STUDENT_MISMATCH | 403 | 파일 학번이 내 학번과 다르거나 없음 (T12) |
@@ -538,7 +538,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 |---|---|---|
 | POST | /api/import | 🔒 multipart `file` (≤5MB) → 저장하지 않고 **미리보기 초안**과 `warnings` 를 돌려줌 |
 
-- 지원: **xlsx(추천)·csv·txt·pdf**. 형식은 확장자가 아니라 앞부분 바이트로 판별(ZIP+`xl/workbook.xml`=xlsx, `%PDF`=pdf, 나머지는 텍스트: UTF-8 → 실패 시 MS949). 그 외는 `IMPORT_UNSUPPORTED_FORMAT`.
+- 지원: **xlsx(추천)·csv·txt**. 형식은 확장자가 아니라 앞부분 바이트로 판별(ZIP+`xl/workbook.xml`=xlsx, 나머지는 텍스트: UTF-8 → 실패 시 MS949). pdf·이미지·hwp·xls 등은 `IMPORT_UNSUPPORTED_FORMAT`("엑셀로 저장해서 올려주세요").
 - 첫 줄 제목으로 해석기 선택: `수강신청확인서` → 시간표 초안(`type: TIMETABLE`), `전체 성적 보기` → 이수내역 초안(`type: GRADES`). 아니면 `IMPORT_UNRECOGNIZED`.
 - 파일의 학번이 로그인 사용자의 `studentNumber` 와 다르거나 없으면 `IMPORT_STUDENT_MISMATCH`(403). 응답에 학번·이름은 넣지 않는다.
 - 저장은 초안을 고친 뒤 `POST /api/timetables/entries/bulk`(mode=REPLACE) 또는 `POST /api/academic/completed-courses/bulk`(replaceTerms = 초안의 학기, keepClassification=true) 로 한다.
@@ -551,7 +551,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 수강신청확인서: 머리글 글자로 열을 찾고, 수업 칸을 쉼표로 나눠 `교수 요일HH:MM-HH:MM 강의실` 마다 시간표 1칸(월=1…일=7). 시간이 없으면(온라인) 칸을 만들지 않고 NO_TIME. `학수번호-분반` 은 하이픈으로 나눔.
 - 전체 성적 보기: `평점/등급` 머리글 다음부터 다른 요약 표 제목 전까지가 과목 표. 과목 행은 **뒤에서부터 센 위치**(-13 학수번호 … -5 등급, -3 폐기사유)로 읽고, 앞 두 칸이 `2026`·`1학기` 모양일 때만 학기를 새로 잡아 아래로 이어 쓴다. 폐기사유가 있으면 제외, 쪽 번호·반복 머리글은 건너뜀. 분반은 끝이 G두자리면 그것, 아니면 마지막 두 자리. 이수구분은 글자(없으면 학교 코드 04·05·08·11·14·15·16·17·06·20)로 매핑, 모르면 null + `needs: CLASSIFICATION`. 배분이수는 `needs: DISTRIBUTION_AREA`.
 - 5MB 초과는 Spring 업로드 한도에서도 `IMPORT_TOO_LARGE`. 업로드는 디스크 임시파일 없이 메모리에서만(`multipart.file-size-threshold`).
-- PDF 는 글자는 읽히지만 표 배치가 뒤섞여 정확도가 낮다 → 항상 확인 경고를 붙이고, 샘플 기대값이 안 나오면 PDF 도 거절한다(9장 19).
+- **PDF 는 받지 않는다**(9장 19): PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음.
 
 ### 4.10 카카오톡 일정 알림 `notification` (T11)
 
@@ -641,7 +641,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T8 ✅ | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
 | T9 ✅ | users/me/summary | A | |
 | T11 | 카카오톡 일정 알림 (4.10) | A | 연결·상태·해제 API, 1분 스케줄러, 중복 발송 없음, 토큰 암호화·갱신·EXPIRED, 실기기 수신 확인 |
-| T12 | 성적·시간표 파일 가져오기 (4.9) | A | 샘플 기대값(신청 6과목 18학점·7칸·경고 1, 성적 8과목 20학점), xlsx·csv·txt 결과 동일, 학번 대조, 재업로드 중복 없음 |
+| T12 ✅ | 성적·시간표 파일 가져오기 (4.9) | A | 샘플 기대값(신청 6과목 18학점·7칸·경고 1, 성적 8과목 20학점), xlsx·csv·txt 결과 동일, 학번 대조, 재업로드 중복 없음 |
 | T10 ✅ | e캠퍼스 피드 연동 (4.8) | A | 피드 주소 검증, 10분 캐시, 실패 시 예전 데이터, 토큰 비노출 |
 
 ### AI에게 줄 프롬프트 예시 (그대로 복사해서 사용)
@@ -701,4 +701,4 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 16 | 중핵교과·기초교과 → GEN_REQUIRED (T12) | 추정. 근거: 성적표 이수구분 코드 14(중핵교과) = 3.1 "교양 필수교과 14, 16". 기초교과 코드는 확인 필요 |
 | 17 | 가져오기 이수구분: 성적표 vs 교육과정 마스터가 다를 때 (T12) | **결정(2026-10-08): 성적표 우선**(keepClassification), 다르면 경고 |
 | 18 | 같은 파일 재업로드 (T12) | **결정(2026-10-08): 학기 단위 교체(REPLACE)** |
-| 19 | PDF 가져오기 (T12) | **결정(2026-10-08): 마지막 단계에서 PDFBox 로 시도**, 샘플 기대값이 안 나오면 거절 |
+| 19 | PDF 가져오기 (T12) | **결정(2026-10-08): 거절.** PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음. 원본 PDF 의 칸 테두리로 표를 재구성하는 방법은 여러 학기 성적표 샘플이 생기면 재검토 |

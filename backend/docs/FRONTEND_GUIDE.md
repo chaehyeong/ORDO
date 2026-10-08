@@ -23,7 +23,7 @@
 | T4 일정·할 일 | ✅ 완료 (A) | `feat/schedule` · PR #3 |
 | T5 시간표 | ✅ 완료 (A) | `feat/timetable` (feat/schedule 위에서 작업) |
 | T10 e캠퍼스 과제 마감 연동 | ✅ 완료 (A) | `feat/ecampus` (feat/timetable 위에서 작업) |
-| T12 성적·시간표 파일 가져오기 (xlsx·csv·txt) | ✅ 완료 (A), PDF 는 확인 중 | `feat/import` (feat/home 위에서 작업) |
+| T12 성적·시간표 파일 가져오기 (xlsx·csv·txt) | ✅ 완료 (A), PDF 는 받지 않음 | `feat/import` (feat/home 위에서 작업) |
 | T11 카카오톡 일정 알림 | ⏳ 예정 (A) | 계획: `docs/plans/T11-kakao-alarm.md` |
 | T8 홈 · T9 마이페이지 요약 | ✅ 완료 (A) | `feat/home` (feat/academic 위에서 작업) |
 | T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
@@ -389,7 +389,7 @@ await api('/api/academic/completed-courses/bulk', { method: 'POST', body: JSON.s
   replaceTerms: g.terms, keepClassification: true }) });
 ```
 
-- **지원 형식**: xlsx(추천)·csv·txt. PDF 는 아직 거절(정확도 확인 중). 그 외는 "엑셀(xlsx)로 저장해서 올려주세요" 오류 → 그대로 보여주면 된다.
+- **지원 형식**: xlsx(추천)·csv·txt. **PDF 는 받지 않는다**(표 구조가 깨져서 정확히 읽을 수 없음). 그 외도 "엑셀(xlsx)로 저장해서 올려주세요" 오류 → 그대로 보여주면 된다. 파일 선택 창에 `accept=".xlsx,.csv,.txt"` 를 걸어 두면 좋다.
 - **같은 파일을 다시 올려도 중복되지 않는다**: 시간표는 그 학기를 통째로 바꾸고(REPLACE), 성적은 `replaceTerms` 학기를 지우고 다시 넣는다. 그래서 그 학기에 직접 입력한 칸·과목도 바뀐다는 안내를 저장 버튼 옆에 띄우는 게 좋다.
 - `warnings` 는 목록으로 보여준다. `NO_TIME`(온라인 등 시간 없는 과목, 시간표에 안 들어감), `DISTRIBUTION_AREA_REQUIRED`·`UNKNOWN_CLASSIFICATION`·`UNKNOWN_GRADE`(→ 그 과목의 `needs` 값을 사용자가 고르게), `UNPARSED_ROW`(읽지 못한 줄).
 - 배분이수 과목은 영역(1~5)을 고르지 않으면 저장 시 `DISTRIBUTION_AREA_REQUIRED` 오류가 난다.

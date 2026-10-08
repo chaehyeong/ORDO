@@ -36,7 +36,6 @@ public class ImportService {
                 case XLSX -> XlsxReader.read(bytes);
                 case CSV -> DelimitedTextReader.read(detected.text(), ',');
                 case TXT -> DelimitedTextReader.read(detected.text(), '\t');
-                case PDF -> throw new BusinessException(ErrorCode.IMPORT_UNSUPPORTED_FORMAT);  // T12 7단계에서 결정
             };
             String title = RawDocument.compact(doc.title());
             if (title.equals(EnrollmentInterpreter.TITLE)) {

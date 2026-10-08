@@ -69,7 +69,7 @@ class ImportServiceTest {
         assertErrorCode(() -> importService.preview(1L, otherZip), ErrorCode.IMPORT_UNSUPPORTED_FORMAT);  // xlsx 가 아닌 압축 파일
         assertErrorCode(() -> importService.preview(1L, file(new byte[]{'a', 0, 'b', 1, 2})),
                 ErrorCode.IMPORT_UNSUPPORTED_FORMAT);  // 이진 파일
-        assertErrorCode(() -> importService.preview(1L, pdf), ErrorCode.IMPORT_UNSUPPORTED_FORMAT);  // PDF 는 7단계에서 결정
+        assertErrorCode(() -> importService.preview(1L, pdf), ErrorCode.IMPORT_UNSUPPORTED_FORMAT);  // PDF 는 받지 않음 (명세 9장 19)
         assertErrorCode(() -> importService.preview(1L, file(new byte[ImportService.MAX_BYTES + 1])),
                 ErrorCode.IMPORT_TOO_LARGE);
     }

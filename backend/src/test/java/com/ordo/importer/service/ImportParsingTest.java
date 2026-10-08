@@ -139,7 +139,6 @@ class ImportParsingTest {
             case XLSX -> XlsxReader.read(bytes);
             case CSV -> DelimitedTextReader.read(detected.text(), ',');
             case TXT -> DelimitedTextReader.read(detected.text(), '\t');
-            case PDF -> throw new IllegalArgumentException("PDF 는 7단계");
         };
     }
 }
