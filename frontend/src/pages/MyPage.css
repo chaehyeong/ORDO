@@ -1,0 +1,26 @@
+.profile {
+    display: flex;
+    margin-top : 1vh;
+}
+.profile img {
+    width: 80px;
+    height: 80px;
+    border-radius: 100%;
+    margin-right: 5px;
+}
+.helpme {
+    line-height: 50px;
+    font-size: 20px;
+}
+.helpmee {
+    line-height: 30px;
+}
+.profile-edit-btn {
+    margin-bottom: 1vh;
+    padding: 5px 10px;
+    color: gray;
+    background-color: white;
+    border: 1px solid;
+    border-radius: 30px;
+    cursor: pointer;
+}
