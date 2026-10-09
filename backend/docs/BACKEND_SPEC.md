@@ -555,6 +555,8 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 
 ### 4.10 카카오톡 일정 알림 `notification` (T11)
 
+> ⚠️ 2026-10-09: '나에게 보내기'는 휴대폰 알림이 울리지 않아 **웹푸시로 바꾸는 계획이 승인 대기 중**(`docs/plans/T11-web-push.md`). 승인되면 이 절과 2.5·3.3·7·8·9장을 계획서 12절대로 교체한다.
+
 | 메서드 | 경로 | 설명 |
 |---|---|---|
 | POST | /api/notifications/kakao/connect | 🔒 `{ "code": "...", "redirectUri": "..." }` → 카카오 토큰 교환 후 암호화 저장 → `{ status, connectedAt }` |
@@ -564,7 +566,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 1분마다 `일정 날짜 + 시작시간(없으면 09:00, 9장 12) - alarm_minutes_before` 가 지난 10분 안에 든 일정을 카카오톡 "나에게 보내기"로 발송. `done` 이거나 `notification_enabled=false` 면 안 보냄.
 - 메시지: 제목·날짜·시간·장소만(메모 제외). 같은 알림은 `notification_logs (schedule_id, channel, notify_at)` 유일 키로 한 번만.
 - 토큰 만료 시 리프레시로 갱신, 실패하면 `EXPIRED` → 앱이 재연결 안내. 키는 환경변수(`KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`, `KAKAO_TOKEN_ENC_KEY`, `KAKAO_REDIRECT_URIS`, `ORDO_WEB_URL`)로만.
-- 자세한 설계·사용자 체크리스트는 `docs/plans/T11-kakao-alarm.md`.
+- 카카오 계획은 웹푸시 계획(`docs/plans/T11-web-push.md`)으로 대체됨(0절에 바꾼 이유).
 
 ---
 

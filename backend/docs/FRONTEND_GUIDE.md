@@ -24,7 +24,7 @@
 | T5 시간표 | ✅ 완료 (A) | `feat/timetable` (feat/schedule 위에서 작업) |
 | T10 e캠퍼스 과제 마감 연동 | ✅ 완료 (A) | `feat/ecampus` (feat/timetable 위에서 작업) |
 | T12 성적·시간표 파일 가져오기 (xlsx·csv·txt) | ✅ 완료 (A), PDF 는 받지 않음 | `feat/import` (feat/home 위에서 작업) |
-| T11 카카오톡 일정 알림 | ⏳ 예정 (A) | 계획: `docs/plans/T11-kakao-alarm.md` |
+| T11 일정 알림 (카카오 → **웹푸시로 변경**) | ⏳ 계획 승인 대기 (A) | 계획: `docs/plans/T11-web-push.md` (프론트 할 일은 7절: 서비스워커·알림 켜기 버튼·manifest) |
 | T8 홈 · T9 마이페이지 요약 | ✅ 완료 (A) | `feat/home` (feat/academic 위에서 작업) |
 | T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
 
