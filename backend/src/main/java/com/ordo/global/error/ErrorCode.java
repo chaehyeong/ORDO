@@ -39,7 +39,13 @@ public enum ErrorCode {
     DISTRIBUTION_AREA_REQUIRED(HttpStatus.BAD_REQUEST, "배분이수 영역(1~5)을 입력해 주세요."),
 
     // e캠퍼스 연동
-    ECAMPUS_FEED_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "e캠퍼스 일정을 가져오지 못했습니다. 캘린더 피드 주소를 다시 등록해 보세요.");
+    ECAMPUS_FEED_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "e캠퍼스 일정을 가져오지 못했습니다. 캘린더 피드 주소를 다시 등록해 보세요."),
+
+    // 파일 가져오기 (T12)
+    IMPORT_UNSUPPORTED_FORMAT(HttpStatus.BAD_REQUEST, "지원하지 않는 파일입니다. 엑셀(xlsx)로 저장해서 올려주세요."),
+    IMPORT_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일이 너무 큽니다. 5MB 이하로 올려주세요."),
+    IMPORT_UNRECOGNIZED(HttpStatus.BAD_REQUEST, "수강신청확인서나 전체 성적 보기 파일이 아니거나 내용을 읽지 못했습니다."),
+    IMPORT_STUDENT_MISMATCH(HttpStatus.FORBIDDEN, "내 학번의 파일이 아닙니다.");
 
     private final HttpStatus status;
     private final String message;

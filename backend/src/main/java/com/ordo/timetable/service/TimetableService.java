@@ -5,13 +5,18 @@ import com.ordo.global.common.Term;
 import com.ordo.global.error.BusinessException;
 import com.ordo.global.error.ErrorCode;
 import com.ordo.timetable.domain.TimetableEntry;
+import com.ordo.timetable.dto.TimetableEntryBulkRequest;
 import com.ordo.timetable.dto.TimetableEntryCreateRequest;
 import com.ordo.timetable.dto.TimetableEntryResponse;
 import com.ordo.timetable.dto.TimetableEntryUpdateRequest;
 import com.ordo.timetable.dto.TimetableResponse;
 import com.ordo.timetable.repository.TimetableEntryRepository;
+import com.ordo.user.domain.User;
 import com.ordo.user.repository.UserRepository;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +61,41 @@ public class TimetableService {
         return TimetableEntryResponse.from(timetableEntryRepository.save(entry));
     }
 
+    /** 여러 칸 저장 (T12). 하나라도 틀리거나 겹치면 아무것도 바꾸지 않는다 */
+    @Transactional
+    public TimetableResponse saveAll(Long userId, TimetableEntryBulkRequest request) {
+        AcademicTerm term = new AcademicTerm(request.year(), request.term());
+        List<TimetableEntry> existing = timetableEntryRepository
+                .findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(userId, term.year(), term.term());
+        boolean replace = request.mode() == TimetableEntryBulkRequest.Mode.REPLACE;
+        List<TimetableEntry> kept = replace ? List.of() : existing;
+        List<TimetableEntry> added = new ArrayList<>();
+        User user = userRepository.getReferenceById(userId);
+        for (TimetableEntryBulkRequest.Entry e : request.entries()) {
+            TimetableEntry entry = TimetableEntry.builder().user(user).academicYear(term.year()).term(term.term())
+                    .courseName(e.courseName()).courseCode(e.courseCode()).dayOfWeek(e.dayOfWeek())
+                    .startTime(e.startTime()).endTime(e.endTime()).location(e.location()).professor(e.professor())
+                    .color(e.color()).build();
+            List<TimetableEntry> others = Stream.concat(kept.stream(), added.stream()).toList();
+            if (others.stream().anyMatch(other -> sameSlot(other, entry))) {
+                continue;  // 이미 있는 칸(또는 요청 안에서 반복된 칸)은 건너뜀
+            }
+            if (others.stream().anyMatch(other -> other.getDayOfWeek() == entry.getDayOfWeek() && other.overlaps(entry))) {
+                throw new BusinessException(ErrorCode.TIMETABLE_OVERLAP);
+            }
+            added.add(entry);
+        }
+        if (replace) {
+            timetableEntryRepository.deleteAll(existing);
+        }
+        timetableEntryRepository.saveAll(added);
+        List<TimetableEntryResponse> entries = Stream.concat(kept.stream(), added.stream())
+                .sorted(Comparator.comparingInt(TimetableEntry::getDayOfWeek).thenComparing(TimetableEntry::getStartTime))
+                .map(TimetableEntryResponse::from)
+                .toList();
+        return new TimetableResponse(term.year(), term.term(), term.label(), entries);
+    }
+
     @Transactional
     public TimetableEntryResponse update(Long userId, Long entryId, TimetableEntryUpdateRequest request) {
         TimetableEntry entry = getOwnEntry(userId, entryId);
@@ -81,6 +121,11 @@ public class TimetableService {
         if (overlapped) {
             throw new BusinessException(ErrorCode.TIMETABLE_OVERLAP);
         }
+    }
+
+    private static boolean sameSlot(TimetableEntry a, TimetableEntry b) {
+        return a.getDayOfWeek() == b.getDayOfWeek() && a.getStartTime().equals(b.getStartTime())
+                && a.getEndTime().equals(b.getEndTime()) && a.getCourseName().equals(b.getCourseName());
     }
 
     // 남의 칸도 "없음"으로 응답해 존재 여부를 노출하지 않는다

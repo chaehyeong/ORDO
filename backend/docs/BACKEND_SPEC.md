@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-10-07 (T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
+> 최종 갱신: 2026-10-08 (T11 카카오 알림·T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
 
 ---
 
@@ -17,7 +17,7 @@
 | 프론트 | 별도 웹 프론트엔드 → 백엔드는 **REST API(JSON)만** 제공 |
 | 팀 | 백엔드 2명 (각자 AI로 코딩) — 분업은 8장 |
 | MVP 범위 | ① 회원/로그인 ② 홈 ③ 캘린더·일정·할 일(+ e캠퍼스 과제 마감 읽기) ④ 시간표 ⑤ 학사관리(이수현황) ⑥ 마이페이지 |
-| 나중에 | 카카오 로그인·카톡 알림, AI 추천, 졸업 시뮬레이션, 마이크로디그리, STT |
+| 나중에 | 카카오 로그인, AI 추천, 졸업 시뮬레이션, 마이크로디그리, STT |
 
 **이미 준비된 것 (새로 만들지 말 것)**
 
@@ -65,7 +65,9 @@ com.ordo
 ├── schedule        일정·할 일
 ├── timetable       시간표
 ├── home            홈 화면 집계
-└── ecampus         e캠퍼스(Canvas) 캘린더 피드 연동
+├── ecampus         e캠퍼스(Canvas) 캘린더 피드 연동
+├── importer        성적·시간표 파일 가져오기 (T12)
+└── notification    카카오톡 일정 알림 (T11)
 ```
 
 각 도메인 안: `controller / service / repository / domain(엔티티·enum) / dto`.
@@ -156,6 +158,14 @@ app:
 | CLASSIFICATION_REQUIRED | 400 | 교과목 자동판별 불가인데 이수구분 미입력 |
 | DISTRIBUTION_AREA_REQUIRED | 400 | 배분이수인데 영역(1~5) 미입력 |
 | ECAMPUS_FEED_UNAVAILABLE | 502 | e캠퍼스 피드를 받지 못했고 예전에 받은 것도 없음 (주소 재등록 안내) |
+| KAKAO_NOT_CONFIGURED | 503 | 서버에 카카오 키가 없음 (T11) |
+| KAKAO_AUTH_FAILED | 400 | 인가코드 틀림·만료, redirectUri 불일치 (T11) |
+| KAKAO_SCOPE_REQUIRED | 400 | '카카오톡 메시지 전송' 동의 안 함 (T11) |
+| KAKAO_UNAVAILABLE | 502 | 카카오 서버 오류·시간 초과 (T11) |
+| IMPORT_UNSUPPORTED_FORMAT | 400 | xlsx·csv·txt 가 아님(pdf 포함) → "엑셀(xlsx)로 저장해서 올려주세요" (T12) |
+| IMPORT_TOO_LARGE | 400 | 업로드 5MB 초과 (T12) |
+| IMPORT_UNRECOGNIZED | 400 | 수강신청확인서·전체 성적 보기가 아니거나 표를 못 찾음 (T12) |
+| IMPORT_STUDENT_MISMATCH | 403 | 파일 학번이 내 학번과 다르거나 없음 (T12) |
 
 ---
 
@@ -373,6 +383,7 @@ enum Classification {             // 이수구분 (학교 코드)
 |---|---|---|
 | GET | /api/timetables?year=2026&term=SECOND | 🔒 해당 학기 칸 목록 (year/term 생략 시 현재 학기) |
 | POST | /api/timetables/entries | 🔒 수업 칸 추가 → 201, 겹치면 409 |
+| POST | /api/timetables/entries/bulk | 🔒 여러 칸 저장 `{ year, term, mode: REPLACE\|MERGE, entries: [...] }` → 201 (T12) |
 | PATCH | /api/timetables/entries/{id} | 🔒 |
 | DELETE | /api/timetables/entries/{id} | 🔒 → 204 |
 
@@ -398,7 +409,7 @@ enum Classification {             // 이수구분 (학교 코드)
 |---|---|---|
 | GET | /api/academic/completed-courses | 🔒 내 이수내역 (학년도·학기 순) |
 | POST | /api/academic/completed-courses | 🔒 1건 등록 |
-| POST | /api/academic/completed-courses/bulk | 🔒 여러 건 등록 `{ "courses": [ ...위와 같은 객체 ] }` |
+| POST | /api/academic/completed-courses/bulk | 🔒 여러 건 등록 `{ "courses": [ ...위와 같은 객체 ], "replaceTerms": [...], "keepClassification": false }` |
 | PATCH | /api/academic/completed-courses/{id} | 🔒 |
 | DELETE | /api/academic/completed-courses/{id} | 🔒 → 204 |
 | GET | /api/academic/progress | 🔒 **이수현황 계산 결과** (학사관리 화면·홈·마이페이지의 원천) |
@@ -427,6 +438,7 @@ enum Classification {             // 이수구분 (학교 코드)
 - 입력 범위: `credits` 0~30, `year` 2000~2100, `term` 필수, `grade` 는 위 목록 또는 null.
 - 과목 객체(목록 원소, POST·PATCH 응답 data): `id, courseCode, courseName, credits, classification, distributionArea, grade, year, term`. 목록은 학년도 → 학기(1학기·여름·2학기·겨울) → 등록 순.
 - `bulk` 는 `courses` 1~100건, 하나라도 실패하면 전부 저장하지 않는다 → 201, data = 과목 객체 배열.
+- (T12) `replaceTerms: [{ year, term }]` 를 주면 그 학기들의 내 이수내역을 지우고 새로 넣는다(같은 트랜잭션, 재업로드해도 중복 없음). `keepClassification: true` 면 요청에 이수구분이 있는 과목은 자동 판별을 건너뛰고 요청값을 쓴다(성적표가 공식 기록이라서, 9장 17).
 - PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음)이고, 합친 값으로 자동 판별을 다시 한다. 남의 과목 → `COMPLETED_COURSE_NOT_FOUND`(404).
 
 ```json
@@ -519,6 +531,43 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 정렬: 날짜 → 시간 순, 시간 없는 것은 그날 맨 뒤. `from > to` 면 `INVALID_TIME_RANGE`(기간 길이 제한 없음).
 - 피드에 제출 여부가 없어 완료 체크는 없다. 일정(`schedules`)과 섞지 않으며 캘린더 화면이 두 API를 함께 불러 그린다. 홈 반영은 T8에서 정한다.
 
+
+### 4.9 파일 가져오기 `importer` (T12)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | /api/import | 🔒 multipart `file` (≤5MB) → 저장하지 않고 **미리보기 초안**과 `warnings` 를 돌려줌 |
+
+- 지원: **xlsx(추천)·csv·txt**. 형식은 확장자가 아니라 앞부분 바이트로 판별(ZIP+`xl/workbook.xml`=xlsx, 나머지는 텍스트: UTF-8 → 실패 시 MS949). pdf·이미지·hwp·xls 등은 `IMPORT_UNSUPPORTED_FORMAT`("엑셀로 저장해서 올려주세요").
+- 첫 줄 제목으로 해석기 선택: `수강신청확인서` → 시간표 초안(`type: TIMETABLE`), `전체 성적 보기` → 이수내역 초안(`type: GRADES`). 아니면 `IMPORT_UNRECOGNIZED`.
+- 파일의 학번이 로그인 사용자의 `studentNumber` 와 다르거나 없으면 `IMPORT_STUDENT_MISMATCH`(403). 응답에 학번·이름은 넣지 않는다.
+- 저장은 초안을 고친 뒤 `POST /api/timetables/entries/bulk`(mode=REPLACE) 또는 `POST /api/academic/completed-courses/bulk`(replaceTerms = 초안의 학기, keepClassification=true) 로 한다.
+- 파일은 메모리에서만 처리하고 버린다. 학번·이름·성적은 로그에 남기지 않는다.
+- 응답 data: `{ type, format, timetable, grades, warnings }` — `type` 이 TIMETABLE 이면 `timetable`, GRADES 면 `grades` 만 채운다.
+  - `timetable`: `{ year, term, courseCount, totalCredits, courses: [{ courseCode, section, courseName, credits, classificationText, classification, retake, sessionCount }], entries: [bulk 저장용 칸] }`
+  - `grades`: `{ terms: [{ year, term }], courseCount, totalCredits, courses: [{ year, term, courseCode, section, courseName, credits, grade, classificationText, classification, distributionArea, needs }] }`
+  - `warnings`: `[{ code, message }]`, code = NO_TIME / OVERLAP / UNKNOWN_CLASSIFICATION / DISTRIBUTION_AREA_REQUIRED / UNKNOWN_GRADE / DISCARDED / UNPARSED_ROW
+- 읽는 법: 모든 형식을 "행과 칸의 목록"으로 바꾼 뒤 같은 해석기로 읽는다. xlsx 는 **병합 영역 1개 = 칸 1개**(csv·txt 와 같은 행이 됨), txt 는 탭 구분, csv 는 따옴표·칸 안 줄바꿈 지원. 칸이 모두 빈 행은 빈 행.
+- 수강신청확인서: 머리글 글자로 열을 찾고, 수업 칸을 쉼표로 나눠 `교수 요일HH:MM-HH:MM 강의실` 마다 시간표 1칸(월=1…일=7). 시간이 없으면(온라인) 칸을 만들지 않고 NO_TIME. `학수번호-분반` 은 하이픈으로 나눔.
+- 전체 성적 보기: `평점/등급` 머리글 다음부터 다른 요약 표 제목 전까지가 과목 표. 과목 행은 **뒤에서부터 센 위치**(-13 학수번호 … -5 등급, -3 폐기사유)로 읽고, 앞 두 칸이 `2026`·`1학기` 모양일 때만 학기를 새로 잡아 아래로 이어 쓴다. 폐기사유가 있으면 제외, 쪽 번호·반복 머리글은 건너뜀. 분반은 끝이 G두자리면 그것, 아니면 마지막 두 자리. 이수구분은 글자(없으면 학교 코드 04·05·08·11·14·15·16·17·06·20)로 매핑, 모르면 null + `needs: CLASSIFICATION`. 배분이수는 `needs: DISTRIBUTION_AREA`.
+- 5MB 초과는 Spring 업로드 한도에서도 `IMPORT_TOO_LARGE`. 업로드는 디스크 임시파일 없이 메모리에서만(`multipart.file-size-threshold`).
+- **PDF 는 받지 않는다**(9장 19): PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음.
+
+### 4.10 카카오톡 일정 알림 `notification` (T11)
+
+> ⚠️ 2026-10-09: '나에게 보내기'는 휴대폰 알림이 울리지 않아 **웹푸시로 바꾸는 계획이 승인 대기 중**(`docs/plans/T11-web-push.md`). 승인되면 이 절과 2.5·3.3·7·8·9장을 계획서 12절대로 교체한다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | /api/notifications/kakao/connect | 🔒 `{ "code": "...", "redirectUri": "..." }` → 카카오 토큰 교환 후 암호화 저장 → `{ status, connectedAt }` |
+| GET | /api/notifications/kakao | 🔒 `{ "status": "NONE"\|"CONNECTED"\|"EXPIRED", "connectedAt": ... }` |
+| DELETE | /api/notifications/kakao | 🔒 연결 해제(카카오 unlink 후 삭제) → 204 |
+
+- 1분마다 `일정 날짜 + 시작시간(없으면 09:00, 9장 12) - alarm_minutes_before` 가 지난 10분 안에 든 일정을 카카오톡 "나에게 보내기"로 발송. `done` 이거나 `notification_enabled=false` 면 안 보냄.
+- 메시지: 제목·날짜·시간·장소만(메모 제외). 같은 알림은 `notification_logs (schedule_id, channel, notify_at)` 유일 키로 한 번만.
+- 토큰 만료 시 리프레시로 갱신, 실패하면 `EXPIRED` → 앱이 재연결 안내. 키는 환경변수(`KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`, `KAKAO_TOKEN_ENC_KEY`, `KAKAO_REDIRECT_URIS`, `ORDO_WEB_URL`)로만.
+- 카카오 계획은 웹푸시 계획(`docs/plans/T11-web-push.md`)으로 대체됨(0절에 바꾼 이유).
+
 ---
 
 ## 5. 이수현황 계산 알고리즘 (`AcademicProgressService`)
@@ -572,6 +621,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - V1(스키마), V2(시드)는 공동 소유. **이미 적용된 파일은 절대 수정 금지** — 바꿀 게 있으면 새 파일.
 - 새 마이그레이션 번호: **A 담당 V10~V49, B 담당 V50~V89**. 파일명 `V{번호}__{영문_설명}.sql`.
 - 사용 중: `V10__add_ecampus_feed_token.sql`(A, users 에 e캠퍼스 피드 토큰 칸 추가).
+- 예약: `V11__add_kakao_notification.sql`(A, T11: `kakao_connections`, `notification_logs` 새 테이블, 2026-10-08 승인).
 - 로컬 DB가 꼬이면: `DROP DATABASE ordo;` 후 서버 재시작 → Flyway가 V1부터 다시 적용.
 
 ---
@@ -592,6 +642,8 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T7 ✅ | progress 계산 + 단위 테스트 | A (B 대신) | 5장 테스트 케이스 전부 통과 |
 | T8 ✅ | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
 | T9 ✅ | users/me/summary | A | |
+| T11 | 카카오톡 일정 알림 (4.10) | A | 연결·상태·해제 API, 1분 스케줄러, 중복 발송 없음, 토큰 암호화·갱신·EXPIRED, 실기기 수신 확인 |
+| T12 ✅ | 성적·시간표 파일 가져오기 (4.9) | A | 샘플 기대값(신청 6과목 18학점·7칸·경고 1, 성적 8과목 20학점), xlsx·csv·txt 결과 동일, 학번 대조, 재업로드 중복 없음 |
 | T10 ✅ | e캠퍼스 피드 연동 (4.8) | A | 피드 주소 검증, 10분 캐시, 실패 시 예전 데이터, 토큰 비노출 |
 
 ### AI에게 줄 프롬프트 예시 (그대로 복사해서 사용)
@@ -641,6 +693,14 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 6 | 전공 초과학점 전공선택 인정, 타전공 인정 한도, 재수강 세부 규칙 | 학과 시행세칙 확인 전까지 5장 단순 규칙 |
 | 7 | 2025학번 이하 교양 기준 | 2026 값으로 근사 + approximate 표시 |
 | 8 | 다전공·부전공 | MVP 제외 (데이터는 이미 시드에 있음) |
-| 9 | 알림 실제 발송 | 2차: 카카오 로그인 + 카톡 알림 (알림 시각 계산은 `schedule_date + start_time - alarm_minutes_before`) |
+| 9 | 알림 실제 발송 | **T11 로 앞당김(2026-10-08)**: 카카오 로그인 없이 '나에게 보내기' 권한만 연결 → 4.10 |
 | 10 | 디자인에 남아있는 '과제', '설정' 메뉴 | 회의록 2차대로 삭제 |
 | 11 | e캠퍼스 연동 | **결정(2026-10-06): MVP 포함.** Canvas 개인 캘린더 피드(.ics) 주소를 사용자가 등록, 캘린더를 열 때 가져오고 10분 캐시, cron 없음 → 4.8. **학교 비밀번호를 서버에 저장하는 방식은 금지** |
+| 12 | 시간 없는 할 일의 알림 기준 시각 (T11) | 그날 09:00 (하루 전 알림 = 전날 09:00) — **확인 필요** |
+| 13 | '나에게 보내기' 휴대폰 푸시 알림 여부 (T11) | 카카오 문서에 없음. 실기기 확인 전 미정, 안 오면 알림톡·웹푸시 검토 |
+| 14 | 서버가 꺼져 있던 동안 놓친 알림 (T11) | 10분 이내 것만 발송, 더 오래된 것은 버림 |
+| 15 | 알림 발송 실패 재시도 (T11) | 안 함(FAILED 기록만) |
+| 16 | 중핵교과·기초교과 → GEN_REQUIRED (T12) | 추정. 근거: 성적표 이수구분 코드 14(중핵교과) = 3.1 "교양 필수교과 14, 16". 기초교과 코드는 확인 필요 |
+| 17 | 가져오기 이수구분: 성적표 vs 교육과정 마스터가 다를 때 (T12) | **결정(2026-10-08): 성적표 우선**(keepClassification), 다르면 경고 |
+| 18 | 같은 파일 재업로드 (T12) | **결정(2026-10-08): 학기 단위 교체(REPLACE)** |
+| 19 | PDF 가져오기 (T12) | **결정(2026-10-08): 거절.** PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음. 원본 PDF 의 칸 테두리로 표를 재구성하는 방법은 여러 학기 성적표 샘플이 생기면 재검토 |

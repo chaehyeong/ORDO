@@ -12,6 +12,7 @@ import com.ordo.global.common.Term;
 import com.ordo.global.error.BusinessException;
 import com.ordo.global.error.ErrorCode;
 import com.ordo.timetable.domain.TimetableEntry;
+import com.ordo.timetable.dto.TimetableEntryBulkRequest;
 import com.ordo.timetable.dto.TimetableEntryCreateRequest;
 import com.ordo.timetable.dto.TimetableEntryResponse;
 import com.ordo.timetable.dto.TimetableEntryUpdateRequest;
@@ -128,6 +129,59 @@ class TimetableServiceTest {
         assertThat(response.entries()).hasSize(1);
         assertThat(onlyYear.year()).isEqualTo(2025);
         assertThat(onlyYear.term()).isEqualTo(current.term());
+    }
+
+    @Test
+    void bulkReplaceSwapsWholeTerm() {
+        TimetableEntry old = entry(at(9, 0), at(10, 30));
+        givenTermEntries(old);
+
+        TimetableResponse response = timetableService.saveAll(1L, bulk(TimetableEntryBulkRequest.Mode.REPLACE,
+                bulkEntry("미분방정식", 4, at(13, 30)), bulkEntry("객체지향프로그래밍", 2, at(15, 0))));
+
+        verify(timetableEntryRepository).deleteAll(List.of(old));
+        assertThat(response.entries()).extracting(TimetableEntryResponse::courseName)
+                .containsExactly("객체지향프로그래밍", "미분방정식");  // 요일 순
+        assertThat(response.label()).isEqualTo("2026년 2학기");
+    }
+
+    @Test
+    void bulkMergeKeepsExistingAndSkipsSameSlot() {
+        TimetableEntry existing = entry(at(9, 0), at(10, 30));  // 화 09:00 타이포그래피 I
+        givenTermEntries(existing);
+
+        TimetableResponse response = timetableService.saveAll(1L, bulk(TimetableEntryBulkRequest.Mode.MERGE,
+                new TimetableEntryBulkRequest.Entry("타이포그래피 I", null, TUESDAY, at(9, 0), at(10, 30), null, null, null),
+                bulkEntry("색채학", 3, at(9, 0))));
+
+        verify(timetableEntryRepository, never()).deleteAll(any());
+        verify(timetableEntryRepository).saveAll(org.mockito.ArgumentMatchers.argThat(
+                (List<TimetableEntry> saved) -> saved.size() == 1 && saved.get(0).getCourseName().equals("색채학")));
+        assertThat(response.entries()).extracting(TimetableEntryResponse::courseName).containsExactly("타이포그래피 I", "색채학");
+    }
+
+    @Test
+    void bulkWithOverlapChangesNothing() {
+        givenTermEntries(entry(at(9, 0), at(10, 30)));
+
+        assertErrorCode(() -> timetableService.saveAll(1L, bulk(TimetableEntryBulkRequest.Mode.REPLACE,
+                bulkEntry("A", 1, at(9, 0)), bulkEntry("B", 1, at(10, 0)))), ErrorCode.TIMETABLE_OVERLAP);
+        verify(timetableEntryRepository, never()).deleteAll(any());
+        verify(timetableEntryRepository, never()).saveAll(any());
+    }
+
+    private void givenTermEntries(TimetableEntry... entries) {
+        given(userRepository.getReferenceById(1L)).willReturn(user());
+        given(timetableEntryRepository.findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(1L, 2026, Term.SECOND))
+                .willReturn(List.of(entries));
+    }
+
+    private static TimetableEntryBulkRequest bulk(TimetableEntryBulkRequest.Mode mode, TimetableEntryBulkRequest.Entry... entries) {
+        return new TimetableEntryBulkRequest(2026, Term.SECOND, mode, List.of(entries));
+    }
+
+    private static TimetableEntryBulkRequest.Entry bulkEntry(String name, int dayOfWeek, LocalTime start) {
+        return new TimetableEntryBulkRequest.Entry(name, null, dayOfWeek, start, start.plusMinutes(75), null, null, null);
     }
 
     private void givenTuesdayEntries(TimetableEntry... entries) {
