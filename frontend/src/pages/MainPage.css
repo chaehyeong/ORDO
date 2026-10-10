@@ -49,3 +49,72 @@
     color: black;
     transition-duration: 0.5s;
 }
+
+/* ===== 서비스 카드 자동 캐러셀 ===== */
+.service {
+    overflow: hidden;          /* 트랙이 넘치는 부분을 잘라냄 */
+    padding: 3vh 0 8vh 0;
+}
+
+.service-track {
+    display: flex;
+    width: max-content;        /* 카드 전체 폭만큼 늘어나게 */
+    animation: service-scroll 45s linear infinite;
+}
+
+@keyframes service-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }   /* 세트 하나만큼만 이동 */
+}
+
+.service-card {
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    width: 21vw;
+    margin-right: 2vw;         /* 모든 카드에 동일하게 줘야 이음매가 맞음 */
+    padding: 4vh 2vw;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.service-card-pink { background-color: #FFC1C1; }
+.service-card-yellow { background-color: #FFE9C1; }
+.service-card-green { background-color: #B8F5B5; }
+.service-card-blue { background-color: #C1E3FF; }
+
+.card-icon {
+    width: 10vw;
+    height: 10vw;
+    border-radius: 50%;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a1a1a;
+}
+.card-icon svg {
+    width: 40%;
+    height: 40%;
+}
+
+.card-title {
+    margin-top: 3vh;
+    font-size: 1.4vw;
+    font-weight: 700;
+}
+.card-desc {
+    margin-top: 1.5vh;
+    font-size: 0.9vw;
+    font-weight: 500;
+    line-height: 1.6;
+    color: #2b2b2b;
+}
+
+/* 애니메이션을 줄이도록 설정한 사용자 배려 */
+@media (prefers-reduced-motion: reduce) {
+    .service-track { animation: none; }
+    .service { overflow-x: auto; }
+}

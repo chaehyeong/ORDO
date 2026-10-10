@@ -24,11 +24,11 @@ function SignIn() {
                 <div className='form1'>
                     <Form>
                         <Form.Group className="mb-3" controlId="formGroupEmail">
-                            <Form.Label>Email address</Form.Label>
+                            <Form.Label>이메일</Form.Label>
                             <Form.Control type="email" placeholder="이메일을 입력하세요." />
                         </Form.Group>
                         <Form.Group className="mb-3" controlId="formGroupPassword">
-                            <Form.Label>Password</Form.Label>
+                            <Form.Label>비밀번호</Form.Label>
                             <Form.Control type="password" placeholder="비밀번호를 입력하세요." />
                         </Form.Group>
                     </Form>
