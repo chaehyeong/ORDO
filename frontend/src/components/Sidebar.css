@@ -5,17 +5,11 @@
 }
 
 .side-logo {
-    display: grid;
-    grid-template-columns: 2fr 4fr 1fr 8fr 2fr;
-    margin: 4vh 0 6vh 0;
+    margin: 3vh 0 5vh 0;
 }
-.side-logo1 {
-    grid-column: 2/3;
-    width: 4vw;
-}
-.side-logo2 {
-    grid-column: 4/5;
-    width: 8vw;
+.side-logo img {
+    width: 15vw;
+    margin: 0 1vw;
 }
 
 .index {

@@ -45,17 +45,6 @@ function SignIn() {
                         <NavLink className='option2' to='/SignUp'>회원가입</NavLink>
                     </div>
                 </div>
-                <div className='line'>
-                    <div></div>
-                    <span className='text'>또는</span>
-                    <div></div>
-                </div>
-                <div className='form2'>
-                    {/* 인포21로 넘어감 */}
-                    <div className="d-grid gap-2">
-                        <a href='https://info21.khu.ac.kr/com/LoginCtr/login.do?sso=ok'><Button id='info21-btn'>경희대학교 통합 로그인</Button></a>
-                    </div>
-                </div>
             </div>
         </div>
     );
