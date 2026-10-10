@@ -33,8 +33,9 @@
 #login-btn {
     background-color: #39B19D;
     border-color: #39B19D;
+    width: 100%;
 }
-#login-btn > .char {
+.char > #login-btn {
     color: white;
 }
 
@@ -78,8 +79,9 @@
 #info21-btn {
     background-color: #CDCDCD;
     border-color: #CDCDCD;
+    width: 100%;
 }
-#info21-btn > a {
+a > #info21-btn {
     color: #2C2C2C;
     text-decoration: none;
 }

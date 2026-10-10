@@ -37,7 +37,7 @@ function SignIn() {
                     </Form.Group>
                     {/* 로그인 누르면 바로 홈 화면으로 감 */}
                     <div className="d-grid gap-2">
-                        <Button id='login-btn'><NavLink className='char' to='/HomePage'>로그인</NavLink></Button>
+                        <NavLink className='char' to='/HomePage'><Button id='login-btn'>로그인</Button></NavLink>
                     </div>
                     <div className='option'>
                         <NavLink className='option1' to='#'>비밀번호 찾기</NavLink> {/* 안 눌러지는거 맞음. 가짜임 */}
@@ -53,7 +53,7 @@ function SignIn() {
                 <div className='form2'>
                     {/* 인포21로 넘어감 */}
                     <div className="d-grid gap-2">
-                        <Button id='info21-btn'><a href='https://info21.khu.ac.kr/com/LoginCtr/login.do?sso=ok'>경희대학교 통합 로그인</a></Button>
+                        <a href='https://info21.khu.ac.kr/com/LoginCtr/login.do?sso=ok'><Button id='info21-btn'>경희대학교 통합 로그인</Button></a>
                     </div>
                 </div>
             </div>

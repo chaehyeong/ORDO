@@ -15,6 +15,7 @@ function SignUp() {
     return (
         <div className='body'>
             <div className='signup'>
+                <div className='signup-title'>회원가입</div>
                 <div className='form'>
                     <Form>
                         <Form.Group className="mb-3" controlId="formBasicName">
@@ -49,10 +50,13 @@ function SignUp() {
                         <Form.Group className="mb-3" controlId="formBasicNum">
                             <Form.Label>학번</Form.Label>
                             <Form.Control type="number" placeholder="학번을 입력하세요." />
+                        </Form.Group>                        
+                        <Form.Group className="mb-3" controlId="formBasicCheckbox">
+                            <Form.Check type="checkbox" label="이용약관 동의 어쩌구 하는거" />
                         </Form.Group>
                         {/* 회원가입 누르면 로그인 화면으로 넘어감 */}
                         <div className="d-grid gap-2">
-                            <Button id='login-btn'><NavLink className='char' to='/SignIn'>회원가입</NavLink></Button>
+                            <NavLink className='char' to='/SignIn'><Button id='login-btn'>회원가입</Button></NavLink>
                         </div>
                     </Form>
                 </div>
