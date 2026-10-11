@@ -7,21 +7,26 @@ body {
 
 .layout {
   display: flex;
+  min-height: 100vh;
 }
 
 .page {
-  width: 83vw;
-  height: 100vh;
-  padding: 2%;
+  flex: 1;
+  min-width: 0;
+  padding: 40px 40px;
+  background-color: white;
 }
 
 .box {
   border: 1px solid rgba(0, 0, 0, 0.75);
   border-radius: 20px;
-  padding: 3%;
-  margin-top: 3vh;
+  padding: 24px 24px;
 }
 
 .title {
   font-weight: 600;
+}
+
+a {
+  text-decoration: none;
 }

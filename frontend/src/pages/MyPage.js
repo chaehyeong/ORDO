@@ -1,69 +1,80 @@
 import { useState } from "react";
+import { NavLink } from 'react-router-dom';
 import { mockUser } from "../mock/userMock";
 import Sidebar from "../components/Sidebar";
-import { FiUser } from "react-icons/fi";
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import './MyPage.css'
+import { FiUser, FiBell, FiLogOut } from "react-icons/fi";
+import './MyPage.css';
 
 function MyPage() {
-    const [user, setUser] = useState(mockUser);
+    const [user] = useState(mockUser);
+    const [alarm, setAlarm] = useState(true);
+
+    const infoList = [
+        ['이름', user.userName],
+        ['학번', user.userId],
+        ['학과', user.userMajor],
+        ['전화번호', user.userPhone],
+        ['이메일', user.userEmail],
+    ];
 
     return (
         <div className="layout">
             <Sidebar />
-            <div className='page'>
-                <h2 className="title">마이페이지</h2>
-                <Container>
-                    <Row>
-                        <Col style={{ padding: '0' }}>
-                            <div className="box myinfo">
-                                <h3 className="title">내 정보</h3>
-                                <Container className="profile">
-                                    <Row>
-                                        <Col xs={2}><FiUser className="profile-img" /></Col>
-                                        <Col xs={10}>
-                                            <div className="profile-name">{user.userName}</div>
-                                            <div className="profile-major">경희대학교 {user.userMajor}</div>
-                                        </Col>
-                                    </Row>
-                                </Container>
-                                <button className="profile-edit-btn">프로필 사진 변경</button>
-                                <Container>
-                                    <Row>
-                                        <Col xs={4}>이름</Col>
-                                        <Col xs={8}>{user.userName}</Col>
-                                    </Row>
-                                    <Row>
-                                        <Col xs={4}>학번</Col>
-                                        <Col xs={8}>{user.userId}</Col>
-                                    </Row>
-                                    <Row>
-                                        <Col xs={4}>학과</Col>
-                                        <Col xs={8}>{user.userMajor}</Col>
-                                    </Row>
-                                    <Row>
-                                        <Col xs={4}>전화번호</Col>
-                                        <Col xs={8}>{user.userPhone}</Col>
-                                    </Row>
-                                    <Row>
-                                        <Col xs={4}>이메일</Col>
-                                        <Col xs={8}>{user.userEmail}</Col>
-                                    </Row>
-                                </Container>
-                            </div> 
-                        </Col>
-                        <Col>
-                            <div className="box">
-                                <h3 className="title">알림 설정</h3>
+            <div className="page">
+                <h2 className="page-title">마이페이지</h2>
+
+                <div className="page-grid">
+                    <section className="box">
+                        <h3 className="box-title">내 정보</h3>
+
+                        <div className="profile">
+                            <FiUser className="profile-img" />
+                            <div>
+                                <div className="profile-name">{user.userName}</div>
+                                <div className="profile-major">경희대학교 {user.userMajor}</div>
                             </div>
-                            <div className="box">
-                                <h3 className="title">로그아웃</h3>
+                        </div>
+
+                        <button className="profile-edit-btn">프로필 사진 변경</button>
+
+                        <dl className="info-list">
+                            {infoList.map(([label, value]) => (
+                                <div className="info-row" key={label}>
+                                    <dt>{label}</dt>
+                                    <dd>{value}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </section>
+
+                    <div className="side-stack">
+                        <section className="box">
+                            <h3 className="box-title">알림 설정</h3>
+                            <p className="box-desc">중요한 일정과 소식을 놓치지 않도록 설정할 수 있습니다.</p>
+                            <div className="toggle-row">
+                                <span className="toggle-label"><FiBell /> 알림</span>
+                                <button
+                                    type="button"
+                                    className={`switch ${alarm ? 'on' : ''}`}
+                                    aria-pressed={alarm}
+                                    onClick={() => setAlarm(!alarm)}
+                                >
+                                    <span className="knob" />
+                                </button>
                             </div>
-                        </Col>
-                    </Row>
-                </Container>                
+                        </section>
+
+                        <section className="box logout-box">
+                            <div>
+                                <h3 className="box-title">로그아웃</h3>
+                                <p className="box-desc">현재 계정에서 로그아웃합니다.</p>
+                            </div>
+                            <NavLink to='/'><button type="button" className="logout-btn">
+                                <FiLogOut /> 로그아웃
+                            </button></NavLink>
+                        </section>
+                    </div>
+                </div>
             </div>
         </div>
     );

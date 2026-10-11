@@ -1,27 +1,28 @@
 .sidebar{
     background-color: #CFECE7;
-    width: 17vw;
+    width: 18vw;
     height: 100vh;
 }
 
 .side-logo {
-    margin: 3vh 0 5vh 0;
+    margin: 4vh 0;
 }
 .side-logo img {
     width: 15vw;
-    margin: 0 1vw;
+    margin: 0 1.5vw;
 }
 
 .index {
     display: grid;
     align-items: center;
-    grid-template-columns: 1fr 3fr;
+    grid-template-columns: 3fr 10fr;
     margin: 1vw;
     padding: 1.5vw;
     border: 2px solid #CFECE7;
     border-radius: 10px;
     background-color: #CFECE7;
     font-weight: 500;
+    font-size: 20px;
 }
 .index:has(.char.active) {
     border: 1px solid #909395;
@@ -32,10 +33,9 @@
     color: #219F8A;
 }
 .index-icon {
-    font-size: 20px;
+    font-size: 28px;
 }
 .char {
     font-size: 100%;
-    text-decoration: none;
     color: black;
 }
