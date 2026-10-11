@@ -1,12 +1,8 @@
 .main-logo {
-    margin: 6vh 4vw 2vh 4vw;
+    margin: 4vh 4vw 1vh 4vw;
 }
-.main-logo1 {
-    width: 7vw;
-    margin-right: 2vw;
-}
-.main-logo2 {
-    width: 9vw;
+.main-logo > img {
+    width: 16vw;
 }
 
 .slogan {
@@ -96,8 +92,8 @@
     color: #1a1a1a;
 }
 .card-icon svg {
-    width: 40%;
-    height: 40%;
+    width: 30%;
+    height: 30%;
 }
 
 .card-title {

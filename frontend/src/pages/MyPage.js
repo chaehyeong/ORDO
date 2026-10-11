@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { mockUser } from "../mock/userMock";
 import Sidebar from "../components/Sidebar";
-import user_icon from '../assets/user_icon.png';
+import { FiUser } from "react-icons/fi";
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
@@ -20,13 +20,15 @@ function MyPage() {
                         <Col style={{ padding: '0' }}>
                             <div className="box myinfo">
                                 <h3 className="title">내 정보</h3>
-                                <div className="profile">
-                                    <img src={user_icon} alt="Profile"/>
-                                    <div>
-                                        <div className="helpme">{user.userName}</div>
-                                        <div className="helpmee">경희대학교 {user.userDept}</div>
-                                    </div>
-                                </div>
+                                <Container className="profile">
+                                    <Row>
+                                        <Col xs={2}><FiUser className="profile-img" /></Col>
+                                        <Col xs={10}>
+                                            <div className="profile-name">{user.userName}</div>
+                                            <div className="profile-major">경희대학교 {user.userMajor}</div>
+                                        </Col>
+                                    </Row>
+                                </Container>
                                 <button className="profile-edit-btn">프로필 사진 변경</button>
                                 <Container>
                                     <Row>
@@ -39,7 +41,7 @@ function MyPage() {
                                     </Row>
                                     <Row>
                                         <Col xs={4}>학과</Col>
-                                        <Col xs={8}>{user.userDept}</Col>
+                                        <Col xs={8}>{user.userMajor}</Col>
                                     </Row>
                                     <Row>
                                         <Col xs={4}>전화번호</Col>
@@ -51,7 +53,6 @@ function MyPage() {
                                     </Row>
                                 </Container>
                             </div> 
-                            <h4>아 어떡해 나 이 페이지 css 못 만지겟어</h4>
                         </Col>
                         <Col>
                             <div className="box">

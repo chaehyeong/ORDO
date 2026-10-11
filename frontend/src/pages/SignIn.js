@@ -4,7 +4,7 @@ import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import './SignIn.css'
 import logo1 from '../assets/logo1.png';
-import logo3 from '../assets/logo3.png';
+import logo2 from '../assets/logo2.png';
 
 function SignIn() {
     useEffect(() => {
@@ -19,7 +19,7 @@ function SignIn() {
             <div className='signin'>
                 <div className='sign-logo'>
                     <img src={logo1} alt='logo1'/>
-                    <img src={logo3} alt='logo2'/>
+                    <img src={logo2} alt='logo2'/>
                 </div>
                 <div className='form1'>
                     <Form>
