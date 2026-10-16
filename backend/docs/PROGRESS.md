@@ -7,8 +7,8 @@
 - 명세 T0~T10 + **T12 구현 완료**(xlsx·csv·txt, PDF 는 거절, 테스트 133개). `feat/import` 푸시됨. PR #3 ← #5 ← #6 ← #7 ← #8 ← feat/import 리뷰 대기.
 - T11 은 카카오 '나에게 보내기'가 휴대폰 알림이 안 울려서 **웹푸시로 계획을 다시 씀**(`docs/plans/T11-web-push.md`) → 사용자 승인 대기(계획서 13절).
 - 2026-10-16: 팀 회의 메모에서 백엔드 추가분 2개를 계획서로 씀 — **T13 평점 평균 API**, **T14 홈 오늘 일정에 e캠퍼스 과제**(승인 대기). 온강(시간 없는 수업)·졸업 길 데이터·복수전공 일정은 **보류**.
-- 2026-10-16: T13·T14 계획 승인(추천안 그대로). **T13 구현 완료**(`feat/gpa`, 테스트 145개, 커밋 전).
-- 다음: T13 커밋 승인 → T14(`feat/home-assignments`). B 확인(PR 리뷰·명세 9장 16), T11 계획 승인.
+- 2026-10-16: T13·T14 계획 승인(추천안 그대로). **T13 완료**(`feat/gpa`, cf4260d), **T14 구현 완료**(`feat/home-assignments`, feat/gpa 위, 테스트 146개, 커밋 전).
+- 다음: T14 커밋 승인 → 푸시(GitHub Desktop) → PR. 실제 e캠퍼스 피드로 홈 확인(사용자). B 확인(PR 리뷰·명세 9장 16), T11 계획 승인.
 
 ## 결정 사항 (2026-10-08 승인)
 
@@ -56,5 +56,8 @@
 
 | 단계 | 상태 | 한 일 | 검증 | 남은 일 |
 |---|---|---|---|---|
-| 0. 계획 | ✅ | `docs/plans/T14-home-assignments.md`: timeline 에 `source: ECAMPUS`(마감 시각, 없으면 23:59) + `courseName`·`url`, e캠퍼스 호출 1번, DB 변경 없음 | 현재 HomeService 코드 확인 | 사용자 승인(계획 10절) |
-| 1~4 | ⏳ | | | |
+| 0. 계획 | ✅ | `docs/plans/T14-home-assignments.md`: timeline 에 `source: ECAMPUS`(마감 시각, 없으면 23:59) + `courseName`·`url`, e캠퍼스 호출 1번, DB 변경 없음 | 현재 HomeService 코드 확인 | |
+| 1. 브랜치 | ✅ | `feat/gpa` 위에 `feat/home-assignments`(계획은 feat/import 위였으나, 명세·가이드·PROGRESS 의 같은 줄 근처를 두 브랜치가 고쳐 충돌하므로 이어 쌓음) | | |
+| 2. DTO·서비스 + 테스트 | ✅ | `TimelineItem` 에 `courseName`·`url`, `HomeService.ecampusEvents`(요청 1번 → 점·timeline 공용), ECAMPUS 항목(마감 시각, 없으면 23:59), 정렬 수업→일정→e캠퍼스 | `HomeServiceTest` 1개 추가·3개 보강, 전체 146개 통과 | |
+| 3. 로컬 서버 확인 | 🔶 | 미연동·가짜 토큰(실패) 경로 | 홈 정상, 기존 항목 `courseName`·`url` null, 토큰이 응답·로그에 없음 4개 | **실제 피드로 마감일 홈 확인**(사용자 피드 주소 필요) |
+| 4. 문서 | ✅ | 명세 4.7·4.8·8장, FRONTEND_GUIDE 홈 절, 계획서 | | 커밋 승인 |

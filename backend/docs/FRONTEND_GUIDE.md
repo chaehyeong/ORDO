@@ -10,6 +10,7 @@
 > T8 홈·T9 마이페이지 요약 추가, AI 추천 보류: 2026-10-07 (백엔드 A)
 > T12 성적·시간표 파일 가져오기 추가: 2026-10-08 (백엔드 A)
 > T13 학사관리 평점 평균 추가: 2026-10-16 (백엔드 A)
+> T14 홈 오늘 일정에 e캠퍼스 과제 추가: 2026-10-16 (백엔드 A)
 
 ---
 
@@ -29,6 +30,7 @@
 | T8 홈 · T9 마이페이지 요약 | ✅ 완료 (A) | `feat/home` (feat/academic 위에서 작업) |
 | T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
 | T13 학사관리 평점 평균 (4.3 만점) | ✅ 완료 (A) | `feat/gpa` (feat/import 위에서 작업) |
+| T14 홈 오늘 일정에 e캠퍼스 과제 | ✅ 완료 (A) | `feat/home-assignments` (feat/gpa 위에서 작업) |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
@@ -39,6 +41,8 @@
 **T5 검증 (2026-10-06)**: 학기 판별·시간표 단위 테스트 12개 추가, 전체 **77개 통과**. 서버를 띄워 시간표 API(겹침 409·딱 붙은 시간 허용·현재 학기 기본값·입력 검증·남의 칸 404·삭제 등) 27개를 직접 호출해 확인.
 
 **T12 검증 (2026-10-08)**: 익명 처리한 실제 샘플(이름·학번·교수명 가명) xlsx·csv·txt 로 단위 테스트 20개 추가, 전체 **133개 통과**. 수강신청확인서 6과목 18학점·시간표 7칸·시간 없는 과목 경고 1건, 성적표 8과목 20학점·2026년 1학기, **세 형식 결과 동일**. 서버에서 업로드 → 저장 → 같은 파일 재저장(중복 없음) → 이수현황 20학점 반영, 남의 학번 403·이미지 거절·5MB 초과 등 19개 확인, 서버 로그에 개인정보 없음.
+
+**T14 검증 (2026-10-16)**: 홈 단위 테스트 1개 추가·기존 3개 보강, 전체 **146개 통과**(같은 15시 수업→일정→과제 순, 시각 없는 마감 23:59, 다른 날 마감은 점만, e캠퍼스 요청 1번). 서버에서 미연동·가짜 토큰(실패) 때 홈 정상·기존 항목의 `courseName`·`url` null·토큰이 응답과 로그에 없음 4개 확인. 실제 피드 확인은 사용자 피드 주소로 따로.
 
 **T13 검증 (2026-10-16)**: 평점 단위 테스트 12개 추가, 전체 **145개 통과**. 익명 성적표 샘플 8과목을 넣어 성적표 요약과 같은 값(평점 3.417·전공 3.3·평점 학점 18·취득 20) 확인, 재수강 F 반영·학기별 값·다른 사용자 분리·토큰 없음 401·이수현황 영향 없음 등 10개를 서버에서 직접 호출해 확인.
 
@@ -200,15 +204,19 @@ async function api(path, options = {}) {
   "week": [ { "date": "2026-10-05", "dayOfWeek": 1, "today": false, "categories": ["LECTURE", "PERSONAL"] },
             … 월~일 7칸 … ],                   // 오늘은 today: true. 점 순서 LECTURE·ASSIGNMENT·PERSONAL
   "timeline": [ { "source": "TIMETABLE", "id": 3, "title": "타이포그래피 I", "category": "LECTURE",
-                  "startTime": "09:00", "endTime": "10:30", "location": "예405" },
+                  "startTime": "09:00", "endTime": "10:30", "location": "예405", "courseName": null, "url": null },
                 { "source": "SCHEDULE", "id": 51, "title": "세시 팀플 모임", "category": "PERSONAL",
-                  "startTime": "12:00", "endTime": null, "location": null } ],
+                  "startTime": "12:00", "endTime": null, "location": null, "courseName": null, "url": null },
+                { "source": "ECAMPUS", "id": null, "title": "3주차 과제 제출", "category": "ASSIGNMENT",
+                  "startTime": "23:59", "endTime": null, "location": null,
+                  "courseName": "디자인씽킹", "url": "https://khcanvas.khu.ac.kr/..." } ],
   "todos": [ { "id": 60, "title": "자료 조사", "category": "ASSIGNMENT", "done": false } ],
   "graduation": { "earned": 102, "required": 130, "percent": 78.4, "remaining": 28 } }   // 학사 프로필 미완성이면 null
 ```
 
 - 주간일정은 **월~일**(최종 디자인). 점은 그날 일정 종류 + 시간표 수업(LECTURE) + **e캠퍼스 과제 마감(ASSIGNMENT)**. e캠퍼스가 응답하지 않으면 그 점만 빠진다.
 - `timeline` 항목을 누르면 `source` 로 구분해 시간표(`/api/timetables`) 또는 일정(`/api/schedules/{id}`)으로 이동. "일정 수정하기" 버튼은 캘린더로.
+- **(T14 새 값) `source: "ECAMPUS"`** = 오늘 마감인 e캠퍼스 과제. `startTime` 이 **마감 시각**(시각 없으면 23:59)이고 `endTime`·`location`·`id` 는 null. "23:59 마감 · 디자인씽킹"처럼 `courseName` 을 같이 보여주고, 누르면 `url`(e캠퍼스 과제 페이지)을 새 탭으로 연다. 수정·삭제·완료 체크는 없다. 제출한 과제도 보이므로 "e캠퍼스 마감" 표시를 붙여 주세요. 모르는 `source` 값은 무시하도록 처리하면 앞으로 값이 늘어도 안전하다.
 - `todos` 체크박스는 `PATCH /api/schedules/{id}/done` 을 부르고 홈을 다시 불러오면 된다.
 - AI 추천 카드는 **보류**(응답에 없음).
 

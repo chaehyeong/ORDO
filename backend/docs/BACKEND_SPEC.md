@@ -505,11 +505,14 @@ enum Classification {             // 이수구분 (학교 코드)
     { "date": "2026-10-15", "dayOfWeek": 1, "today": false, "categories": [] },
     { "date": "2026-10-16", "dayOfWeek": 2, "today": true,  "categories": ["LECTURE", "PERSONAL"] }
   ],
-  "timeline": [                                  // 오늘 일정: 시간표 수업 + 시간 있는 일정, 시작시간 순
+  "timeline": [                                  // 오늘 일정: 시간표 수업 + 시간 있는 일정 + e캠퍼스 과제 마감, 시작시간 순
     { "source": "TIMETABLE", "id": 3,  "title": "타이포그래피 I", "category": "LECTURE",
-      "startTime": "09:00", "endTime": "10:30", "location": "예405" },
+      "startTime": "09:00", "endTime": "10:30", "location": "예405", "courseName": null, "url": null },
     { "source": "SCHEDULE",  "id": 51, "title": "세시 팀플 모임", "category": "PERSONAL",
-      "startTime": "12:00", "endTime": null, "location": null }
+      "startTime": "12:00", "endTime": null, "location": null, "courseName": null, "url": null },
+    { "source": "ECAMPUS",   "id": null, "title": "3주차 과제 제출", "category": "ASSIGNMENT",   // T14
+      "startTime": "23:59", "endTime": null, "location": null,
+      "courseName": "디자인씽킹", "url": "https://khcanvas.khu.ac.kr/..." }
   ],
   "todos": [ { "id": 60, "title": "자료 조사", "category": "ASSIGNMENT", "done": false } ],  // 오늘 날짜의 시간 없는 일정
   "graduation": { "earned": 102, "required": 130, "percent": 78.4, "remaining": 28 }           // 프로필 미완성이면 null
@@ -518,7 +521,8 @@ enum Classification {             // 이수구분 (학교 코드)
 
 - `week`: `date` 가 속한 주 **월~일**(최종 디자인). `today` 는 `date`(생략 시 오늘)와 같은 날. 학기는 날짜마다 `AcademicTerm.of` 로 본다.
 - `week.categories`: 그날의 일정 카테고리(중복 제거) + 그 요일에 시간표 수업이 있으면 `LECTURE` + **e캠퍼스 과제 마감(4.8)이 있으면 `ASSIGNMENT`**. 순서는 LECTURE·ASSIGNMENT·PERSONAL. e캠퍼스를 못 받아 오면 그 점만 빠지고 홈은 정상 응답.
-- `timeline`: 시작시간 순, 같은 시각이면 시간표 수업 먼저. `todos`: 오늘 날짜의 시간 없는 일정(완료한 것도 `done: true` 로 포함). e캠퍼스 마감은 제출 여부를 몰라 할 일에는 넣지 않는다.
+- `timeline`: 시작시간 순, 같은 시각이면 **시간표 수업 → 직접 등록한 일정 → e캠퍼스** 순. `todos`: 오늘 날짜의 시간 없는 일정(완료한 것도 `done: true` 로 포함). e캠퍼스 마감은 제출 여부를 몰라 할 일에는 넣지 않는다.
+- (T14) `source: "ECAMPUS"`: `date` 날짜에 마감인 e캠퍼스 과제(4.8). `startTime` = 마감 시각(시각 없는 하루 종일 마감은 **23:59**), `id`·`endTime`·`location` 은 null, `category` 는 항상 `ASSIGNMENT`. `courseName`·`url` 은 ECAMPUS 에만 값이 있고 나머지 항목은 null. e캠퍼스 요청은 주간 점과 합쳐 **홈 1번당 1번**. 미연동이거나 못 받아 오면 ECAMPUS 항목과 점만 빠지고 홈은 정상 응답. 제출한 과제도 뜨고(피드에 제출 여부 없음), 사용자가 같은 과제를 직접 등록했으면 두 번 보일 수 있다(제목 비교로 거르지 않음).
 - ~~`recommendation`~~ **보류(2026-10-07)**: 최종 디자인에 카드가 없어 응답에서 뺐다. 3차 LLM 추천 때 규칙(오늘~7일 이내 미완료 과제 중 가장 가까운 것)과 함께 다시 넣는다.
 
 
@@ -545,7 +549,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 다시 받다가 실패하면 예전에 받은 것을 돌려준다(`syncedAt` 이 예전 시각). 받은 적이 없으면 `ECAMPUS_FEED_UNAVAILABLE`(502).
 - `title`·`courseName`: 피드 제목 `과제명 [과목명 분반]` 을 나눈 것(괄호가 없으면 `courseName` null). `time` null = 하루 종일 표시(Canvas 는 23:59 마감을 이렇게 내보냄), 시간이 있으면 한국 시간 `"HH:mm"`.
 - 정렬: 날짜 → 시간 순, 시간 없는 것은 그날 맨 뒤. `from > to` 면 `INVALID_TIME_RANGE`(기간 길이 제한 없음).
-- 피드에 제출 여부가 없어 완료 체크는 없다. 일정(`schedules`)과 섞지 않으며 캘린더 화면이 두 API를 함께 불러 그린다. 홈 반영은 T8에서 정한다.
+- 피드에 제출 여부가 없어 완료 체크는 없다. 일정(`schedules`)과 섞지 않으며 캘린더 화면이 두 API를 함께 불러 그린다. 홈 반영: 주간 점(T8), 오늘 `timeline`(T14) → 4.7.
 
 
 ### 4.9 파일 가져오기 `importer` (T12)
@@ -679,6 +683,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T11 | 카카오톡 일정 알림 (4.10) | A | 연결·상태·해제 API, 1분 스케줄러, 중복 발송 없음, 토큰 암호화·갱신·EXPIRED, 실기기 수신 확인 |
 | T12 ✅ | 성적·시간표 파일 가져오기 (4.9) | A | 샘플 기대값(신청 6과목 18학점·7칸·경고 1, 성적 8과목 20학점), xlsx·csv·txt 결과 동일, 학번 대조, 재업로드 중복 없음 |
 | T10 ✅ | e캠퍼스 피드 연동 (4.8) | A | 피드 주소 검증, 10분 캐시, 실패 시 예전 데이터, 토큰 비노출 |
+| T14 ✅ | 홈 오늘 일정에 e캠퍼스 과제 (4.7) | A | ECAMPUS 항목, 23:59 규칙, 같은 시각 정렬(수업→일정→e캠퍼스), 미연동·실패 시 정상, e캠퍼스 호출 1번 |
 | T13 ✅ | 학사관리 평점 평균 (4.6, 5장 평점 평균) | A | 등급표(4.3), P·NP 제외, 재수강 최근 1건(F 포함), 학기별, 전공 평점, 셋째 자리 반올림, 성적표 샘플 대조(3.417·3.3), 빈 이수내역 |
 
 ### AI에게 줄 프롬프트 예시 (그대로 복사해서 사용)

@@ -14,11 +14,14 @@ public record HomeResponse(String greetingName, List<Day> week, List<TimelineIte
     public record Day(LocalDate date, int dayOfWeek, boolean today, List<ScheduleCategory> categories) {
     }
 
-    /** source: TIMETABLE(시간표 수업) / SCHEDULE(시간 있는 일정) */
+    /**
+     * source: TIMETABLE(시간표 수업) / SCHEDULE(시간 있는 일정) / ECAMPUS(e캠퍼스 과제 마감, startTime = 마감 시각).
+     * ECAMPUS 는 id·endTime·location 이 null 이고 courseName·url 은 ECAMPUS 에만 값이 있다
+     */
     public record TimelineItem(String source, Long id, String title, ScheduleCategory category,
                                @JsonFormat(pattern = "HH:mm") LocalTime startTime,
                                @JsonFormat(pattern = "HH:mm") LocalTime endTime,
-                               String location) {
+                               String location, String courseName, String url) {
     }
 
     public record Todo(Long id, String title, ScheduleCategory category, boolean done) {
