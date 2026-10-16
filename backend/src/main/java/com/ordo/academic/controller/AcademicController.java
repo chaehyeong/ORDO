@@ -4,7 +4,9 @@ import com.ordo.academic.dto.CompletedCourseBulkRequest;
 import com.ordo.academic.dto.CompletedCourseRequest;
 import com.ordo.academic.dto.CompletedCourseResponse;
 import com.ordo.academic.dto.CompletedCourseUpdateRequest;
+import com.ordo.academic.dto.GpaSummary;
 import com.ordo.academic.dto.ProgressSummary;
+import com.ordo.academic.service.AcademicGpaService;
 import com.ordo.academic.service.AcademicProgressService;
 import com.ordo.academic.service.CompletedCourseService;
 import com.ordo.global.common.ApiResponse;
@@ -30,6 +32,7 @@ public class AcademicController {
 
     private final CompletedCourseService completedCourseService;
     private final AcademicProgressService academicProgressService;
+    private final AcademicGpaService academicGpaService;
 
     @GetMapping("/completed-courses")
     public ApiResponse<List<CompletedCourseResponse>> getCourses(@LoginUser Long userId) {
@@ -65,5 +68,10 @@ public class AcademicController {
     @GetMapping("/progress")
     public ApiResponse<ProgressSummary> getProgress(@LoginUser Long userId) {
         return ApiResponse.ok(academicProgressService.getSummary(userId));
+    }
+
+    @GetMapping("/gpa")
+    public ApiResponse<GpaSummary> getGpa(@LoginUser Long userId) {
+        return ApiResponse.ok(academicGpaService.getGpa(userId));
     }
 }

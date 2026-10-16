@@ -63,6 +63,11 @@ public class CompletedCourse extends BaseTimeEntity {
         change(courseCode, courseName, credits, classification, distributionArea, grade, academicYear, term);
     }
 
+    /** 재수강 판단 키: 같은 학수번호(없으면 공백 뺀 과목명)면 같은 과목 (명세 5장 4번) */
+    public String retakeKey() {
+        return courseCode != null ? "code:" + courseCode : "name:" + courseName.replaceAll("\\s+", "");
+    }
+
     /** PATCH: 서비스가 기존 값과 합치고 이수구분까지 다시 판별한 값으로 통째로 바꾼다 */
     public void change(String courseCode, String courseName, int credits, Classification classification,
                        Integer distributionArea, String grade, int academicYear, Term term) {
