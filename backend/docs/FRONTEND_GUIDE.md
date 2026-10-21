@@ -195,6 +195,20 @@ async function api(path, options = {}) {
 - `grade`(학년) = (currentSemester + 1) / 2, 학기를 모르면 null.
 - 홈 인사말은 `nickname` 이 없으면 `name` 을 쓴다.
 
+**마이페이지 mock → API 대응 (2026-10-21, `frontend/src/mock/userMock.js` 기준)**
+
+| 화면 | mock 필드 | API |
+|---|---|---|
+| 이름 | `userName` | `GET /api/users/me` → `name` |
+| 학번 | `userId` | `studentNumber` (`id` 는 DB 번호라 학번이 아님) |
+| 학과 | `userMajor` | `major.displayName` (단과대는 `major.collegeName`, 전공 미선택이면 `major` 가 null) |
+| 전화번호 | `userPhone` | `phone` (null 가능) |
+| 이메일 | `userEmail` | `email` |
+| 알림 스위치 | `alarm` (화면 상태) | 처음 값은 `notificationEnabled`, 누르면 `PATCH /api/users/me/settings` `{ "notificationEnabled": true/false }` |
+| 로그아웃 | - | `POST /api/auth/logout` 후 저장한 토큰 삭제 (3장) |
+
+- 학기·학점 요약 칸이 생기면 `GET /api/users/me/summary`(아래 마이페이지 요약)를 쓴다.
+
 ### 홈 `home` (🔒)
 
 `GET /api/home?date=2026-10-07` — date 생략 시 오늘. 홈 화면에 필요한 걸 한 번에 준다.
