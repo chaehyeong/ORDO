@@ -21,6 +21,7 @@ import com.ordo.user.domain.User;
 import com.ordo.user.repository.UserRepository;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +43,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class HomeService {
 
+    private static final List<String> SOURCE_ORDER = List.of("TIMETABLE", "SCHEDULE", "ECAMPUS");
     private static final Comparator<TimelineItem> TIMELINE_ORDER = Comparator.comparing(TimelineItem::startTime)
-            .thenComparing(item -> item.source().equals("SCHEDULE"));  // 같은 시각이면 수업 먼저
+            .thenComparing(item -> SOURCE_ORDER.indexOf(item.source()));  // 같은 시각이면 수업 → 일정 → e캠퍼스
+    private static final LocalTime ALL_DAY_DUE = LocalTime.of(23, 59);  // 시각 없는 e캠퍼스 마감 (명세 4.8)
 
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
@@ -57,7 +61,8 @@ public class HomeService {
         LocalDate monday = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate sunday = monday.plusDays(6);
         List<Schedule> weekSchedules = scheduleRepository.findInPeriod(userId, monday, sunday, null);
-        Set<LocalDate> ecampusDueDays = ecampusDueDays(userId, monday, sunday);
+        List<EcampusEventResponse> ecampusEvents = ecampusEvents(userId, monday, sunday);  // e캠퍼스 요청은 1번만
+        Set<LocalDate> ecampusDueDays = ecampusEvents.stream().map(EcampusEventResponse::date).collect(Collectors.toSet());
         Map<AcademicTerm, List<TimetableEntry>> timetables = new HashMap<>();  // 학기가 바뀌는 주도 있어 날짜마다 학기를 본다
 
         List<Day> week = monday.datesUntil(sunday.plusDays(1))
@@ -66,13 +71,17 @@ public class HomeService {
                 .toList();
 
         List<Schedule> todaySchedules = weekSchedules.stream().filter(s -> s.getScheduleDate().equals(date)).toList();
-        List<TimelineItem> timeline = Stream.concat(
+        List<TimelineItem> timeline = Stream.of(
                         classesOn(userId, date, timetables).stream()
                                 .map(e -> new TimelineItem("TIMETABLE", e.getId(), e.getCourseName(), ScheduleCategory.LECTURE,
-                                        e.getStartTime(), e.getEndTime(), e.getLocation())),
+                                        e.getStartTime(), e.getEndTime(), e.getLocation(), null, null)),
                         todaySchedules.stream().filter(s -> s.getStartTime() != null)
                                 .map(s -> new TimelineItem("SCHEDULE", s.getId(), s.getTitle(), s.getCategory(),
-                                        s.getStartTime(), s.getEndTime(), s.getLocation())))
+                                        s.getStartTime(), s.getEndTime(), s.getLocation(), null, null)),
+                        ecampusEvents.stream().filter(e -> e.date().equals(date))
+                                .map(e -> new TimelineItem("ECAMPUS", null, e.title(), ScheduleCategory.ASSIGNMENT,
+                                        e.time() != null ? e.time() : ALL_DAY_DUE, null, null, e.courseName(), e.url())))
+                .flatMap(Function.identity())
                 .sorted(TIMELINE_ORDER)
                 .toList();
         List<Todo> todos = todaySchedules.stream().filter(s -> s.getStartTime() == null)
@@ -109,14 +118,13 @@ public class HomeService {
                 .toList();
     }
 
-    // e캠퍼스 과제 마감은 주간 점에만 쓴다(제출 여부를 몰라 할 일·추천에는 넣지 않음). 못 받아 오면 점 없이 보여준다
-    private Set<LocalDate> ecampusDueDays(Long userId, LocalDate from, LocalDate to) {
+    // e캠퍼스 과제 마감은 주간 점과 오늘 timeline 에만 쓴다(제출 여부를 몰라 할 일·추천에는 넣지 않음).
+    // 미연동이면 빈 목록, 못 받아 오면 e캠퍼스 것만 빼고 보여준다
+    private List<EcampusEventResponse> ecampusEvents(Long userId, LocalDate from, LocalDate to) {
         try {
-            return ecampusService.getEvents(userId, from, to).events().stream()
-                    .map(EcampusEventResponse::date)
-                    .collect(Collectors.toSet());
+            return ecampusService.getEvents(userId, from, to).events();
         } catch (BusinessException e) {
-            return Set.of();
+            return List.of();
         }
     }
 }

@@ -1,7 +1,10 @@
 package com.ordo.home.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 
 import com.ordo.academic.dto.ProgressSummary;
 import com.ordo.academic.dto.ProgressSummary.Total;
@@ -91,6 +94,30 @@ class HomeServiceTest {
         assertThat(home.timeline().get(0).source()).isEqualTo("TIMETABLE");
         assertThat(home.timeline().get(0).category()).isEqualTo(ScheduleCategory.LECTURE);
         assertThat(home.todos()).extracting(Todo::title).containsExactly("자료 조사");
+        assertThat(home.timeline()).extracting(TimelineItem::courseName, TimelineItem::url).containsOnly(tuple(null, null));
+    }
+
+    @Test
+    void ecampusAssignmentsDueTodayJoinTimelineAtDueTime() {
+        givenHomeWithEvents(user("하은"),
+                List.of(schedule("팀플 모임", WEDNESDAY, at(15), ScheduleCategory.PERSONAL)),
+                List.of(timetable("디자인씽킹", 3, at(15))),
+                List.of(event("퀴즈", WEDNESDAY, null),
+                        event("3주차 과제 제출", WEDNESDAY, at(15)),
+                        event("금요일 과제", LocalDate.of(2026, 10, 9), at(10))));
+
+        HomeResponse home = homeService.getHome(1L, WEDNESDAY);
+
+        assertThat(home.timeline()).extracting(TimelineItem::source, TimelineItem::title, TimelineItem::startTime)
+                .containsExactly(tuple("TIMETABLE", "디자인씽킹", at(15)),       // 같은 15시면 수업 → 일정 → e캠퍼스
+                        tuple("SCHEDULE", "팀플 모임", at(15)),
+                        tuple("ECAMPUS", "3주차 과제 제출", at(15)),
+                        tuple("ECAMPUS", "퀴즈", LocalTime.of(23, 59)));       // 시각 없는 마감은 23:59
+        assertThat(home.timeline().get(2)).isEqualTo(new TimelineItem("ECAMPUS", null, "3주차 과제 제출",
+                ScheduleCategory.ASSIGNMENT, at(15), null, null, "디자인씽킹", "https://khcanvas.khu.ac.kr/courses/1"));
+        assertThat(home.week().get(4).categories()).containsExactly(ScheduleCategory.ASSIGNMENT);  // 금요일은 점만
+        assertThat(home.todos()).isEmpty();
+        then(ecampusService).should(times(1)).getEvents(1L, MONDAY, SUNDAY);
     }
 
     @Test
@@ -130,15 +157,25 @@ class HomeServiceTest {
 
         assertThat(home.week().get(2).categories()).containsExactly(ScheduleCategory.ASSIGNMENT);
         assertThat(home.todos()).hasSize(1);
+        assertThat(home.timeline()).isEmpty();
     }
 
     private void givenHome(User user, List<Schedule> schedules, List<TimetableEntry> entries, List<LocalDate> ecampusDays) {
+        givenHomeWithEvents(user, schedules, entries, ecampusDays.stream().map(d -> event("LAB", d, null)).toList());
+    }
+
+    private void givenHomeWithEvents(User user, List<Schedule> schedules, List<TimetableEntry> entries,
+                                     List<EcampusEventResponse> events) {
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
         given(scheduleRepository.findInPeriod(1L, MONDAY, SUNDAY, null)).willReturn(schedules);
         given(timetableEntryRepository.findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(1L, 2026, Term.SECOND))
                 .willReturn(entries);
-        given(ecampusService.getEvents(1L, MONDAY, SUNDAY)).willReturn(new EcampusEventsResponse(!ecampusDays.isEmpty(), null,
-                ecampusDays.stream().map(d -> new EcampusEventResponse("event-assignment-1", "LAB", "과목", d, null, null)).toList()));
+        given(ecampusService.getEvents(1L, MONDAY, SUNDAY)).willReturn(new EcampusEventsResponse(!events.isEmpty(), null, events));
+    }
+
+    private static EcampusEventResponse event(String title, LocalDate date, LocalTime time) {
+        return new EcampusEventResponse("event-assignment-1", title, "디자인씽킹", date, time,
+                "https://khcanvas.khu.ac.kr/courses/1");
     }
 
     private static User user(String name) {
