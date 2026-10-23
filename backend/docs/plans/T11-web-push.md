@@ -1,6 +1,6 @@
 # T11 일정 알림 (웹푸시) — 구현 계획
 
-> 상태: **계획, 승인 대기 (2026-10-09).** 진행 기록은 `docs/PROGRESS.md`.
+> 상태: **승인(2026-10-21) → 구현 중.** 승인 결과와 추가된 설계는 14절. 진행 기록은 `docs/PROGRESS.md`.
 > 2026-10-08 에 승인된 카카오 "나에게 보내기" 계획을 대체한다(이유는 0절). 명세(2.5·3.3·4.10·7·8·9장)는 아직 카카오 기준이고, 이 계획이 승인되면 12절 목록대로 바꾼다.
 
 ---
@@ -105,6 +105,10 @@ CREATE TABLE push_subscriptions (            -- 기기(브라우저)당 1행
 ALTER TABLE schedules
     ADD COLUMN alarm_sent_for DATETIME NULL COMMENT '알림을 처리한 발송 예정 시각(중복 방지)',
     ADD KEY idx_schedules_date (schedule_date);
+
+-- 14절(2026-10-21 추가): 시간 없는 할 일의 알림 기준 시각, 사용자가 마이페이지에서 바꿈
+ALTER TABLE users
+    ADD COLUMN todo_alarm_time TIME NOT NULL DEFAULT '09:00:00' COMMENT '시간 없는 할 일의 알림 기준 시각';
 ```
 
 - 카카오 계획의 테이블 2개(`kakao_connections`, `notification_logs`) → **테이블 1개 + 칸 1개**로 줄였다.
@@ -281,3 +285,16 @@ await api.post('/api/notifications/push/subscriptions', sub.toJSON());
 2. 의존성: **안 A(새 의존성 없음, 추천)** / B / C
 3. 테스트 발송 API(`POST /api/notifications/push/test`) 포함 여부: 추천은 포함
 4. (기존 미결) 시간 없는 할 일의 알림 기준 09:00: 명세 9장 12
+
+## 14. 승인 결과 (2026-10-21, 사용자)
+
+1. 웹푸시 설계·V11 승인. 2. **안 A**(새 의존성 없음). 3. 테스트 발송 API **포함**.
+4. 시간 없는 할 일의 알림 기준 시각: **사용자가 설정**, 기본 09:00 (명세 9장 12 결정). 이를 위해 아래를 더한다.
+   - V11: `users.todo_alarm_time TIME NOT NULL DEFAULT '09:00:00'` (5절 SQL 끝).
+   - `PATCH /api/users/me/settings`: `{ "notificationEnabled": false, "todoAlarmTime": "21:00" }` 두 필드 모두 선택(다른 PATCH 와 같이 생략·null 이면 그대로). `todoAlarmTime` 은 `HH:mm`.
+     기존에 `notificationEnabled` 만 보내던 요청은 그대로 동작한다.
+   - `GET /api/users/me` 응답에 `"todoAlarmTime": "09:00"` 추가.
+   - 발송 시각 = `날짜 + (시작시간 ?? 그 사용자의 todoAlarmTime) − alarm_minutes_before`.
+
+**구현하며 줄인 것**: `NotificationScheduler`·`WebPushSender` 클래스는 따로 두지 않는다. `@Scheduled` 는 `NotificationService.sendDue()` 에 바로 달고(`SchedulingConfig` 가 꺼지면 동작 안 함),
+기기별 발송·404/410 삭제는 `PushSubscriptionService.sendToUser` 가 한다(테스트 API 와 스케줄러가 같이 씀).

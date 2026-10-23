@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,6 +23,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseTimeEntity {
+
+    public static final LocalTime DEFAULT_TODO_ALARM_TIME = LocalTime.of(9, 0);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,6 +52,7 @@ public class User extends BaseTimeEntity {
 
     private Integer currentSemester;
     private boolean notificationEnabled;
+    private LocalTime todoAlarmTime;  // 시간 없는 할 일의 알림 기준 시각 (T11, 기본 09:00)
     private String ecampusFeedToken;  // Canvas 캘린더 피드 토큰. 비밀값이라 응답·로그에 내보내지 않는다
 
     /** 이메일 회원가입 (password 는 BCrypt 로 인코딩된 값) */
@@ -67,6 +71,7 @@ public class User extends BaseTimeEntity {
         this.major = major;
         this.currentSemester = currentSemester;
         this.notificationEnabled = true;
+        this.todoAlarmTime = DEFAULT_TODO_ALARM_TIME;
     }
 
     /** PATCH: null 인 값은 그대로 둔다 */
@@ -82,8 +87,10 @@ public class User extends BaseTimeEntity {
         if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
     }
 
-    public void changeNotificationEnabled(boolean notificationEnabled) {
-        this.notificationEnabled = notificationEnabled;
+    /** PATCH settings: null 인 값은 그대로 둔다 */
+    public void changeSettings(Boolean notificationEnabled, LocalTime todoAlarmTime) {
+        if (notificationEnabled != null) this.notificationEnabled = notificationEnabled;
+        if (todoAlarmTime != null) this.todoAlarmTime = todoAlarmTime;
     }
 
     /** null 이면 연결 해제 */
