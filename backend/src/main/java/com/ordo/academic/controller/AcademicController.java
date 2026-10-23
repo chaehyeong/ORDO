@@ -47,7 +47,7 @@ public class AcademicController {
     public ResponseEntity<ApiResponse<List<CompletedCourseResponse>>> createAll(
             @LoginUser Long userId, @Valid @RequestBody CompletedCourseBulkRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(completedCourseService.createAll(userId, request.courses())));
+                .body(ApiResponse.ok(completedCourseService.createAll(userId, request)));
     }
 
     @PatchMapping("/completed-courses/{id}")

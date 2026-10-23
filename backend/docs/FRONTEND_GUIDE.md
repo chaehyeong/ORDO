@@ -8,6 +8,7 @@
 > e캠퍼스 과제 마감 연동 추가: 2026-10-06 (백엔드 A)
 > T6·T7 학사관리(이수내역·이수현황) 추가: 2026-10-07 (백엔드 A, B 대신 진행)
 > T8 홈·T9 마이페이지 요약 추가, AI 추천 보류: 2026-10-07 (백엔드 A)
+> T12 성적·시간표 파일 가져오기 추가: 2026-10-08 (백엔드 A)
 
 ---
 
@@ -22,6 +23,8 @@
 | T4 일정·할 일 | ✅ 완료 (A) | `feat/schedule` · PR #3 |
 | T5 시간표 | ✅ 완료 (A) | `feat/timetable` (feat/schedule 위에서 작업) |
 | T10 e캠퍼스 과제 마감 연동 | ✅ 완료 (A) | `feat/ecampus` (feat/timetable 위에서 작업) |
+| T12 성적·시간표 파일 가져오기 (xlsx·csv·txt) | ✅ 완료 (A), PDF 는 받지 않음 | `feat/import` (feat/home 위에서 작업) |
+| T11 일정 알림 (카카오 → **웹푸시로 변경**) | ⏳ 계획 승인 대기 (A) | 계획: `docs/plans/T11-web-push.md` (프론트 할 일은 7절: 서비스워커·알림 켜기 버튼·manifest) |
 | T8 홈 · T9 마이페이지 요약 | ✅ 완료 (A) | `feat/home` (feat/academic 위에서 작업) |
 | T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
 
@@ -32,6 +35,8 @@
 **T4 검증 (2026-09-28)**: 일정 단위 테스트 11개 통과. 서버를 띄워 일정 API(생성·정렬·기간 제한·시간 검증·남의 일정 404·삭제 등) 31개를 직접 호출해 확인. T3 가 들어간 master 를 합친 뒤 전체 테스트 **65개 통과**(T3 까지 54개 + 일정 11개).
 
 **T5 검증 (2026-10-06)**: 학기 판별·시간표 단위 테스트 12개 추가, 전체 **77개 통과**. 서버를 띄워 시간표 API(겹침 409·딱 붙은 시간 허용·현재 학기 기본값·입력 검증·남의 칸 404·삭제 등) 27개를 직접 호출해 확인.
+
+**T12 검증 (2026-10-08)**: 익명 처리한 실제 샘플(이름·학번·교수명 가명) xlsx·csv·txt 로 단위 테스트 20개 추가, 전체 **133개 통과**. 수강신청확인서 6과목 18학점·시간표 7칸·시간 없는 과목 경고 1건, 성적표 8과목 20학점·2026년 1학기, **세 형식 결과 동일**. 서버에서 업로드 → 저장 → 같은 파일 재저장(중복 없음) → 이수현황 20학점 반영, 남의 학번 403·이미지 거절·5MB 초과 등 19개 확인, 서버 로그에 개인정보 없음.
 
 **T8·T9 검증 (2026-10-07)**: 홈·마이페이지 요약 단위 테스트 7개 추가, 전체 **113개 통과**. 서버를 띄워 월요일 시작 7칸·오늘 표시·수업+일정 타임라인 정렬·할 일·점 종류·졸업 진행률·date 지정·마이페이지 요약·e캠퍼스 실패 시에도 홈 정상 등 12개를 직접 호출해 확인.
 
@@ -80,6 +85,10 @@
 | TIMETABLE_ENTRY_NOT_FOUND | 404 | 없는 시간표 칸, 또는 남의 칸 |
 | TIMETABLE_OVERLAP | 409 | 같은 학기·요일에 시간이 겹치는 칸이 이미 있음 |
 | ECAMPUS_FEED_UNAVAILABLE | 502 | e캠퍼스 피드를 받지 못함 → 주소 재등록 안내 |
+| IMPORT_UNSUPPORTED_FORMAT | 400 | 지원하지 않는 파일 → "엑셀(xlsx)로 저장해서 올려주세요" |
+| IMPORT_TOO_LARGE | 400 | 5MB 초과 |
+| IMPORT_UNRECOGNIZED | 400 | 수강신청확인서·전체 성적 보기가 아님 |
+| IMPORT_STUDENT_MISMATCH | 403 | 내 학번의 파일이 아님 |
 | NOT_FOUND | 404 | 없는 경로·리소스 |
 | INTERNAL_ERROR | 500 | 서버 오류 (백엔드에 알려주세요) |
 
@@ -356,6 +365,36 @@ general-education.data: { admissionYear, basisYear, approximate,
 - `approximate: true` 면 "해당 학번 교양 기준이 없어 2026 기준으로 계산했어요" 안내. 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE` → 마이페이지 정보 수정으로 안내.
 - 성적 미정(null)인 과목도 학점에 들어간다(이번 학기 수강 중인 과목). F·NP 는 빠지고, 같은 과목은 가장 최근 것 1번만 센다.
 
+### 파일 가져오기 `import` (🔒, T12)
+
+학교 시스템에서 받은 **수강신청확인서**(→ 시간표)나 **전체 성적 보기**(→ 이수내역) 파일을 올리면 저장하지 않고 미리보기를 준다. 사용자가 확인·수정한 뒤 bulk API 로 저장한다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | /api/import | multipart `file`(5MB 이하) → 미리보기 `{ type, format, timetable \| grades, warnings }` |
+| POST | /api/timetables/entries/bulk | `{ year, term, mode: "REPLACE", entries }` → **201**, 저장 후 그 학기 시간표 |
+| POST | /api/academic/completed-courses/bulk | `{ courses, replaceTerms, keepClassification: true }` → **201** |
+
+```js
+// 1) 업로드
+const form = new FormData(); form.append('file', file);
+const res = await fetch('/api/import', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+// 2-a) 시간표: data.timetable 을 표로 보여주고 저장
+await api('/api/timetables/entries/bulk', { method: 'POST', body: JSON.stringify({
+  year: t.year, term: t.term, mode: 'REPLACE', entries: t.entries }) });
+// 2-b) 성적: needs 가 있는 과목은 사용자가 고르게 한 뒤 저장
+await api('/api/academic/completed-courses/bulk', { method: 'POST', body: JSON.stringify({
+  courses: g.courses.map(c => ({ courseCode: c.courseCode, courseName: c.courseName, credits: c.credits,
+    classification: c.classification, distributionArea: c.distributionArea, grade: c.grade, year: c.year, term: c.term })),
+  replaceTerms: g.terms, keepClassification: true }) });
+```
+
+- **지원 형식**: xlsx(추천)·csv·txt. **PDF 는 받지 않는다**(표 구조가 깨져서 정확히 읽을 수 없음). 그 외도 "엑셀(xlsx)로 저장해서 올려주세요" 오류 → 그대로 보여주면 된다. 파일 선택 창에 `accept=".xlsx,.csv,.txt"` 를 걸어 두면 좋다.
+- **같은 파일을 다시 올려도 중복되지 않는다**: 시간표는 그 학기를 통째로 바꾸고(REPLACE), 성적은 `replaceTerms` 학기를 지우고 다시 넣는다. 그래서 그 학기에 직접 입력한 칸·과목도 바뀐다는 안내를 저장 버튼 옆에 띄우는 게 좋다.
+- `warnings` 는 목록으로 보여준다. `NO_TIME`(온라인 등 시간 없는 과목, 시간표에 안 들어감), `DISTRIBUTION_AREA_REQUIRED`·`UNKNOWN_CLASSIFICATION`·`UNKNOWN_GRADE`(→ 그 과목의 `needs` 값을 사용자가 고르게), `UNPARSED_ROW`(읽지 못한 줄).
+- 배분이수 과목은 영역(1~5)을 고르지 않으면 저장 시 `DISTRIBUTION_AREA_REQUIRED` 오류가 난다.
+- 파일의 학번이 내 학번과 다르면 403 `IMPORT_STUDENT_MISMATCH`.
+
 ### e캠퍼스 과제 마감 `ecampus` (전부 🔒)
 
 e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자기 e캠퍼스 캘린더 피드 주소** 를 한 번 등록하면 된다(학교 비밀번호는 받지 않음).
@@ -405,6 +444,7 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 - T5: 공용 파일 `global/common/Term.java`(학기 enum)·`AcademicTerm.java`(현재 학기 판별, `AcademicTerm.now()`)를 새로 추가했다. T6 이수내역의 `term` 도 이 `Term` 을 써 주세요.
 - T10: Flyway `V10__add_ecampus_feed_token.sql`(users 에 칸 하나), 공용 `ErrorCode` 에 `ECAMPUS_FEED_UNAVAILABLE`, `AGENTS.md` 패키지 목록에 `ecampus` 추가. `User` 에 `ecampusFeedToken` 필드가 생겼다(H2 테스트는 ddl-auto 라 영향 없음).
 - T6·T7(원래 B 담당, A 가 대신 진행): 공용 `Term` 선언 순서를 FIRST·SUMMER·SECOND·WINTER(시간 순)로 바꿔 정렬에 쓴다(DB 는 이름 저장이라 영향 없음). B 의 `CourseRepository` 에 `findFirstByUnitNameAndCourseCodeOrderByIdAsc` 하나 추가. 홈·마이페이지는 `AcademicProgressService.findSummary(userId)` 를 쓴다.
+- T12: 공용 `build.gradle` 에 Apache POI(`poi-ooxml` 5.5.1), `application.yml` 에 multipart 설정(5MB·메모리 처리), `ErrorCode` 4개(IMPORT_*), `GlobalExceptionHandler` 에 업로드 크기 초과 처리, `AGENTS.md` 패키지 목록(importer·notification). 이수내역 bulk 에 `replaceTerms`·`keepClassification`, 시간표 bulk API 추가. 테스트 사본은 `src/test/resources/import/`(익명).
 - 명세와 다르게/새로 정한 것은 `BACKEND_SPEC.md` 4장·4.1·4.2·8장에 반영해 두었다.
 
 ---

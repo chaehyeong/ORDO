@@ -3,6 +3,7 @@ package com.ordo.timetable.controller;
 import com.ordo.global.common.ApiResponse;
 import com.ordo.global.common.Term;
 import com.ordo.global.security.LoginUser;
+import com.ordo.timetable.dto.TimetableEntryBulkRequest;
 import com.ordo.timetable.dto.TimetableEntryCreateRequest;
 import com.ordo.timetable.dto.TimetableEntryResponse;
 import com.ordo.timetable.dto.TimetableEntryUpdateRequest;
@@ -40,6 +41,13 @@ public class TimetableController {
     public ResponseEntity<ApiResponse<TimetableEntryResponse>> create(
             @LoginUser Long userId, @Valid @RequestBody TimetableEntryCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(timetableService.create(userId, request)));
+    }
+
+    /** 여러 칸 저장 (T12 가져오기). 응답은 저장 후 그 학기 시간표 */
+    @PostMapping("/entries/bulk")
+    public ResponseEntity<ApiResponse<TimetableResponse>> saveAll(
+            @LoginUser Long userId, @Valid @RequestBody TimetableEntryBulkRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(timetableService.saveAll(userId, request)));
     }
 
     @PatchMapping("/entries/{id}")
