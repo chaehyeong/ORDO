@@ -141,8 +141,7 @@ public class AcademicProgressService {
         courses.stream()
                 .filter(c -> c.getGrade() == null || !NOT_RECOGNIZED_GRADES.contains(c.getGrade()))
                 .sorted(CompletedCourse.CHRONOLOGICAL)
-                .forEach(c -> latest.put(c.getCourseCode() != null ? "code:" + c.getCourseCode()
-                        : "name:" + withoutSpaces(c.getCourseName()), c));
+                .forEach(c -> latest.put(c.retakeKey(), c));
         return latest.values();
     }
 
