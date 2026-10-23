@@ -1,3 +1,10 @@
+.main-body {
+    display: flow-root;
+    background-image: url('../assets/background1.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}
+
 .main-logo {
     margin: 4vh 4vw 1vh 4vw;
 }
@@ -49,7 +56,7 @@
 /* ===== 서비스 카드 자동 캐러셀 ===== */
 .service {
     overflow: hidden;          /* 트랙이 넘치는 부분을 잘라냄 */
-    padding: 3vh 0 8vh 0;
+    padding: 3vh 0 3vh 0;
 }
 
 .service-track {

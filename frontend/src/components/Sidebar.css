@@ -18,14 +18,13 @@
     grid-template-columns: 3fr 10fr;
     margin: 1vw;
     padding: 1.5vw;
-    border: 2px solid #CFECE7;
     border-radius: 10px;
     background-color: #CFECE7;
     font-weight: 500;
     font-size: 20px;
 }
 .index:has(.char.active) {
-    border: 1px solid #909395;
+    box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.25);
     background-color: white;
     color: #219F8A;
 }

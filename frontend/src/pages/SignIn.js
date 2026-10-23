@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
@@ -7,13 +6,6 @@ import logo1 from '../assets/logo1.png';
 import logo2 from '../assets/logo2.png';
 
 function SignIn() {
-    useEffect(() => {
-        document.body.style.backgroundColor = '#F9FDF9';
-        return () => {
-            document.body.style.backgroundColor = null;
-        };
-    }, []);
-
     return (
         <div className='body'>
             <div className='signin'>

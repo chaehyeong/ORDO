@@ -50,9 +50,9 @@ function MainPage() {
     const loop = [...services, ...services];
 
     return (
-        <div>
+        <div className='main-body'>
             <div className='main-logo'>
-                <img src={ordo_logo}/>
+                <img src={ordo_logo} alt='ordo_logo'/>
             </div>
             <div>
                 <div className='slogan'>ORDO와 함께하는<br/>대학생활의 모든 순간</div>

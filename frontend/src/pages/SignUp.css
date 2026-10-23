@@ -3,8 +3,8 @@
     height: auto;
     margin: 5vh auto;
     padding-top: 2%;
-    border: 1px solid rgba(0, 0, 0, 0.75);
     border-radius: 50px;
+    box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.25);
     background-color: white;
 }
 
@@ -15,8 +15,20 @@
 
 .form {
     width: 445px;
-    margin: 3% auto 5% auto;
+    margin: 3% auto;
     padding: 24px;
+    padding-bottom: 0;
     border: 1px solid #D9D9D9;
     border-radius: 8px;
+}
+
+#signup-btn {
+    display: block;
+    background-color: #39B19D;
+    border-color: #39B19D;
+    width: 445px;
+    margin: 3% auto 7%;
+}
+.char > #signup-btn {
+    color: white;
 }

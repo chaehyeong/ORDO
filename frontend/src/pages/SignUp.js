@@ -54,11 +54,11 @@ function SignUp() {
                         <Form.Group className="mb-3" controlId="formBasicCheckbox">
                             <Form.Check type="checkbox" label="이용약관 동의 어쩌구 하는거" />
                         </Form.Group>
-                        {/* 회원가입 누르면 로그인 화면으로 넘어감 */}
-                        <div className="d-grid gap-2">
-                            <NavLink className='char' to='/SignIn'><Button id='login-btn'>회원가입</Button></NavLink>
-                        </div>
                     </Form>
+                </div>
+                {/* 회원가입 누르면 로그인 화면으로 넘어감 */}
+                <div className="d-grid gap-2">
+                    <NavLink className='char' to='/SignIn'><Button id='signup-btn'>회원가입</Button></NavLink>
                 </div>
             </div>
         </div>
