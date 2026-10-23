@@ -4,6 +4,7 @@ import com.ordo.global.common.BaseTimeEntity;
 import com.ordo.global.error.BusinessException;
 import com.ordo.global.error.ErrorCode;
 import com.ordo.user.domain.User;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -50,7 +52,11 @@ public class Schedule extends BaseTimeEntity {
     private String location;
     private String memo;
     private boolean done;
-    private Integer alarmMinutesBefore;  // null = 알림 없음. MVP는 저장만 한다
+    private Integer alarmMinutesBefore;  // null = 알림 없음. T11 웹푸시로 발송
+
+    // 알림을 처리한 발송 예정 시각 (T11 중복 방지). ScheduleRepository.claimAlarm 만 쓰고, 엔티티 저장 때는 건드리지 않는다
+    @Column(insertable = false, updatable = false)
+    private LocalDateTime alarmSentFor;
 
     @Builder
     private Schedule(User user, String title, ScheduleCategory category, LocalDate scheduleDate, LocalTime startTime,

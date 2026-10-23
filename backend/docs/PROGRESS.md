@@ -5,11 +5,12 @@
 ## 현재 상황 (2026-10-21)
 
 - 명세 T0~T10 + **T12 구현 완료**(xlsx·csv·txt, PDF 는 거절, 테스트 133개). `feat/import` 푸시됨. PR #3 ← #5 ← #6 ← #7 ← #8 ← feat/import 리뷰 대기.
-- T11 은 카카오 '나에게 보내기'가 휴대폰 알림이 안 울려서 **웹푸시로 계획을 다시 씀**(`docs/plans/T11-web-push.md`) → 사용자 승인 대기(계획서 13절).
+- T11 은 카카오 '나에게 보내기'가 휴대폰 알림이 안 울려서 **웹푸시로 계획을 다시 씀**(`docs/plans/T11-web-push.md`) → 2026-10-21 승인, 구현(`feat/web-push`).
 - 2026-10-16: 팀 회의 메모에서 백엔드 추가분 2개를 계획서로 씀 — **T13 평점 평균 API**, **T14 홈 오늘 일정에 e캠퍼스 과제**(승인 대기). 온강(시간 없는 수업)·졸업 길 데이터·복수전공 일정은 **보류**.
 - 2026-10-16: T13·T14 계획 승인(추천안 그대로). **T13 완료**(`feat/gpa`, cf4260d), **T14 완료**(`feat/home-assignments`, feat/gpa 위, bdbac7c, 테스트 146개). 두 브랜치 푸시됨, PR 은 아직 없음(base: feat/gpa → feat/import, feat/home-assignments → feat/gpa).
 - 2026-10-21: T11 은 **웹푸시로 구현하기로 확정**(세부 선택은 계획 13절). FRONTEND_GUIDE 에 마이페이지 mock 필드 ↔ API 대응표 추가.
-- 다음: PR 2개 생성(사용자), 실제 e캠퍼스 피드로 홈 확인(사용자), B 확인(PR #3~#9 리뷰·명세 9장 16), T11 구현.
+- 2026-10-21: **T11 웹푸시 구현**(`feat/web-push`, 테스트 196개, 커밋 전). 할 일 알림 시각은 사용자 설정(`todoAlarmTime`, 기본 09:00).
+- 다음: PC 크롬 실제 수신 확인(사용자) → T11 커밋 승인. PR 2개 생성(사용자), 실제 e캠퍼스 피드로 홈 확인(사용자), B 확인(PR #3~#9 리뷰·명세 9장 16), 배포 후 휴대폰 확인.
 
 ## 결정 사항 (2026-10-08 승인)
 
@@ -39,8 +40,15 @@
 | 단계 | 상태 | 한 일 | 검증 | 남은 일 |
 |---|---|---|---|---|
 | 0. 카카오 계획·명세 반영 | ✅ (폐기) | `T11-kakao-alarm.md`, 명세 2.1·2.5·4.10·7·8·9장 | 문서 검토 | |
-| 0b. 웹푸시 계획 | ✅ | `docs/plans/T11-web-push.md`: API 4개, V11(`push_subscriptions` + `schedules.alarm_sent_for`), 새 의존성 없이 JDK 암호화 + 기존 jjwt 로 VAPID, endpoint 허용 목록(SSRF 방지), 프론트 할 일, 사용자 체크리스트. 명세 4.10 과 FRONTEND_GUIDE 진행표에는 "변경 승인 대기" 표시만 | VAPID 키 생성 PowerShell 명령을 실제로 실행해 길이 확인(공개키 87자·개인키 43자) | 사용자 승인(계획 13절) → 명세 교체(계획 12절) |
-| 1~7 | ⏳ | | | |
+| 0b. 웹푸시 계획 | ✅ | `docs/plans/T11-web-push.md`: API 4개, V11(`push_subscriptions` + `schedules.alarm_sent_for`), 새 의존성 없이 JDK 암호화 + 기존 jjwt 로 VAPID, endpoint 허용 목록(SSRF 방지), 프론트 할 일, 사용자 체크리스트. 명세 4.10 과 FRONTEND_GUIDE 진행표에는 "변경 승인 대기" 표시만 | VAPID 키 생성 PowerShell 명령을 실제로 실행해 길이 확인(공개키 87자·개인키 43자) | |
+| 승인 | ✅ | 2026-10-21: 웹푸시·V11, **안 A**(새 의존성 없음), 테스트 API 포함, 할 일 알림 시각 **사용자 설정**(기본 09:00) → 계획 14절 | | |
+| 1. 암호화·VAPID | ✅ | `WebPushCrypto`(RFC 8291 aes128gcm, JDK 만), `WebPushClient`(jjwt ES256 VAPID, 시작 때 키 짝·subject 확인, endpoint 허용 목록) | **RFC 8291 부록 A 테스트 벡터와 바이트까지 일치**, 무작위 암호화를 받는 쪽 키로 복호화, 허용·거절 주소 18개 | |
+| 2. V11·구독 API | ✅ | `V11__add_web_push.sql`, `PushSubscription`, API 4개, `PUSH_NOT_CONFIGURED`, `users.todo_alarm_time` + settings `todoAlarmTime` | 서비스 단위 테스트(갱신·이동·10개 제한·키 검증·만료 삭제·로그에 주소/키 없음) | |
+| 3. 메시지·발송 | ✅ | `NotificationMessage`(메모 없음), `PushSubscriptionService.sendToUser`(201 성공, 404·410 삭제, 그 밖 로그) | 단위 테스트 | |
+| 4. 스케줄러 | ✅ | `NotificationService.sendDue`(1분, 10분 창, 한국 시간), `ScheduleRepository.findAlarmCandidates`·`claimAlarm`, `Schedule.alarmSentFor`(엔티티 저장이 덮지 않게 insertable/updatable=false) | 발송 시각 계산 5가지, 창 경계, 선점 0 이면 안 보냄, **H2 로 선점 UPDATE 1→0·수정 동시 저장에도 유지·후보 조건** | |
+| 5. 로컬 확인 | 🔶 | 키 없이 503·설정 API, 임시 키로 공개키·구독·거절·테스트 발송(가짜 기기에 FCM 이 410 → 구독 삭제)·삭제 | 22개 OK, 서버 로그에 endpoint·키 없음. **실제 푸시 서비스 종단 확인(2026-10-23)**: 브라우저 대신 Firefox 와 같은 프로토콜로 Mozilla autopush 에 등록(서버 공개키로 VAPID 강제) → 구독 저장 → 테스트 발송 수신·복호화 → 알람 일정의 스케줄러 자동 발송 수신(제목·"10월 23일 (금) 13:41 · 예405", 메모 없음) → 90초 동안 중복 없음 → 구독 삭제, 18개 OK (스크립트는 스크래치 `PushE2E.java`, 저장소 밖) | PC 크롬(FCM) 실제 화면 알림(사용자, 임시 페이지) |
+| 6. 문서 | ✅ | 명세 2.1·2.5·3.2·3.3·4.2·4.10·7·8·9장, FRONTEND_GUIDE(진행표·에러·설정·웹푸시 절·B 참고), 계획 14절 | | 커밋 승인 |
+| 7. 휴대폰 | ⏳ | | | HTTPS 배포 후 안드로이드·아이폰 |
 
 ## T13 학사관리 평점 평균 (4.3 만점)
 

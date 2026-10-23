@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-10-08 (T11 카카오 알림·T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
+> 최종 갱신: 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
 
 ---
 
@@ -67,7 +67,7 @@ com.ordo
 ├── home            홈 화면 집계
 ├── ecampus         e캠퍼스(Canvas) 캘린더 피드 연동
 ├── importer        성적·시간표 파일 가져오기 (T12)
-└── notification    카카오톡 일정 알림 (T11)
+└── notification    일정 알림 웹푸시 (T11)
 ```
 
 각 도메인 안: `controller / service / repository / domain(엔티티·enum) / dto`.
@@ -158,10 +158,7 @@ app:
 | CLASSIFICATION_REQUIRED | 400 | 교과목 자동판별 불가인데 이수구분 미입력 |
 | DISTRIBUTION_AREA_REQUIRED | 400 | 배분이수인데 영역(1~5) 미입력 |
 | ECAMPUS_FEED_UNAVAILABLE | 502 | e캠퍼스 피드를 받지 못했고 예전에 받은 것도 없음 (주소 재등록 안내) |
-| KAKAO_NOT_CONFIGURED | 503 | 서버에 카카오 키가 없음 (T11) |
-| KAKAO_AUTH_FAILED | 400 | 인가코드 틀림·만료, redirectUri 불일치 (T11) |
-| KAKAO_SCOPE_REQUIRED | 400 | '카카오톡 메시지 전송' 동의 안 함 (T11) |
-| KAKAO_UNAVAILABLE | 502 | 카카오 서버 오류·시간 초과 (T11) |
+| PUSH_NOT_CONFIGURED | 503 | 서버에 웹푸시(VAPID) 키가 설정되지 않음 (T11) |
 | IMPORT_UNSUPPORTED_FORMAT | 400 | xlsx·csv·txt 가 아님(pdf 포함) → "엑셀(xlsx)로 저장해서 올려주세요" (T12) |
 | IMPORT_TOO_LARGE | 400 | 업로드 5MB 초과 (T12) |
 | IMPORT_UNRECOGNIZED | 400 | 수강신청확인서·전체 성적 보기가 아니거나 표를 못 찾음 (T12) |
@@ -205,16 +202,17 @@ enum Classification {             // 이수구분 (학교 코드)
 | general_education_requirements | 기준정보(읽기) | 2026만 존재: 필수 17 / 배분 9(3영역 이상) / 자유 3 / 합계 29 |
 | general_education_required_courses | 기준정보(읽기) | 교양 필수과목 6개(인간의가치탐색, 세계와시민, 빅뱅에서문명까지, 성찰과표현, 주제연구, 대학영어) |
 | courses | 기준정보(읽기) | 2026 전공 교과목. **학수번호가 학과마다 중복**(예: 미분적분학 AMTH1009가 32개 학과) → 반드시 `(unit_name, course_code)` 로 조회 |
-| users | 사용자 | email 유일, BCrypt password, name, nickname, student_number, phone, admission_year, major_id, current_semester, notification_enabled, ecampus_feed_token(V10, 4.8) |
+| users | 사용자 | email 유일, BCrypt password, name, nickname, student_number, phone, admission_year, major_id, current_semester, notification_enabled, todo_alarm_time(V11, 기본 09:00), ecampus_feed_token(V10, 4.8) |
 | refresh_tokens | 인증 | token 유일, 만료일. 로그아웃·재발급 시 삭제 |
-| schedules | 사용자 | schedule_date, start_time/end_time(NULL 가능), category, done, alarm_minutes_before |
+| schedules | 사용자 | schedule_date, start_time/end_time(NULL 가능), category, done, alarm_minutes_before, alarm_sent_for(V11, 알림 중복 방지·내부용) |
+| push_subscriptions | 사용자 | 기기(브라우저)별 웹푸시 구독: endpoint(유일), p256dh, auth (V11, 4.10) |
 | timetable_entries | 사용자 | academic_year + term, day_of_week(1=월…7=일), start_time~end_time |
 | completed_courses | 사용자 | 내가 들은 과목: course_code(선택), course_name, credits, classification, distribution_area, grade, academic_year, term |
 
 ### 3.3 도메인 규칙
 
 - **일정 vs 할 일**: 같은 `schedules` 테이블. `start_time` 이 있으면 "일정"(홈 타임라인·캘린더), 없으면 "할 일"(홈 '오늘 할 일' 체크박스). `end_time` 이 있으면 `start_time` 필수, `end_time > start_time`.
-- **알람**: `alarm_minutes_before` 값은 `null`(없음), 10, 30, 60, 1440(하루 전) 중 하나. MVP는 **저장만** 하고 실제 발송은 2차(카톡).
+- **알람**: `alarm_minutes_before` 값은 `null`(없음), 10, 30, 60, 1440(하루 전) 중 하나. **T11 웹푸시로 발송**(4.10). 시간 없는 할 일은 사용자의 `todo_alarm_time`(기본 09:00) 기준.
 - **현재 학기 판별**(`AcademicTerm.of(LocalDate)`): 3~8월 → 그해 FIRST, 9~12월 → 그해 SECOND, 1~2월 → **전년도** SECOND. 계절학기는 사용자가 직접 선택할 때만.
 - **학년**: `grade = (current_semester + 1) / 2` (current_semester null이면 null).
 - **전공 목록(회원가입)**: 선택한 입학년도에 `graduation_requirements` 행이 있는 전공만, `convergence = false` 만 (융합전공은 주전공 불가).
@@ -274,12 +272,13 @@ enum Classification {             // 이수구분 (학교 코드)
 |---|---|---|
 | GET | /api/users/me | 🔒 프로필 |
 | PATCH | /api/users/me | 🔒 프로필 수정(보낸 필드만 변경): name, nickname, studentNumber, phone, admissionYear, majorId, currentSemester, profileImageUrl |
-| PATCH | /api/users/me/settings | 🔒 `{ "notificationEnabled": false }` |
+| PATCH | /api/users/me/settings | 🔒 `{ "notificationEnabled": false, "todoAlarmTime": "21:00" }` 둘 다 선택 (T11) |
 | GET | /api/users/me/summary | 🔒 마이페이지 요약 |
 
 - PATCH 두 API의 응답 data 는 `GET /api/users/me` 와 같은 형태(수정 후 값).
 - 보낸 필드만 변경: 생략하거나 null 이면 그대로 둔다(값을 비우는 기능은 없음).
 - `majorId`·`admissionYear` 를 바꾸면 가입과 같은 규칙으로 확인 → 안 맞으면 `MAJOR_NOT_FOUND`.
+- (T11) `todoAlarmTime`: 시간 없는 할 일의 알림 기준 시각 `HH:mm`(기본 09:00, 형식이 틀리면 `INVALID_INPUT`). 예: 21:00 이고 알람이 하루 전이면 전날 21:00 에 온다. `notificationEnabled=false` 면 웹푸시를 보내지 않는다(4.10).
 
 ```json
 // GET /api/users/me
@@ -287,7 +286,8 @@ enum Classification {             // 이수구분 (학교 코드)
   "studentNumber": "2026105632", "phone": "010-1234-5678", "profileImageUrl": null,
   "admissionYear": 2026, "currentSemester": 1, "grade": 1,
   "major": { "id": 35, "displayName": "시각디자인학과", "collegeName": "예술·디자인대학" },
-  "notificationEnabled": true, "ecampusConnected": false }   // ecampusConnected: 4.8 피드 등록 여부
+  "notificationEnabled": true, "todoAlarmTime": "09:00",    // todoAlarmTime: 시간 없는 할 일 알림 기준(T11)
+  "ecampusConnected": false }                               // ecampusConnected: 4.8 피드 등록 여부
 
 // GET /api/users/me/summary
 { "term": { "year": 2026, "term": "SECOND", "label": "2026년 2학기" },
@@ -573,20 +573,31 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 5MB 초과는 Spring 업로드 한도에서도 `IMPORT_TOO_LARGE`. 업로드는 디스크 임시파일 없이 메모리에서만(`multipart.file-size-threshold`).
 - **PDF 는 받지 않는다**(9장 19): PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음.
 
-### 4.10 카카오톡 일정 알림 `notification` (T11)
+### 4.10 일정 알림 웹푸시 `notification` (T11)
 
-> ⚠️ 2026-10-09: '나에게 보내기'는 휴대폰 알림이 울리지 않아 **웹푸시로 바꾸는 계획이 승인 대기 중**(`docs/plans/T11-web-push.md`). 승인되면 이 절과 2.5·3.3·7·8·9장을 계획서 12절대로 교체한다.
+> 2026-10-09: 카카오 '나에게 보내기'는 휴대폰 알림이 울리지 않아 **브라우저 웹푸시(Push API)** 로 바꿨다(이유·설계는 `docs/plans/T11-web-push.md`). 무료, 심사·사업자 불필요. 안드로이드·PC 는 바로, 아이폰은 iOS 16.4+ 에서 홈 화면에 추가한 경우만.
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| POST | /api/notifications/kakao/connect | 🔒 `{ "code": "...", "redirectUri": "..." }` → 카카오 토큰 교환 후 암호화 저장 → `{ status, connectedAt }` |
-| GET | /api/notifications/kakao | 🔒 `{ "status": "NONE"\|"CONNECTED"\|"EXPIRED", "connectedAt": ... }` |
-| DELETE | /api/notifications/kakao | 🔒 연결 해제(카카오 unlink 후 삭제) → 204 |
+| GET | /api/notifications/push/public-key | 🔒 `{ "publicKey": "BMx…(87자)" }`: 구독할 때 `applicationServerKey` 로 쓴다 |
+| POST | /api/notifications/push/subscriptions | 🔒 브라우저의 `subscription.toJSON()` 그대로 → 204. 같은 endpoint 면 갱신(다른 사용자 것이었으면 지금 사용자로 옮김) |
+| DELETE | /api/notifications/push/subscriptions | 🔒 `{ "endpoint": "..." }` → 204. 내 것만 지우고, 없어도 204 |
+| POST | /api/notifications/push/test | 🔒 내 모든 기기로 테스트 알림을 바로 보냄 → `{ "sent": 1, "failed": 0 }` (알림 끄기 상태여도 보냄) |
 
-- 1분마다 `일정 날짜 + 시작시간(없으면 09:00, 9장 12) - alarm_minutes_before` 가 지난 10분 안에 든 일정을 카카오톡 "나에게 보내기"로 발송. `done` 이거나 `notification_enabled=false` 면 안 보냄.
-- 메시지: 제목·날짜·시간·장소만(메모 제외). 같은 알림은 `notification_logs (schedule_id, channel, notify_at)` 유일 키로 한 번만.
-- 토큰 만료 시 리프레시로 갱신, 실패하면 `EXPIRED` → 앱이 재연결 안내. 키는 환경변수(`KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`, `KAKAO_TOKEN_ENC_KEY`, `KAKAO_REDIRECT_URIS`, `ORDO_WEB_URL`)로만.
-- 카카오 계획은 웹푸시 계획(`docs/plans/T11-web-push.md`)으로 대체됨(0절에 바꾼 이유).
+```json
+// POST /api/notifications/push/subscriptions (expirationTime 은 무시)
+{ "endpoint": "https://fcm.googleapis.com/fcm/send/dXk…",
+  "keys": { "p256dh": "BNc…(87자)", "auth": "tBH…(22자)" } }
+```
+
+- 검증(아니면 `INVALID_INPUT`): endpoint 는 `https`·포트 지정 없음·사용자정보 없음·700자 이하·호스트가 **허용 목록**(`fcm.googleapis.com`, `updates.push.services.mozilla.com`, `*.push.apple.com`, `*.notify.windows.com`). 서버가 이 주소로 직접 요청하므로 다른 주소는 받지 않는다(SSRF 방지, 보낼 때도 다시 확인). `p256dh` = Base64url 65바이트 P-256 공개키, `auth` = 16바이트.
+- 사용자당 기기 최대 10개, 넘으면 먼저 등록한 것부터 지운다. 서버에 VAPID 키가 없으면 4개 모두 `PUSH_NOT_CONFIGURED`(503), 서버는 정상 시작.
+- **발송**: 1분마다 `날짜 + (시작시간 ?? 사용자의 todoAlarmTime(4.2, 기본 09:00)) − alarm_minutes_before` 가 **지난 10분 안**(`now − 10분 < 발송 시각 ≤ now`, Asia/Seoul)인 일정을 그 사용자의 모든 기기로 보낸다. `done` 이거나 `notificationEnabled=false` 면 안 보냄(구독은 유지).
+- **한 번만**: 보내기 전에 `schedules.alarm_sent_for` 를 조건부 UPDATE 로 선점(바뀐 행 1 = 내 차례). 서버를 재시작하거나 여러 대여도 같은 알림은 한 번. 일정 시간·알람을 바꾸면 발송 시각이 달라져 다시 보낸다.
+- 결과: 201 성공, 404·410 → 만료된 구독이라 삭제, 그 밖(403·429·5xx·시간 초과 5초)은 경고 로그(구독 id·상태 코드만)만, **재시도 없음**.
+- 알림 내용(기기 키로 암호화, RFC 8291 aes128gcm + VAPID RFC 8292): `{ "title": "디자인씽킹 과제 제출", "body": "10월 18일 (일) 09:00 · 예405", "tag": "schedule-42", "url": "/" }`. 할 일이면 `"10월 18일 (일) 할 일"`, 장소 없으면 생략. **메모는 넣지 않는다.** 테스트 알림은 `"오르도 알림 테스트"`.
+- 키는 환경변수(`WEBPUSH_PUBLIC_KEY`, `WEBPUSH_PRIVATE_KEY`, `WEBPUSH_SUBJECT` = `mailto:…` 또는 `https://…`, localhost 불가)로만. 짝이 안 맞거나 형식이 틀리면 서버 시작 실패(키 값은 로그에 안 찍음). 스케줄러는 `NOTIFICATION_SCHEDULER_ENABLED=false` 로 끈다.
+- endpoint·p256dh·auth·개인키는 로그와 응답에 남기지 않는다. `alarm_sent_for` 는 응답에 없다.
 
 ---
 
@@ -659,7 +670,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - V1(스키마), V2(시드)는 공동 소유. **이미 적용된 파일은 절대 수정 금지** — 바꿀 게 있으면 새 파일.
 - 새 마이그레이션 번호: **A 담당 V10~V49, B 담당 V50~V89**. 파일명 `V{번호}__{영문_설명}.sql`.
 - 사용 중: `V10__add_ecampus_feed_token.sql`(A, users 에 e캠퍼스 피드 토큰 칸 추가).
-- 예약: `V11__add_kakao_notification.sql`(A, T11: `kakao_connections`, `notification_logs` 새 테이블, 2026-10-08 승인).
+- 사용 중: `V11__add_web_push.sql`(A, T11: `push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·`idx_schedules_date`, `users.todo_alarm_time`, 2026-10-21 승인).
 - 로컬 DB가 꼬이면: `DROP DATABASE ordo;` 후 서버 재시작 → Flyway가 V1부터 다시 적용.
 
 ---
@@ -680,7 +691,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T7 ✅ | progress 계산 + 단위 테스트 | A (B 대신) | 5장 테스트 케이스 전부 통과 |
 | T8 ✅ | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
 | T9 ✅ | users/me/summary | A | |
-| T11 | 카카오톡 일정 알림 (4.10) | A | 연결·상태·해제 API, 1분 스케줄러, 중복 발송 없음, 토큰 암호화·갱신·EXPIRED, 실기기 수신 확인 |
+| T11 | 일정 알림 웹푸시 (4.10) | A | 구독 API 4개, 1분 스케줄러, 중복 발송 없음(선점 UPDATE), RFC 8291 테스트 벡터, 허용 주소 검증, 할 일 알림 시각 설정, 실기기(PC·안드로이드·아이폰) 수신 확인 |
 | T12 ✅ | 성적·시간표 파일 가져오기 (4.9) | A | 샘플 기대값(신청 6과목 18학점·7칸·경고 1, 성적 8과목 20학점), xlsx·csv·txt 결과 동일, 학번 대조, 재업로드 중복 없음 |
 | T10 ✅ | e캠퍼스 피드 연동 (4.8) | A | 피드 주소 검증, 10분 캐시, 실패 시 예전 데이터, 토큰 비노출 |
 | T14 ✅ | 홈 오늘 일정에 e캠퍼스 과제 (4.7) | A | ECAMPUS 항목, 23:59 규칙, 같은 시각 정렬(수업→일정→e캠퍼스), 미연동·실패 시 정상, e캠퍼스 호출 1번 |
@@ -733,13 +744,13 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 6 | 전공 초과학점 전공선택 인정, 타전공 인정 한도, 재수강 세부 규칙 | 학과 시행세칙 확인 전까지 5장 단순 규칙 |
 | 7 | 2025학번 이하 교양 기준 | 2026 값으로 근사 + approximate 표시 |
 | 8 | 다전공·부전공 | MVP 제외 (데이터는 이미 시드에 있음) |
-| 9 | 알림 실제 발송 | **T11 로 앞당김(2026-10-08)**: 카카오 로그인 없이 '나에게 보내기' 권한만 연결 → 4.10 |
+| 9 | 알림 실제 발송 | **T11 로 앞당김(2026-10-08)**, 2026-10-09 카카오 → **웹푸시**로 변경 → 4.10 |
 | 10 | 디자인에 남아있는 '과제', '설정' 메뉴 | 회의록 2차대로 삭제 |
 | 11 | e캠퍼스 연동 | **결정(2026-10-06): MVP 포함.** Canvas 개인 캘린더 피드(.ics) 주소를 사용자가 등록, 캘린더를 열 때 가져오고 10분 캐시, cron 없음 → 4.8. **학교 비밀번호를 서버에 저장하는 방식은 금지** |
-| 12 | 시간 없는 할 일의 알림 기준 시각 (T11) | 그날 09:00 (하루 전 알림 = 전날 09:00) — **확인 필요** |
-| 13 | '나에게 보내기' 휴대폰 푸시 알림 여부 (T11) | 카카오 문서에 없음. 실기기 확인 전 미정, 안 오면 알림톡·웹푸시 검토 |
+| 12 | 시간 없는 할 일의 알림 기준 시각 (T11) | **결정(2026-10-21): 사용자가 설정**(`todoAlarmTime`, 기본 09:00). 하루 전 알림 = 전날 그 시각 |
+| 13 | 휴대폰 알림 (T11) | '나에게 보내기'는 푸시가 안 와서 웹푸시로 변경(2026-10-09). 아이폰은 iOS 16.4+·홈 화면 추가 필요. 실기기 확인은 HTTPS 배포 후 |
 | 14 | 서버가 꺼져 있던 동안 놓친 알림 (T11) | 10분 이내 것만 발송, 더 오래된 것은 버림 |
-| 15 | 알림 발송 실패 재시도 (T11) | 안 함(FAILED 기록만) |
+| 15 | 알림 발송 실패 재시도 (T11) | 안 함(경고 로그만, 404·410 은 구독 삭제) |
 | 16 | 중핵교과·기초교과 → GEN_REQUIRED (T12) | 추정. 근거: 성적표 이수구분 코드 14(중핵교과) = 3.1 "교양 필수교과 14, 16". 기초교과 코드는 확인 필요 |
 | 17 | 가져오기 이수구분: 성적표 vs 교육과정 마스터가 다를 때 (T12) | **결정(2026-10-08): 성적표 우선**(keepClassification), 다르면 경고 |
 | 18 | 같은 파일 재업로드 (T12) | **결정(2026-10-08): 학기 단위 교체(REPLACE)** |

@@ -136,10 +136,22 @@ class UserServiceTest {
         User user = user(null, 1);
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
 
-        UserResponse response = userService.updateSettings(1L, new UserSettingsRequest(false));
+        UserResponse response = userService.updateSettings(1L, new UserSettingsRequest(false, null));
 
         assertThat(user.isNotificationEnabled()).isFalse();
         assertThat(response.notificationEnabled()).isFalse();
+        assertThat(response.todoAlarmTime()).isEqualTo(LocalTime.of(9, 0));  // 안 보낸 값은 그대로(기본 09:00)
+    }
+
+    @Test
+    void updateSettingsChangesTodoAlarmTimeOnly() {
+        User user = user(null, 1);
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+
+        UserResponse response = userService.updateSettings(1L, new UserSettingsRequest(null, LocalTime.of(21, 30)));
+
+        assertThat(response.todoAlarmTime()).isEqualTo(LocalTime.of(21, 30));
+        assertThat(response.notificationEnabled()).isTrue();
     }
 
     @Test

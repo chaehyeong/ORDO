@@ -1,11 +1,14 @@
 package com.ordo.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ordo.catalog.domain.Major;
 import com.ordo.user.domain.User;
+import java.time.LocalTime;
 
 public record UserResponse(Long id, String email, String name, String nickname, String studentNumber, String phone,
                            String profileImageUrl, Integer admissionYear, Integer currentSemester, Integer grade,
-                           MajorInfo major, boolean notificationEnabled, boolean ecampusConnected) {
+                           MajorInfo major, boolean notificationEnabled,
+                           @JsonFormat(pattern = "HH:mm") LocalTime todoAlarmTime, boolean ecampusConnected) {
 
     public record MajorInfo(Long id, String displayName, String collegeName) {
     }
@@ -19,6 +22,7 @@ public record UserResponse(Long id, String email, String name, String nickname, 
                 semester == null ? null : (semester + 1) / 2,  // 학년 (명세 3.3)
                 major == null ? null : new MajorInfo(major.getId(), major.getDisplayName(), major.getCollege().getName()),
                 user.isNotificationEnabled(),
+                user.getTodoAlarmTime(),
                 user.getEcampusFeedToken() != null);  // 토큰 자체는 내보내지 않는다
     }
 }

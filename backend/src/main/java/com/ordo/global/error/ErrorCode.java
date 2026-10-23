@@ -45,7 +45,10 @@ public enum ErrorCode {
     IMPORT_UNSUPPORTED_FORMAT(HttpStatus.BAD_REQUEST, "지원하지 않는 파일입니다. 엑셀(xlsx)로 저장해서 올려주세요."),
     IMPORT_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일이 너무 큽니다. 5MB 이하로 올려주세요."),
     IMPORT_UNRECOGNIZED(HttpStatus.BAD_REQUEST, "수강신청확인서나 전체 성적 보기 파일이 아니거나 내용을 읽지 못했습니다."),
-    IMPORT_STUDENT_MISMATCH(HttpStatus.FORBIDDEN, "내 학번의 파일이 아닙니다.");
+    IMPORT_STUDENT_MISMATCH(HttpStatus.FORBIDDEN, "내 학번의 파일이 아닙니다."),
+
+    // 일정 알림 (T11 웹푸시)
+    PUSH_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "서버에 알림(웹푸시) 설정이 되어 있지 않습니다.");
 
     private final HttpStatus status;
     private final String message;

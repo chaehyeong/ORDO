@@ -66,7 +66,7 @@ public class UserService {
     @Transactional
     public UserResponse updateSettings(Long userId, UserSettingsRequest request) {
         User user = getUser(userId);
-        user.changeNotificationEnabled(request.notificationEnabled());
+        user.changeSettings(request.notificationEnabled(), request.todoAlarmTime());
         return UserResponse.from(user);
     }
 

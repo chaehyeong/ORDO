@@ -11,6 +11,7 @@
 > T12 성적·시간표 파일 가져오기 추가: 2026-10-08 (백엔드 A)
 > T13 학사관리 평점 평균 추가: 2026-10-16 (백엔드 A)
 > T14 홈 오늘 일정에 e캠퍼스 과제 추가: 2026-10-16 (백엔드 A)
+> T11 일정 알림 웹푸시 추가: 2026-10-21 (백엔드 A)
 
 ---
 
@@ -26,7 +27,7 @@
 | T5 시간표 | ✅ 완료 (A) | `feat/timetable` (feat/schedule 위에서 작업) |
 | T10 e캠퍼스 과제 마감 연동 | ✅ 완료 (A) | `feat/ecampus` (feat/timetable 위에서 작업) |
 | T12 성적·시간표 파일 가져오기 (xlsx·csv·txt) | ✅ 완료 (A), PDF 는 받지 않음 | `feat/import` (feat/home 위에서 작업) |
-| T11 일정 알림 (카카오 → **웹푸시로 변경**) | ⏳ 계획 승인 대기 (A) | 계획: `docs/plans/T11-web-push.md` (프론트 할 일은 7절: 서비스워커·알림 켜기 버튼·manifest) |
+| T11 일정 알림 웹푸시 | ✅ 구현 (A), 휴대폰 확인은 배포 후 | `feat/web-push` (feat/home-assignments 위에서 작업). 프론트 할 일은 4장 "일정 알림 웹푸시" |
 | T8 홈 · T9 마이페이지 요약 | ✅ 완료 (A) | `feat/home` (feat/academic 위에서 작업) |
 | T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
 | T13 학사관리 평점 평균 (4.3 만점) | ✅ 완료 (A) | `feat/gpa` (feat/import 위에서 작업) |
@@ -97,6 +98,7 @@
 | IMPORT_TOO_LARGE | 400 | 5MB 초과 |
 | IMPORT_UNRECOGNIZED | 400 | 수강신청확인서·전체 성적 보기가 아님 |
 | IMPORT_STUDENT_MISMATCH | 403 | 내 학번의 파일이 아님 |
+| PUSH_NOT_CONFIGURED | 503 | 서버에 알림(웹푸시) 키가 없음 → 알림 기능 숨기거나 "준비 중" |
 | NOT_FOUND | 404 | 없는 경로·리소스 |
 | INTERNAL_ERROR | 500 | 서버 오류 (백엔드에 알려주세요) |
 
@@ -177,7 +179,7 @@ async function api(path, options = {}) {
 |---|---|---|
 | GET | /api/users/me | 프로필 |
 | PATCH | /api/users/me | 프로필 수정 — **보낸 필드만** 바뀜 |
-| PATCH | /api/users/me/settings | 알림 on/off `{ "notificationEnabled": false }` |
+| PATCH | /api/users/me/settings | 알림 on/off·할 일 알림 시각 `{ "notificationEnabled": false, "todoAlarmTime": "21:00" }` (보낸 것만 바뀜) |
 
 ```json
 // GET /api/users/me 응답 data (PATCH 두 개도 수정 후 이 모양 그대로 응답)
@@ -185,7 +187,8 @@ async function api(path, options = {}) {
   "studentNumber": "2026105632", "phone": "010-1234-5678", "profileImageUrl": null,
   "admissionYear": 2026, "currentSemester": 3, "grade": 2,
   "major": { "id": 35, "displayName": "시각디자인학과", "collegeName": "예술·디자인대학" },
-  "notificationEnabled": true, "ecampusConnected": false }   // ecampusConnected: e캠퍼스 피드 등록 여부
+  "notificationEnabled": true, "todoAlarmTime": "09:00",    // todoAlarmTime: 시간 없는 할 일의 알림 기준 시각(HH:mm)
+  "ecampusConnected": false }                               // ecampusConnected: e캠퍼스 피드 등록 여부
 
 // PATCH /api/users/me — 바꿀 것만 보낸다
 { "nickname": "하은", "currentSemester": 3 }
@@ -449,6 +452,51 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 
 ---
 
+### 일정 알림 웹푸시 `notification` (전부 🔒, T11)
+
+알람을 설정한 일정·할 일을 정해진 시각에 **기기 알림(푸시)** 으로 보낸다. 오르도 탭이 닫혀 있어도 온다. 기기(폰·PC 브라우저)마다 한 번 "알림 켜기"를 해야 한다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | /api/notifications/push/public-key | 구독에 쓰는 서버 공개키 `{ "publicKey": "BMx…" }` |
+| POST | /api/notifications/push/subscriptions | 브라우저 구독 정보 `subscription.toJSON()` 그대로 → **204** |
+| DELETE | /api/notifications/push/subscriptions | `{ "endpoint": sub.endpoint }` → **204** (로그아웃 때) |
+| POST | /api/notifications/push/test | 내 모든 기기로 테스트 알림 → `{ "sent": 1, "failed": 0 }` |
+
+- 서버에 알림 키가 없으면 전부 **503 `PUSH_NOT_CONFIGURED`** → "알림 기능 준비 중" 정도로 표시.
+- 언제 오나: 일정 시작 `alarmMinutesBefore` 분 전. **시간 없는 할 일**은 그날 `todoAlarmTime`(마이페이지 설정, 기본 09:00) 기준. 마이페이지 알림 스위치가 꺼져 있으면 안 온다(테스트 알림은 옴). 완료한 일은 안 온다.
+- 알림 내용: 제목 + `"10월 18일 (일) 09:00 · 예405"`(할 일은 `"… 할 일"`). 메모는 안 나간다. 누르면 오르도 홈(`/`)이 열린다.
+
+**프론트 할 일**
+
+1. `public/sw.js` (서비스워커, 아래 그대로):
+   ```js
+   self.addEventListener('push', (event) => {
+     const data = event.data ? event.data.json() : { title: '오르도' };
+     event.waitUntil(self.registration.showNotification(data.title, { body: data.body, tag: data.tag, data: { url: data.url } }));
+   });
+   self.addEventListener('notificationclick', (event) => {
+     event.notification.close();
+     event.waitUntil(clients.openWindow((event.notification.data && event.notification.data.url) || '/'));
+   });
+   ```
+2. 앱 시작 때 `navigator.serviceWorker.register('/sw.js')`.
+3. 마이페이지 "이 기기에서 알림 받기" 버튼 — **반드시 버튼 클릭 안에서** 권한을 묻는다(그냥 띄우면 브라우저가 막거나 사용자가 차단하면 다시 못 물음):
+   ```js
+   const toBytes = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+   const reg = await navigator.serviceWorker.ready;
+   if ((await Notification.requestPermission()) !== 'granted') return;   // 거부면 "브라우저 설정에서 알림 허용" 안내
+   const { data } = await api.get('/api/notifications/push/public-key');
+   const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: toBytes(data.publicKey) });
+   await api.post('/api/notifications/push/subscriptions', sub.toJSON());
+   ```
+4. 로그아웃 때: `const sub = await reg.pushManager.getSubscription(); if (sub) { await api.delete('/api/notifications/push/subscriptions', { data: { endpoint: sub.endpoint } }); await sub.unsubscribe(); }` (같은 PC 를 다른 사람이 쓰면 앞 사람 알림이 오지 않게).
+5. 로그인 후 앱을 열 때마다 `Notification.permission === 'granted'` 면 현재 구독을 다시 `POST`(같은 값이면 갱신만 된다. 서버 키가 바뀌었거나 구독이 만료됐을 때 자동 복구).
+6. 아이폰: `public/manifest.json`(`"display": "standalone"`, `name`, 아이콘) + `index.html` 에 `<link rel="manifest" href="/manifest.json">`. 아이폰은 **사파리 → 공유 → 홈 화면에 추가** 후 그 아이콘으로 열었을 때만 알림이 된다 → 버튼 옆에 안내 문구.
+7. 테스트 버튼(선택): `POST /api/notifications/push/test` 로 "이 기기에서 알림이 오는지" 바로 확인.
+
+- HTTPS 에서만 동작한다(`http://localhost` 는 예외로 허용). 휴대폰 확인은 배포 주소에서.
+
 ## 5. 프론트에 부탁할 수정 (SignUp.js / SignIn.js)
 
 1. **학과 목록이 하드코딩(value 1·2·3)** 이라 실제 전공 id 와 다르다. 그대로 보내면 엉뚱한 전공으로 가입되거나 `MAJOR_NOT_FOUND`.
@@ -473,6 +521,7 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 - T10: Flyway `V10__add_ecampus_feed_token.sql`(users 에 칸 하나), 공용 `ErrorCode` 에 `ECAMPUS_FEED_UNAVAILABLE`, `AGENTS.md` 패키지 목록에 `ecampus` 추가. `User` 에 `ecampusFeedToken` 필드가 생겼다(H2 테스트는 ddl-auto 라 영향 없음).
 - T6·T7(원래 B 담당, A 가 대신 진행): 공용 `Term` 선언 순서를 FIRST·SUMMER·SECOND·WINTER(시간 순)로 바꿔 정렬에 쓴다(DB 는 이름 저장이라 영향 없음). B 의 `CourseRepository` 에 `findFirstByUnitNameAndCourseCodeOrderByIdAsc` 하나 추가. 홈·마이페이지는 `AcademicProgressService.findSummary(userId)` 를 쓴다.
 - T12: 공용 `build.gradle` 에 Apache POI(`poi-ooxml` 5.5.1), `application.yml` 에 multipart 설정(5MB·메모리 처리), `ErrorCode` 4개(IMPORT_*), `GlobalExceptionHandler` 에 업로드 크기 초과 처리, `AGENTS.md` 패키지 목록(importer·notification). 이수내역 bulk 에 `replaceTerms`·`keepClassification`, 시간표 bulk API 추가. 테스트 사본은 `src/test/resources/import/`(익명).
+- T11: Flyway `V11__add_web_push.sql`(`push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·인덱스, `users.todo_alarm_time`), 공용 `ErrorCode` 에 `PUSH_NOT_CONFIGURED`(카카오 코드는 만들지 않음), `application.yml` 에 `app.webpush.*`·`app.notification.scheduler-enabled`(값 없이 환경변수 이름만). 새 의존성 없음(JDK 암호화 + 기존 jjwt). `@EnableScheduling` 은 `notification/config/SchedulingConfig`. `UserSettingsRequest` 의 `notificationEnabled` 가 필수 → 선택으로 바뀜.
 - 명세와 다르게/새로 정한 것은 `BACKEND_SPEC.md` 4장·4.1·4.2·8장에 반영해 두었다.
 
 ---
