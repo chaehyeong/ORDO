@@ -7,6 +7,7 @@
 > T5 시간표 API 추가: 2026-10-06 (백엔드 A)
 > e캠퍼스 과제 마감 연동 추가: 2026-10-06 (백엔드 A)
 > T6·T7 학사관리(이수내역·이수현황) 추가: 2026-10-07 (백엔드 A, B 대신 진행)
+> T8 홈·T9 마이페이지 요약 추가, AI 추천 보류: 2026-10-07 (백엔드 A)
 
 ---
 
@@ -21,7 +22,7 @@
 | T4 일정·할 일 | ✅ 완료 (A) | `feat/schedule` · PR #3 |
 | T5 시간표 | ✅ 완료 (A) | `feat/timetable` (feat/schedule 위에서 작업) |
 | T10 e캠퍼스 과제 마감 연동 | ✅ 완료 (A) | `feat/ecampus` (feat/timetable 위에서 작업) |
-| T8 홈 · T9 마이페이지 요약 | ⏳ 예정 (A) | |
+| T8 홈 · T9 마이페이지 요약 | ✅ 완료 (A) | `feat/home` (feat/academic 위에서 작업) |
 | T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
@@ -31,6 +32,8 @@
 **T4 검증 (2026-09-28)**: 일정 단위 테스트 11개 통과. 서버를 띄워 일정 API(생성·정렬·기간 제한·시간 검증·남의 일정 404·삭제 등) 31개를 직접 호출해 확인. T3 가 들어간 master 를 합친 뒤 전체 테스트 **65개 통과**(T3 까지 54개 + 일정 11개).
 
 **T5 검증 (2026-10-06)**: 학기 판별·시간표 단위 테스트 12개 추가, 전체 **77개 통과**. 서버를 띄워 시간표 API(겹침 409·딱 붙은 시간 허용·현재 학기 기본값·입력 검증·남의 칸 404·삭제 등) 27개를 직접 호출해 확인.
+
+**T8·T9 검증 (2026-10-07)**: 홈·마이페이지 요약 단위 테스트 7개 추가, 전체 **113개 통과**. 서버를 띄워 월요일 시작 7칸·오늘 표시·수업+일정 타임라인 정렬·할 일·점 종류·졸업 진행률·date 지정·마이페이지 요약·e캠퍼스 실패 시에도 홈 정상 등 12개를 직접 호출해 확인.
 
 **T6·T7 검증 (2026-10-07)**: 이수내역·이수현황 단위 테스트 17개 추가(명세 5장 필수 7케이스 포함), 전체 **106개 통과**. 서버를 띄워 실제 시드로 CSE204 자동 판별(컴공 → 전공필수)·분류/영역 누락 거부·bulk 전체 롤백·학기 순 정렬·F 제외·재수강 1회·교양 필수 체크·2025학번 근사·남의 과목 404 등 21개를 직접 호출해 확인.
 
@@ -174,6 +177,38 @@ async function api(path, options = {}) {
 
 - `grade`(학년) = (currentSemester + 1) / 2, 학기를 모르면 null.
 - 홈 인사말은 `nickname` 이 없으면 `name` 을 쓴다.
+
+### 홈 `home` (🔒)
+
+`GET /api/home?date=2026-10-07` — date 생략 시 오늘. 홈 화면에 필요한 걸 한 번에 준다.
+
+```json
+{ "greetingName": "하은",                       // 닉네임 없으면 이름
+  "week": [ { "date": "2026-10-05", "dayOfWeek": 1, "today": false, "categories": ["LECTURE", "PERSONAL"] },
+            … 월~일 7칸 … ],                   // 오늘은 today: true. 점 순서 LECTURE·ASSIGNMENT·PERSONAL
+  "timeline": [ { "source": "TIMETABLE", "id": 3, "title": "타이포그래피 I", "category": "LECTURE",
+                  "startTime": "09:00", "endTime": "10:30", "location": "예405" },
+                { "source": "SCHEDULE", "id": 51, "title": "세시 팀플 모임", "category": "PERSONAL",
+                  "startTime": "12:00", "endTime": null, "location": null } ],
+  "todos": [ { "id": 60, "title": "자료 조사", "category": "ASSIGNMENT", "done": false } ],
+  "graduation": { "earned": 102, "required": 130, "percent": 78.4, "remaining": 28 } }   // 학사 프로필 미완성이면 null
+```
+
+- 주간일정은 **월~일**(최종 디자인). 점은 그날 일정 종류 + 시간표 수업(LECTURE) + **e캠퍼스 과제 마감(ASSIGNMENT)**. e캠퍼스가 응답하지 않으면 그 점만 빠진다.
+- `timeline` 항목을 누르면 `source` 로 구분해 시간표(`/api/timetables`) 또는 일정(`/api/schedules/{id}`)으로 이동. "일정 수정하기" 버튼은 캘린더로.
+- `todos` 체크박스는 `PATCH /api/schedules/{id}/done` 을 부르고 홈을 다시 불러오면 된다.
+- AI 추천 카드는 **보류**(응답에 없음).
+
+### 마이페이지 요약 (🔒)
+
+`GET /api/users/me/summary`
+
+```json
+{ "term": { "year": 2026, "term": "SECOND", "label": "2026년 2학기" },
+  "courseCount": 6,              // 이번 학기 시간표의 서로 다른 과목 수
+  "pendingAssignmentCount": 3,   // 오늘 포함 이후, 완료 안 한 '과제' 일정 수 (e캠퍼스 마감은 제출 여부를 몰라 안 셈)
+  "credits": { "earned": 18, "required": 130, "percent": 13.8 } }   // 학사 프로필 미완성이면 null
+```
 
 ### 학사 기준정보 `catalog` (로그인 불필요)
 

@@ -12,6 +12,10 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     Optional<Schedule> findByIdAndUserId(Long id, Long userId);
 
+    /** 마이페이지 '남은 과제 수': from 이후 완료 안 한 그 카테고리 일정 수 */
+    long countByUserIdAndCategoryAndDoneFalseAndScheduleDateGreaterThanEqual(
+            Long userId, ScheduleCategory category, LocalDate from);
+
     /** category 가 null 이면 전체. 화면 정렬은 서비스에서 한다 */
     @Query("""
             SELECT s FROM Schedule s

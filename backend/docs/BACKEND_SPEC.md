@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-10-07 (T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic 세부 규칙, e캠퍼스 연동 추가)
+> 최종 갱신: 2026-10-07 (T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
 
 ---
 
@@ -37,7 +37,7 @@
 |---|---|---|
 | 랜딩 | 서비스 소개, 로그인/회원가입 버튼 | 없음 |
 | 로그인·회원가입 | 가입: 이름·전화번호·이메일·비밀번호(+확인)·학과·학번 / 로그인: 이메일·비밀번호·'로그인 상태 유지' 체크 (프론트 `SignUp.js`, `SignIn.js`) | `POST /api/auth/*`, `GET /api/catalog/majors?admissionYear=` (학번 앞 4자리로 조회) |
-| **홈** | "안녕하세요 (닉네임)님", 주간일정(요일·날짜·카테고리 점), 오늘일정 타임라인(시간·제목·장소·카테고리), AI 오르도 추천 카드, 졸업 진행률(78%, 102/130, 남은 학점), 오늘 할 일 | `GET /api/home` |
+| **홈** | "안녕하세요 (닉네임)님", 주간일정(요일·날짜·카테고리 점), 오늘일정 타임라인(시간·제목·장소·카테고리), ~~AI 오르도 추천 카드~~(보류, 최종 디자인에도 없음), 졸업 진행률(78%, 102/130, 남은 학점), 오늘 할 일 | `GET /api/home` |
 | 캘린더 | 연/월 선택, 오늘 버튼, 월 달력, +일정추가, 날짜 클릭 → 그날 일정 상세·추가·삭제, e캠퍼스 과제 마감 표시 | `GET/POST/PATCH/DELETE /api/schedules`, `GET /api/ecampus/events` |
 | 일정(할 일) 추가 폼 | 제목, 카테고리, 날짜, 시작~종료 시간, 알람 | `POST /api/schedules` |
 | 시간표 | 학기 선택(2026년 2학기), 시간표 편집, 월~금 09:00~19:00 격자 | `/api/timetables` |
@@ -284,6 +284,7 @@ enum Classification {             // 이수구분 (학교 코드)
   "courseCount": 6,          // 이번 학기 시간표의 서로 다른 과목명 수
   "pendingAssignmentCount": 3, // 오늘 이후 done=false 인 ASSIGNMENT 일정 수
   "credits": { "earned": 18, "required": 130, "percent": 13.8 } }   // 학사 프로필 미완성이면 credits = null
+// term 은 현재 학기(3.3). pendingAssignmentCount 는 오늘 포함, e캠퍼스 마감은 제출 여부를 몰라 세지 않는다
 ```
 
 ### 4.3 학사 기준정보 `catalog` (읽기 전용, 인증 불필요)
@@ -483,13 +484,14 @@ enum Classification {             // 이수구분 (학교 코드)
       "startTime": "12:00", "endTime": null, "location": null }
   ],
   "todos": [ { "id": 60, "title": "자료 조사", "category": "ASSIGNMENT", "done": false } ],  // 오늘 날짜의 시간 없는 일정
-  "graduation": { "earned": 102, "required": 130, "percent": 78.4, "remaining": 28 },          // 프로필 미완성이면 null
-  "recommendation": { "message": "오늘은 디자인씽킹 수업 과제가 마감 2일 전이에요!", "scheduleId": 42 }  // 없으면 null
+  "graduation": { "earned": 102, "required": 130, "percent": 78.4, "remaining": 28 }           // 프로필 미완성이면 null
 }
 ```
 
-- `week.categories`: 그날의 일정 카테고리(중복 제거) + 그 요일에 시간표 수업이 있으면 `LECTURE`.
-- `recommendation`(MVP는 규칙 기반): 오늘~7일 이내, `done=false` 인 `ASSIGNMENT` 중 가장 마감이 가까운 것 → `"오늘은 {제목} 과제가 마감 {D}일 전이에요!"` (D=0이면 "오늘 마감이에요!"). 없으면 null. **3차에 LLM으로 교체**.
+- `week`: `date` 가 속한 주 **월~일**(최종 디자인). `today` 는 `date`(생략 시 오늘)와 같은 날. 학기는 날짜마다 `AcademicTerm.of` 로 본다.
+- `week.categories`: 그날의 일정 카테고리(중복 제거) + 그 요일에 시간표 수업이 있으면 `LECTURE` + **e캠퍼스 과제 마감(4.8)이 있으면 `ASSIGNMENT`**. 순서는 LECTURE·ASSIGNMENT·PERSONAL. e캠퍼스를 못 받아 오면 그 점만 빠지고 홈은 정상 응답.
+- `timeline`: 시작시간 순, 같은 시각이면 시간표 수업 먼저. `todos`: 오늘 날짜의 시간 없는 일정(완료한 것도 `done: true` 로 포함). e캠퍼스 마감은 제출 여부를 몰라 할 일에는 넣지 않는다.
+- ~~`recommendation`~~ **보류(2026-10-07)**: 최종 디자인에 카드가 없어 응답에서 뺐다. 3차 LLM 추천 때 규칙(오늘~7일 이내 미완료 과제 중 가장 가까운 것)과 함께 다시 넣는다.
 
 
 ### 4.8 e캠퍼스 과제 마감 `ecampus`
@@ -588,8 +590,8 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T5 ✅ | timetable CRUD | A | 겹침 409, 현재 학기 기본값 |
 | T6 ✅ | completed-courses CRUD + 이수구분 자동판별 | A (B 대신) | CSE204 입력 시 컴공 학생은 MAJOR_REQUIRED 자동 |
 | T7 ✅ | progress 계산 + 단위 테스트 | A (B 대신) | 5장 테스트 케이스 전부 통과 |
-| T8 | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
-| T9 | users/me/summary | A 또는 B | |
+| T8 ✅ | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
+| T9 ✅ | users/me/summary | A | |
 | T10 ✅ | e캠퍼스 피드 연동 (4.8) | A | 피드 주소 검증, 10분 캐시, 실패 시 예전 데이터, 토큰 비노출 |
 
 ### AI에게 줄 프롬프트 예시 (그대로 복사해서 사용)
