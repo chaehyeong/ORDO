@@ -36,7 +36,10 @@ public enum ErrorCode {
     // 이수내역
     COMPLETED_COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "이수 과목을 찾을 수 없습니다."),
     CLASSIFICATION_REQUIRED(HttpStatus.BAD_REQUEST, "이수구분을 입력해 주세요."),
-    DISTRIBUTION_AREA_REQUIRED(HttpStatus.BAD_REQUEST, "배분이수 영역(1~5)을 입력해 주세요.");
+    DISTRIBUTION_AREA_REQUIRED(HttpStatus.BAD_REQUEST, "배분이수 영역(1~5)을 입력해 주세요."),
+
+    // e캠퍼스 연동
+    ECAMPUS_FEED_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "e캠퍼스 일정을 가져오지 못했습니다. 캘린더 피드 주소를 다시 등록해 보세요.");
 
     private final HttpStatus status;
     private final String message;

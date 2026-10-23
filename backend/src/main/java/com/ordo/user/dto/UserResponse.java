@@ -5,7 +5,7 @@ import com.ordo.user.domain.User;
 
 public record UserResponse(Long id, String email, String name, String nickname, String studentNumber, String phone,
                            String profileImageUrl, Integer admissionYear, Integer currentSemester, Integer grade,
-                           MajorInfo major, boolean notificationEnabled) {
+                           MajorInfo major, boolean notificationEnabled, boolean ecampusConnected) {
 
     public record MajorInfo(Long id, String displayName, String collegeName) {
     }
@@ -18,6 +18,7 @@ public record UserResponse(Long id, String email, String name, String nickname, 
                 semester,
                 semester == null ? null : (semester + 1) / 2,  // 학년 (명세 3.3)
                 major == null ? null : new MajorInfo(major.getId(), major.getDisplayName(), major.getCollege().getName()),
-                user.isNotificationEnabled());
+                user.isNotificationEnabled(),
+                user.getEcampusFeedToken() != null);  // 토큰 자체는 내보내지 않는다
     }
 }

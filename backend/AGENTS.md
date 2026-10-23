@@ -23,7 +23,7 @@ Java 17 · Spring Boot 3.3.5 · Spring Data JPA · Spring Security + JWT(jjwt 0.
 5. 명세에 없는 기능·엔드포인트·필드를 임의로 추가하지 않는다.
 
 ## 코드 규칙 (자세한 건 명세서 2장)
-- 패키지: `com.ordo.{global|auth|user|catalog|academic|schedule|timetable|home}`, 각 도메인 안에 `controller / service / repository / domain / dto`.
+- 패키지: `com.ordo.{global|auth|user|catalog|academic|schedule|timetable|home|ecampus}`, 각 도메인 안에 `controller / service / repository / domain / dto`.
 - 응답은 항상 `ApiResponse<T>` (`{success, data, error}`), 예외는 `BusinessException(ErrorCode)` → `GlobalExceptionHandler`. 새 에러는 명세서 2.5 표에 있는 코드만 사용(추가 필요 시 표부터 갱신).
 - 로그인 사용자: 컨트롤러에서 `@LoginUser Long userId`. 남의 데이터 접근은 **404**.
 - 엔티티: setter 금지, `@NoArgsConstructor(access = PROTECTED)`, 연관관계는 `@ManyToOne(fetch = LAZY)` 단방향만, enum은 `@Enumerated(EnumType.STRING)`, 사용자 데이터는 `BaseTimeEntity` 상속.

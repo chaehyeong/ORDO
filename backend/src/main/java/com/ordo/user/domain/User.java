@@ -49,6 +49,7 @@ public class User extends BaseTimeEntity {
 
     private Integer currentSemester;
     private boolean notificationEnabled;
+    private String ecampusFeedToken;  // Canvas 캘린더 피드 토큰. 비밀값이라 응답·로그에 내보내지 않는다
 
     /** 이메일 회원가입 (password 는 BCrypt 로 인코딩된 값) */
     @Builder
@@ -83,5 +84,10 @@ public class User extends BaseTimeEntity {
 
     public void changeNotificationEnabled(boolean notificationEnabled) {
         this.notificationEnabled = notificationEnabled;
+    }
+
+    /** null 이면 연결 해제 */
+    public void changeEcampusFeedToken(String ecampusFeedToken) {
+        this.ecampusFeedToken = ecampusFeedToken;
     }
 }
