@@ -317,7 +317,7 @@ general-education.data: { admissionYear, basisYear, approximate,
   "endTime": "15:30",           // 선택. 넣으면 startTime 필수, startTime 보다 늦어야 함
   "location": "예405",          // 선택, 100자 이하
   "memo": null,                 // 선택, 1000자 이하
-  "alarmMinutesBefore": 30 }    // 선택: null(없음) / 10 / 30 / 60 / 1440(하루 전). 그 외 값은 INVALID_INPUT
+  "alarmMinutesBefore": 30 }    // 선택: null(없음) / 10 / 30 / 60 / 1440(하루 전) / 0(끄기, 응답은 null). 그 외 값은 INVALID_INPUT
 
 // 응답 data (생성·조회·수정·완료 공통)
 { "id": 42, "title": "팀플 모임", "category": "PERSONAL", "date": "2026-10-18",
@@ -328,8 +328,9 @@ general-education.data: { admissionYear, basisYear, approximate,
 - `type`: `startTime` 이 있으면 `EVENT`(일정 → 캘린더·홈 타임라인), 없으면 `TODO`(할 일 → 홈 '오늘 할 일' 체크박스).
 - 목록 정렬: 날짜 → 시작시간 순, 시간 없는 할 일은 그날 맨 뒤. `category` 를 생략하거나 비우면 전체.
 - 조회 기간: `from`·`to` 필수, 양 끝 포함 **최대 62일**(예: 10-01~12-01). 달력 앞뒤 주까지 한 번에 받아도 된다.
-- **PATCH 로 값을 지울 수는 없다**(null = 그대로). 알람 끄기, 시간 지우기(일정 → 할 일), 장소·메모 지우기는 삭제 후 다시 만든다.
-- 알람은 저장만 된다. 실제 알림 발송은 2차(카톡).
+- **알람 끄기는 `PATCH { "alarmMinutesBefore": 0 }`** → 응답 `alarmMinutesBefore: null`(2026-10-23).
+- 그 밖에는 **PATCH 로 값을 지울 수는 없다**(null = 그대로). 시간 지우기(일정 → 할 일), 장소·메모 지우기는 삭제 후 다시 만든다.
+- 알람을 설정하면 그 시각에 웹푸시 알림이 간다(T11, 아래 "일정 알림 웹푸시" 절). 기기에서 알림 켜기를 해야 받는다.
 
 ### 시간표 `timetable` (전부 🔒)
 

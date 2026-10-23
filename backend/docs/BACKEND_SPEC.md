@@ -212,7 +212,7 @@ enum Classification {             // 이수구분 (학교 코드)
 ### 3.3 도메인 규칙
 
 - **일정 vs 할 일**: 같은 `schedules` 테이블. `start_time` 이 있으면 "일정"(홈 타임라인·캘린더), 없으면 "할 일"(홈 '오늘 할 일' 체크박스). `end_time` 이 있으면 `start_time` 필수, `end_time > start_time`.
-- **알람**: `alarm_minutes_before` 값은 `null`(없음), 10, 30, 60, 1440(하루 전) 중 하나. **T11 웹푸시로 발송**(4.10). 시간 없는 할 일은 사용자의 `todo_alarm_time`(기본 09:00) 기준.
+- **알람**: `alarm_minutes_before` 값은 `null`(없음), 10, 30, 60, 1440(하루 전) 중 하나. 요청에서 **`0` 은 알람 끄기**(null 로 저장, PATCH 의 null 은 '그대로'라서 따로 둠, 2026-10-23). **T11 웹푸시로 발송**(4.10). 시간 없는 할 일은 사용자의 `todo_alarm_time`(기본 09:00) 기준.
 - **현재 학기 판별**(`AcademicTerm.of(LocalDate)`): 3~8월 → 그해 FIRST, 9~12월 → 그해 SECOND, 1~2월 → **전년도** SECOND. 계절학기는 사용자가 직접 선택할 때만.
 - **학년**: `grade = (current_semester + 1) / 2` (current_semester null이면 null).
 - **전공 목록(회원가입)**: 선택한 입학년도에 `graduation_requirements` 행이 있는 전공만, `convergence = false` 만 (융합전공은 주전공 불가).
@@ -372,8 +372,8 @@ enum Classification {             // 이수구분 (학교 코드)
 ```
 
 - 기간 조회: `from`·`to` 필수(없으면 `INVALID_INPUT`), 양 끝 포함 62일까지(예: 10-01~12-01). 넘거나 `from > to` 면 `INVALID_TIME_RANGE`. `category` 생략·빈 값이면 전체.
-- PATCH 는 4.2 와 같은 규칙: 생략·null 이면 그대로, **값을 비우는 기능은 없음**(알람 끄기·시간 지우기는 삭제 후 재생성). 바꾼 뒤의 값으로 3.3 시간 규칙을 다시 검사.
-- `alarmMinutesBefore` 가 3.3 목록 밖의 값이면 `INVALID_INPUT`.
+- PATCH 는 4.2 와 같은 규칙: 생략·null 이면 그대로, **값을 비우는 기능은 없음**(시간 지우기는 삭제 후 재생성). 예외로 **알람 끄기는 `"alarmMinutesBefore": 0`**(응답은 `null`). 바꾼 뒤의 값으로 3.3 시간 규칙을 다시 검사.
+- `alarmMinutesBefore` 가 3.3 목록(+ 끄기 `0`) 밖의 값이면 `INVALID_INPUT`. 생성 때 `0` 은 알람 없음과 같다.
 - `PATCH /{id}/done` 은 값을 뒤집지 않고 보낸 `done` 값으로 설정한다(여러 번 보내도 결과 같음).
 - 남의 일정 → `SCHEDULE_NOT_FOUND`(404). 시간은 JSON `"HH:mm"`(응답 DTO 의 `@JsonFormat`).
 

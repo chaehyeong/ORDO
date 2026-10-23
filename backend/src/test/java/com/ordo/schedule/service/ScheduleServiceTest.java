@@ -134,6 +134,29 @@ class ScheduleServiceTest {
     }
 
     @Test
+    void alarmZeroTurnsAlarmOff() {
+        Schedule schedule = Schedule.builder().user(user()).title("팀플 모임").category(ScheduleCategory.PERSONAL)
+                .scheduleDate(DAY).startTime(at(12)).alarmMinutesBefore(30).build();
+        given(scheduleRepository.findByIdAndUserId(51L, 1L)).willReturn(Optional.of(schedule));
+
+        scheduleService.update(1L, 51L, new ScheduleUpdateRequest(null, null, null, null, null, null, null, 60));
+        assertThat(schedule.getAlarmMinutesBefore()).isEqualTo(60);
+        scheduleService.update(1L, 51L, new ScheduleUpdateRequest(null, null, null, null, null, null, null, null));
+        assertThat(schedule.getAlarmMinutesBefore()).isEqualTo(60);  // null 은 그대로
+        ScheduleResponse off = scheduleService.update(1L, 51L, new ScheduleUpdateRequest(null, null, null, null, null, null, null, 0));
+        assertThat(schedule.getAlarmMinutesBefore()).isNull();       // 0 = 알람 끄기 → null 저장
+        assertThat(off.alarmMinutesBefore()).isNull();
+    }
+
+    @Test
+    void createWithAlarmZeroHasNoAlarm() {
+        given(userRepository.getReferenceById(1L)).willReturn(user());
+        given(scheduleRepository.save(any(Schedule.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        assertThat(scheduleService.create(1L, createRequest(at(9), null, 0)).alarmMinutesBefore()).isNull();
+    }
+
+    @Test
     void updateValidatesMergedTimes() {
         Schedule schedule = schedule("팀플 모임", DAY, at(12), at(13));
         given(scheduleRepository.findByIdAndUserId(51L, 1L)).willReturn(Optional.of(schedule));

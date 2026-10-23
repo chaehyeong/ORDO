@@ -48,6 +48,7 @@
 | 4. 스케줄러 | ✅ | `NotificationService.sendDue`(1분, 10분 창, 한국 시간), `ScheduleRepository.findAlarmCandidates`·`claimAlarm`, `Schedule.alarmSentFor`(엔티티 저장이 덮지 않게 insertable/updatable=false) | 발송 시각 계산 5가지, 창 경계, 선점 0 이면 안 보냄, **H2 로 선점 UPDATE 1→0·수정 동시 저장에도 유지·후보 조건** | |
 | 5. 로컬 확인 | 🔶 | 키 없이 503·설정 API, 임시 키로 공개키·구독·거절·테스트 발송(가짜 기기에 FCM 이 410 → 구독 삭제)·삭제 | 22개 OK, 서버 로그에 endpoint·키 없음. **실제 푸시 서비스 종단 확인(2026-10-23)**: 브라우저 대신 Firefox 와 같은 프로토콜로 Mozilla autopush 에 등록(서버 공개키로 VAPID 강제) → 구독 저장 → 테스트 발송 수신·복호화 → 알람 일정의 스케줄러 자동 발송 수신(제목·"10월 23일 (금) 13:41 · 예405", 메모 없음) → 90초 동안 중복 없음 → 구독 삭제, 18개 OK (스크립트는 스크래치 `PushE2E.java`, 저장소 밖) | PC 크롬(FCM) 실제 화면 알림(사용자, 임시 페이지) |
 | 6. 문서 | ✅ | 명세 2.1·2.5·3.2·3.3·4.2·4.10·7·8·9장, FRONTEND_GUIDE(진행표·에러·설정·웹푸시 절·B 참고), 계획 14절 | | 커밋 승인 |
+| 6b. 알람 끄기 | ✅ | 2026-10-23 사용자 결정: 일정 `alarmMinutesBefore: 0` = 알람 끄기(null 저장). PATCH 의 null 은 '그대로'라 끌 방법이 없었음. 명세 3.3·4.4, FRONTEND_GUIDE 일정 절(옛 "저장만, 카톡" 문구도 정리) | `ScheduleServiceTest` 2개(PATCH 60→null 유지→0 끄기, 생성 0 = 알람 없음) | 커밋 승인 |
 | 7. 휴대폰 | ⏳ | | | HTTPS 배포 후 안드로이드·아이폰 |
 
 ## T13 학사관리 평점 평균 (4.3 만점)

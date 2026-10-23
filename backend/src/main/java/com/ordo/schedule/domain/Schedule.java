@@ -32,6 +32,7 @@ import lombok.NoArgsConstructor;
 public class Schedule extends BaseTimeEntity {
 
     private static final Set<Integer> ALARM_MINUTES = Set.of(10, 30, 60, 1440);
+    private static final int ALARM_OFF = 0;  // PATCH 에서 알람 끄기 (null 은 '그대로'라서 따로 둔다). 저장은 null
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -69,7 +70,7 @@ public class Schedule extends BaseTimeEntity {
         this.endTime = endTime;
         this.location = location;
         this.memo = memo;
-        this.alarmMinutesBefore = alarmMinutesBefore;
+        this.alarmMinutesBefore = offToNull(alarmMinutesBefore);
         validate();
     }
 
@@ -83,12 +84,16 @@ public class Schedule extends BaseTimeEntity {
         if (endTime != null) this.endTime = endTime;
         if (location != null) this.location = location;
         if (memo != null) this.memo = memo;
-        if (alarmMinutesBefore != null) this.alarmMinutesBefore = alarmMinutesBefore;
+        if (alarmMinutesBefore != null) this.alarmMinutesBefore = offToNull(alarmMinutesBefore);
         validate();
     }
 
     public void changeDone(boolean done) {
         this.done = done;
+    }
+
+    private static Integer offToNull(Integer alarmMinutesBefore) {
+        return alarmMinutesBefore != null && alarmMinutesBefore == ALARM_OFF ? null : alarmMinutesBefore;
     }
 
     // 종료 시간이 있으면 시작 시간 필수 + 종료 > 시작. 알람은 null/10/30/60/1440 (명세 3.3)
