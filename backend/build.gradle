@@ -41,6 +41,8 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    // xlsx 읽기 (T12 성적·시간표 파일 가져오기)
+    implementation 'org.apache.poi:poi-ooxml:5.5.1'
     // MySQL 드라이버
     runtimeOnly 'com.mysql:mysql-connector-j'
     // Lombok (보일러플레이트 축소)

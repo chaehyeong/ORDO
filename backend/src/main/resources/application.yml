@@ -4,6 +4,12 @@ spring:
   # 비밀값(DB 비밀번호, JWT 키)은 git에 올리지 않는 application-local.yml 에 둔다. 없으면 아래 기본값 사용.
   config:
     import: optional:application-local.yml
+  # 파일 가져오기(T12): 5MB 까지, 디스크 임시파일 없이 메모리에서만 처리
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+      file-size-threshold: 6MB
 
   datasource:
     url: jdbc:mysql://localhost:3306/ordo?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
@@ -28,3 +34,10 @@ app:
     refresh-token-validity-seconds: 1209600   # 14일
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+  # 일정 알림 웹푸시(T11). 키 값은 커밋하지 않고 환경변수로만 넣는다. 없으면 알림 API 는 503, 서버는 정상 시작
+  webpush:
+    public-key: ${WEBPUSH_PUBLIC_KEY:}     # Base64url 87자 (공개해도 되는 값)
+    private-key: ${WEBPUSH_PRIVATE_KEY:}   # Base64url 43자 (비밀)
+    subject: ${WEBPUSH_SUBJECT:}           # mailto:팀메일 또는 https://배포주소 (localhost 불가)
+  notification:
+    scheduler-enabled: ${NOTIFICATION_SCHEDULER_ENABLED:true}   # 1분마다 발송. false 면 끔

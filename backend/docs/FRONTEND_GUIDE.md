@@ -3,6 +3,15 @@
 > 프론트 개발자와 백엔드 B 검수용. 기준 문서는 `docs/BACKEND_SPEC.md` 이고, 이 문서는 **지금 바로 쓸 수 있는 API** 와 **프론트에 부탁할 수정**만 모았다.
 > 작성: 2026-09-24 (백엔드 A)
 > T3 연동 설명 갱신: 2026-10-06 (`feat/catalog`, `feat/auth` 기반)
+> T4 일정 API 추가: 2026-09-28 (백엔드 A)
+> T5 시간표 API 추가: 2026-10-06 (백엔드 A)
+> e캠퍼스 과제 마감 연동 추가: 2026-10-06 (백엔드 A)
+> T6·T7 학사관리(이수내역·이수현황) 추가: 2026-10-07 (백엔드 A, B 대신 진행)
+> T8 홈·T9 마이페이지 요약 추가, AI 추천 보류: 2026-10-07 (백엔드 A)
+> T12 성적·시간표 파일 가져오기 추가: 2026-10-08 (백엔드 A)
+> T13 학사관리 평점 평균 추가: 2026-10-16 (백엔드 A)
+> T14 홈 오늘 일정에 e캠퍼스 과제 추가: 2026-10-16 (백엔드 A)
+> T11 일정 알림 웹푸시 추가: 2026-10-21 (백엔드 A)
 
 ---
 
@@ -14,12 +23,35 @@
 | T1 회원가입·로그인·토큰 재발급·로그아웃 | ✅ 완료 | `feat/auth` (feat/global 위에서 작업) |
 | T2 내 정보 조회·수정·알림 설정 | ✅ 완료 | `feat/auth` |
 | T3 전공 목록 등 catalog 조회 API | ✅ 구현·전체 테스트 완료 (B) | `feat/catalog` (실제 MySQL 부팅·시드 조회 포함) |
-| T4 일정 · T5 시간표 · T8 홈 · T9 마이페이지 요약 | ⏳ 예정 (A) | |
-| T6·T7 이수내역 · 이수현황 계산 | ⏳ 예정 (B) | |
+| T4 일정·할 일 | ✅ 완료 (A) | `feat/schedule` · PR #3 |
+| T5 시간표 | ✅ 완료 (A) | `feat/timetable` (feat/schedule 위에서 작업) |
+| T10 e캠퍼스 과제 마감 연동 | ✅ 완료 (A) | `feat/ecampus` (feat/timetable 위에서 작업) |
+| T12 성적·시간표 파일 가져오기 (xlsx·csv·txt) | ✅ 완료 (A), PDF 는 받지 않음 | `feat/import` (feat/home 위에서 작업) |
+| T11 일정 알림 웹푸시 | ✅ 구현 (A), 휴대폰 확인은 배포 후 | `feat/web-push` (feat/home-assignments 위에서 작업). 프론트 할 일은 4장 "일정 알림 웹푸시" |
+| T8 홈 · T9 마이페이지 요약 | ✅ 완료 (A) | `feat/home` (feat/academic 위에서 작업) |
+| T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
+| T13 학사관리 평점 평균 (4.3 만점) | ✅ 완료 (A) | `feat/gpa` (feat/import 위에서 작업) |
+| T14 홈 오늘 일정에 e캠퍼스 과제 | ✅ 완료 (A) | `feat/home-assignments` (feat/gpa 위에서 작업) |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
 **T3 검증 (2026-10-06)**: 조회·실제 시드 데이터 테스트 16개, HTTP 응답·입력 검증 17개, 기존 인증·회원 테스트 19개, 실제 MySQL의 애플리케이션 부팅·초기 데이터 조회 2개로 전체 **54개 통과**. 실행 서버에서도 컴퓨터공학과 교과목 80개와 CSE204 자료구조 조회를 확인했다. 재현 명령과 범위는 7장 참고.
+
+**T4 검증 (2026-09-28)**: 일정 단위 테스트 11개 통과. 서버를 띄워 일정 API(생성·정렬·기간 제한·시간 검증·남의 일정 404·삭제 등) 31개를 직접 호출해 확인. T3 가 들어간 master 를 합친 뒤 전체 테스트 **65개 통과**(T3 까지 54개 + 일정 11개).
+
+**T5 검증 (2026-10-06)**: 학기 판별·시간표 단위 테스트 12개 추가, 전체 **77개 통과**. 서버를 띄워 시간표 API(겹침 409·딱 붙은 시간 허용·현재 학기 기본값·입력 검증·남의 칸 404·삭제 등) 27개를 직접 호출해 확인.
+
+**T12 검증 (2026-10-08)**: 익명 처리한 실제 샘플(이름·학번·교수명 가명) xlsx·csv·txt 로 단위 테스트 20개 추가, 전체 **133개 통과**. 수강신청확인서 6과목 18학점·시간표 7칸·시간 없는 과목 경고 1건, 성적표 8과목 20학점·2026년 1학기, **세 형식 결과 동일**. 서버에서 업로드 → 저장 → 같은 파일 재저장(중복 없음) → 이수현황 20학점 반영, 남의 학번 403·이미지 거절·5MB 초과 등 19개 확인, 서버 로그에 개인정보 없음.
+
+**T14 검증 (2026-10-16)**: 홈 단위 테스트 1개 추가·기존 3개 보강, 전체 **146개 통과**(같은 15시 수업→일정→과제 순, 시각 없는 마감 23:59, 다른 날 마감은 점만, e캠퍼스 요청 1번). 서버에서 미연동·가짜 토큰(실패) 때 홈 정상·기존 항목의 `courseName`·`url` null·토큰이 응답과 로그에 없음 4개 확인. 실제 피드 확인은 사용자 피드 주소로 따로.
+
+**T13 검증 (2026-10-16)**: 평점 단위 테스트 12개 추가, 전체 **145개 통과**. 익명 성적표 샘플 8과목을 넣어 성적표 요약과 같은 값(평점 3.417·전공 3.3·평점 학점 18·취득 20) 확인, 재수강 F 반영·학기별 값·다른 사용자 분리·토큰 없음 401·이수현황 영향 없음 등 10개를 서버에서 직접 호출해 확인.
+
+**T8·T9 검증 (2026-10-07)**: 홈·마이페이지 요약 단위 테스트 7개 추가, 전체 **113개 통과**. 서버를 띄워 월요일 시작 7칸·오늘 표시·수업+일정 타임라인 정렬·할 일·점 종류·졸업 진행률·date 지정·마이페이지 요약·e캠퍼스 실패 시에도 홈 정상 등 12개를 직접 호출해 확인.
+
+**T6·T7 검증 (2026-10-07)**: 이수내역·이수현황 단위 테스트 17개 추가(명세 5장 필수 7케이스 포함), 전체 **106개 통과**. 서버를 띄워 실제 시드로 CSE204 자동 판별(컴공 → 전공필수)·분류/영역 누락 거부·bulk 전체 롤백·학기 순 정렬·F 제외·재수강 1회·교양 필수 체크·2025학번 근사·남의 과목 404 등 21개를 직접 호출해 확인.
+
+**T10 검증 (2026-10-06)**: ics 파서·e캠퍼스 서비스 단위 테스트 12개 추가(실제 피드 형식을 본뜬 가짜 데이터), 전체 **89개 통과**. 서버를 띄워 주소 검증(다른 도메인·http·쿼리 붙이기 거부)·연결/해제·가짜 토큰 502·토큰이 응답과 로그에 안 나오는지 등 16개를 직접 호출해 확인.
 
 ---
 
@@ -53,6 +85,20 @@
 | EMAIL_DUPLICATED | 409 | 이미 가입된 이메일 |
 | MAJOR_NOT_FOUND | 404 | 없는 전공 id. 가입·프로필 변경에서는 해당 학번에 없는 전공이나 융합전공 선택도 포함 |
 | REQUIREMENT_NOT_FOUND | 404 | 해당 전공·입학년도 졸업요건이 없거나, 교양 기준과 2026 대체 자료가 모두 없음 |
+| PROFILE_INCOMPLETE | 400 | 입학년도·전공 없이 이수현황 조회 → 마이페이지 정보 수정 안내 |
+| COMPLETED_COURSE_NOT_FOUND | 404 | 없는 이수 과목, 또는 남의 과목 |
+| CLASSIFICATION_REQUIRED | 400 | 자동 판별이 안 되는 과목인데 이수구분 없음 |
+| DISTRIBUTION_AREA_REQUIRED | 400 | 배분이수인데 영역(1~5) 없음 |
+| SCHEDULE_NOT_FOUND | 404 | 없는 일정, 또는 남의 일정 |
+| INVALID_TIME_RANGE | 400 | 종료 시간이 시작보다 빠름·같음(일정·시간표), 시작 없이 종료만 있음, 조회 기간 역전·62일 초과 |
+| TIMETABLE_ENTRY_NOT_FOUND | 404 | 없는 시간표 칸, 또는 남의 칸 |
+| TIMETABLE_OVERLAP | 409 | 같은 학기·요일에 시간이 겹치는 칸이 이미 있음 |
+| ECAMPUS_FEED_UNAVAILABLE | 502 | e캠퍼스 피드를 받지 못함 → 주소 재등록 안내 |
+| IMPORT_UNSUPPORTED_FORMAT | 400 | 지원하지 않는 파일 → "엑셀(xlsx)로 저장해서 올려주세요" |
+| IMPORT_TOO_LARGE | 400 | 5MB 초과 |
+| IMPORT_UNRECOGNIZED | 400 | 수강신청확인서·전체 성적 보기가 아님 |
+| IMPORT_STUDENT_MISMATCH | 403 | 내 학번의 파일이 아님 |
+| PUSH_NOT_CONFIGURED | 503 | 서버에 알림(웹푸시) 키가 없음 → 알림 기능 숨기거나 "준비 중" |
 | NOT_FOUND | 404 | 없는 경로·리소스 |
 | INTERNAL_ERROR | 500 | 서버 오류 (백엔드에 알려주세요) |
 
@@ -133,7 +179,7 @@ async function api(path, options = {}) {
 |---|---|---|
 | GET | /api/users/me | 프로필 |
 | PATCH | /api/users/me | 프로필 수정 — **보낸 필드만** 바뀜 |
-| PATCH | /api/users/me/settings | 알림 on/off `{ "notificationEnabled": false }` |
+| PATCH | /api/users/me/settings | 알림 on/off·할 일 알림 시각 `{ "notificationEnabled": false, "todoAlarmTime": "21:00" }` (보낸 것만 바뀜) |
 
 ```json
 // GET /api/users/me 응답 data (PATCH 두 개도 수정 후 이 모양 그대로 응답)
@@ -141,7 +187,8 @@ async function api(path, options = {}) {
   "studentNumber": "2026105632", "phone": "010-1234-5678", "profileImageUrl": null,
   "admissionYear": 2026, "currentSemester": 3, "grade": 2,
   "major": { "id": 35, "displayName": "시각디자인학과", "collegeName": "예술·디자인대학" },
-  "notificationEnabled": true }
+  "notificationEnabled": true, "todoAlarmTime": "09:00",    // todoAlarmTime: 시간 없는 할 일의 알림 기준 시각(HH:mm)
+  "ecampusConnected": false }                               // ecampusConnected: e캠퍼스 피드 등록 여부
 
 // PATCH /api/users/me — 바꿀 것만 보낸다
 { "nickname": "하은", "currentSemester": 3 }
@@ -150,6 +197,56 @@ async function api(path, options = {}) {
 
 - `grade`(학년) = (currentSemester + 1) / 2, 학기를 모르면 null.
 - 홈 인사말은 `nickname` 이 없으면 `name` 을 쓴다.
+
+**마이페이지 mock → API 대응 (2026-10-21, `frontend/src/mock/userMock.js` 기준)**
+
+| 화면 | mock 필드 | API |
+|---|---|---|
+| 이름 | `userName` | `GET /api/users/me` → `name` |
+| 학번 | `userId` | `studentNumber` (`id` 는 DB 번호라 학번이 아님) |
+| 학과 | `userMajor` | `major.displayName` (단과대는 `major.collegeName`, 전공 미선택이면 `major` 가 null) |
+| 전화번호 | `userPhone` | `phone` (null 가능) |
+| 이메일 | `userEmail` | `email` |
+| 알림 스위치 | `alarm` (화면 상태) | 처음 값은 `notificationEnabled`, 누르면 `PATCH /api/users/me/settings` `{ "notificationEnabled": true/false }` |
+| 로그아웃 | - | `POST /api/auth/logout` 후 저장한 토큰 삭제 (3장) |
+
+- 학기·학점 요약 칸이 생기면 `GET /api/users/me/summary`(아래 마이페이지 요약)를 쓴다.
+
+### 홈 `home` (🔒)
+
+`GET /api/home?date=2026-10-07` — date 생략 시 오늘. 홈 화면에 필요한 걸 한 번에 준다.
+
+```json
+{ "greetingName": "하은",                       // 닉네임 없으면 이름
+  "week": [ { "date": "2026-10-05", "dayOfWeek": 1, "today": false, "categories": ["LECTURE", "PERSONAL"] },
+            … 월~일 7칸 … ],                   // 오늘은 today: true. 점 순서 LECTURE·ASSIGNMENT·PERSONAL
+  "timeline": [ { "source": "TIMETABLE", "id": 3, "title": "타이포그래피 I", "category": "LECTURE",
+                  "startTime": "09:00", "endTime": "10:30", "location": "예405", "courseName": null, "url": null },
+                { "source": "SCHEDULE", "id": 51, "title": "세시 팀플 모임", "category": "PERSONAL",
+                  "startTime": "12:00", "endTime": null, "location": null, "courseName": null, "url": null },
+                { "source": "ECAMPUS", "id": null, "title": "3주차 과제 제출", "category": "ASSIGNMENT",
+                  "startTime": "23:59", "endTime": null, "location": null,
+                  "courseName": "디자인씽킹", "url": "https://khcanvas.khu.ac.kr/..." } ],
+  "todos": [ { "id": 60, "title": "자료 조사", "category": "ASSIGNMENT", "done": false } ],
+  "graduation": { "earned": 102, "required": 130, "percent": 78.4, "remaining": 28 } }   // 학사 프로필 미완성이면 null
+```
+
+- 주간일정은 **월~일**(최종 디자인). 점은 그날 일정 종류 + 시간표 수업(LECTURE) + **e캠퍼스 과제 마감(ASSIGNMENT)**. e캠퍼스가 응답하지 않으면 그 점만 빠진다.
+- `timeline` 항목을 누르면 `source` 로 구분해 시간표(`/api/timetables`) 또는 일정(`/api/schedules/{id}`)으로 이동. "일정 수정하기" 버튼은 캘린더로.
+- **(T14 새 값) `source: "ECAMPUS"`** = 오늘 마감인 e캠퍼스 과제. `startTime` 이 **마감 시각**(시각 없으면 23:59)이고 `endTime`·`location`·`id` 는 null. "23:59 마감 · 디자인씽킹"처럼 `courseName` 을 같이 보여주고, 누르면 `url`(e캠퍼스 과제 페이지)을 새 탭으로 연다. 수정·삭제·완료 체크는 없다. 제출한 과제도 보이므로 "e캠퍼스 마감" 표시를 붙여 주세요. 모르는 `source` 값은 무시하도록 처리하면 앞으로 값이 늘어도 안전하다.
+- `todos` 체크박스는 `PATCH /api/schedules/{id}/done` 을 부르고 홈을 다시 불러오면 된다.
+- AI 추천 카드는 **보류**(응답에 없음).
+
+### 마이페이지 요약 (🔒)
+
+`GET /api/users/me/summary`
+
+```json
+{ "term": { "year": 2026, "term": "SECOND", "label": "2026년 2학기" },
+  "courseCount": 6,              // 이번 학기 시간표의 서로 다른 과목 수
+  "pendingAssignmentCount": 3,   // 오늘 포함 이후, 완료 안 한 '과제' 일정 수 (e캠퍼스 마감은 제출 여부를 몰라 안 셈)
+  "credits": { "earned": 18, "required": 130, "percent": 13.8 } }   // 학사 프로필 미완성이면 null
+```
 
 ### 학사 기준정보 `catalog` (로그인 불필요)
 
@@ -200,7 +297,206 @@ general-education.data: { admissionYear, basisYear, approximate,
 - 졸업요건 원본의 null은 ‘자료 없음/해당 없음’이다. 이 API만으로 이수현황·졸업 가능 여부를 계산하지 않는다(T7에서 제공 예정).
 - 검색 결과를 사용자의 이수내역에 저장하는 기능은 T6 범위로, 이번 T3에는 포함되지 않는다.
 
+### 일정·할 일 `schedule` (전부 🔒)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | /api/schedules?from=2026-10-01&to=2026-10-31&category= | 기간 조회 (캘린더 월·날짜 상세). data = 아래 객체의 배열 |
+| POST | /api/schedules | 생성 → **201** |
+| GET | /api/schedules/{id} | 한 건 조회 |
+| PATCH | /api/schedules/{id} | 수정 — **보낸 필드만** 바뀜 |
+| DELETE | /api/schedules/{id} | 삭제 → **204** (본문 없음) |
+| PATCH | /api/schedules/{id}/done | 완료 체크 `{ "done": true }` — 뒤집기가 아니라 보낸 값으로 설정 |
+
+```json
+// POST /api/schedules — 일정 추가 폼
+{ "title": "팀플 모임",          // 필수, 100자 이하
+  "category": "PERSONAL",       // 필수: LECTURE(수업) / ASSIGNMENT(과제) / PERSONAL(개인일정)
+  "date": "2026-10-18",         // 필수
+  "startTime": "14:00",         // 선택. 비우면 '할 일'
+  "endTime": "15:30",           // 선택. 넣으면 startTime 필수, startTime 보다 늦어야 함
+  "location": "예405",          // 선택, 100자 이하
+  "memo": null,                 // 선택, 1000자 이하
+  "alarmMinutesBefore": 30 }    // 선택: null(없음) / 10 / 30 / 60 / 1440(하루 전) / 0(끄기, 응답은 null). 그 외 값은 INVALID_INPUT
+
+// 응답 data (생성·조회·수정·완료 공통)
+{ "id": 42, "title": "팀플 모임", "category": "PERSONAL", "date": "2026-10-18",
+  "startTime": "14:00", "endTime": "15:30", "location": "예405", "memo": null,
+  "done": false, "alarmMinutesBefore": 30, "type": "EVENT" }
+```
+
+- `type`: `startTime` 이 있으면 `EVENT`(일정 → 캘린더·홈 타임라인), 없으면 `TODO`(할 일 → 홈 '오늘 할 일' 체크박스).
+- 목록 정렬: 날짜 → 시작시간 순, 시간 없는 할 일은 그날 맨 뒤. `category` 를 생략하거나 비우면 전체.
+- 조회 기간: `from`·`to` 필수, 양 끝 포함 **최대 62일**(예: 10-01~12-01). 달력 앞뒤 주까지 한 번에 받아도 된다.
+- **알람 끄기는 `PATCH { "alarmMinutesBefore": 0 }`** → 응답 `alarmMinutesBefore: null`(2026-10-23).
+- 그 밖에는 **PATCH 로 값을 지울 수는 없다**(null = 그대로). 시간 지우기(일정 → 할 일), 장소·메모 지우기는 삭제 후 다시 만든다.
+- 알람을 설정하면 그 시각에 웹푸시 알림이 간다(T11, 아래 "일정 알림 웹푸시" 절). 기기에서 알림 켜기를 해야 받는다.
+
+### 시간표 `timetable` (전부 🔒)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | /api/timetables?year=2026&term=SECOND | 학기 시간표. 생략한 값은 현재 학기 값으로 채움 |
+| POST | /api/timetables/entries | 수업 칸 추가 → **201**, 겹치면 **409** |
+| PATCH | /api/timetables/entries/{id} | 수정 — **보낸 필드만** 바뀜, 겹치면 409 |
+| DELETE | /api/timetables/entries/{id} | 삭제 → **204** (본문 없음) |
+
+```json
+// POST /api/timetables/entries
+{ "year": 2026,                   // 필수, 2000~2100
+  "term": "SECOND",               // 필수: FIRST / SECOND / SUMMER(여름계절) / WINTER(겨울계절)
+  "courseName": "타이포그래피 I",  // 필수, 100자 이하
+  "courseCode": null,             // 선택, 20자 이하
+  "dayOfWeek": 2,                 // 필수: 1=월 … 7=일
+  "startTime": "09:00",           // 필수
+  "endTime": "10:30",             // 필수, startTime 보다 늦어야 함
+  "location": "예405",            // 선택, 100자 이하
+  "professor": "김교수",           // 선택, 50자 이하
+  "color": "#3BB39A" }            // 선택, #RRGGBB
+
+// GET 응답 data
+{ "year": 2026, "term": "SECOND", "label": "2026년 2학기",
+  "entries": [ { "id": 3, "courseName": "타이포그래피 I", "courseCode": null, "dayOfWeek": 2,
+                 "startTime": "09:00", "endTime": "10:30", "location": "예405",
+                 "professor": "김교수", "color": "#3BB39A" } ] }
+// POST·PATCH 응답 data 는 entries 원소 하나와 같은 모양
+```
+
+- 현재 학기: 3~8월 → 그해 1학기, 9~12월 → 그해 2학기, 1~2월 → 전년도 2학기. 학기 선택의 기본값은 파라미터 없이 `GET /api/timetables` 한 응답의 `year`·`term` 을 쓰면 된다.
+- `entries` 는 요일 → 시작시간 순. 격자(월~금 09:00~19:00) 밖의 칸(토·일, 이른 시간)도 올 수 있다.
+- 겹침: 같은 학기·요일에서 시간이 겹치면 `TIMETABLE_OVERLAP`. 09:00~10:30 다음 10:30~12:00 처럼 딱 붙는 건 괜찮다.
+- PATCH 로 값을 지울 수는 없다(null = 그대로). 장소·교수·색 지우기는 삭제 후 다시 만든다.
+
+### 학사관리 `academic` (전부 🔒)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | /api/academic/completed-courses | 내 이수내역 (학년도 → 학기 순) |
+| POST | /api/academic/completed-courses | 1건 등록 → **201** |
+| POST | /api/academic/completed-courses/bulk | 여러 건 등록 `{ "courses": [ … ] }` → **201**, 하나라도 틀리면 전부 저장 안 함 |
+| PATCH | /api/academic/completed-courses/{id} | 수정 — **보낸 필드만** 바뀜 |
+| DELETE | /api/academic/completed-courses/{id} | 삭제 → **204** |
+| GET | /api/academic/progress | 이수현황 계산 결과 (학사관리 화면·홈·마이페이지 학점) |
+| GET | /api/academic/gpa | 평점 평균 (학사관리 학점·성적 박스) |
+
+```json
+// POST /api/academic/completed-courses
+{ "courseCode": "CSE204",   // 선택. 내 전공 교과목이면 이수구분·과목명을 서버가 채움
+  "courseName": "자료구조",  // 자동으로 못 채우면 필수
+  "credits": 3,              // 필수 0~30
+  "classification": null,    // 자동 판별 안 될 때 필수 (교양·일반선택 등). 명세 3.1 의 대문자 이름
+  "distributionArea": null,  // GEN_DISTRIBUTION 이면 1~5 필수
+  "grade": "A+",             // A+ A0 B+ B0 C+ C0 D+ D0 F P NP, 미정이면 null
+  "year": 2026, "term": "FIRST" }
+// 응답 data (목록 원소·수정 응답도 같은 모양): 위 필드 + id, classification 은 실제로 저장된 값
+```
+
+- **과목 추가 화면 흐름**: 과목 검색(`/api/catalog/courses?majorId=`)에서 고르면 `courseCode` 만 보내도 된다. 직접 입력(교양 등)이면 `courseName` + `classification` 을 받는다(배분이수면 영역 1~5 선택도).
+- `progress` 응답 모양은 명세 4.6 예시 그대로. 도넛은 `groups`, 영역별 막대는 `areas`, 교양 필수 체크리스트는 `requiredGeneralCourses`, 부가요건 안내는 `checks`(자동 판정 아님).
+- `approximate: true` 면 "해당 학번 교양 기준이 없어 2026 기준으로 계산했어요" 안내. 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE` → 마이페이지 정보 수정으로 안내.
+- 성적 미정(null)인 과목도 학점에 들어간다(이번 학기 수강 중인 과목). F·NP 는 빠지고, 같은 과목은 가장 최근 것 1번만 센다.
+- **평점 박스(`gpa`)**: 응답 모양은 명세 4.6 예시. 숫자는 4.3 만점, 소수 셋째 자리까지(예: `3.417` → "3.417 / 4.3"). `gpa`·`majorGpa` 는 성적 있는 과목이 없으면 **null** → "-" 로 표시. 학기별 그래프는 `terms`(학기 순). P/NP·성적 미정 과목은 평점에서 빠지므로 `gradedCredits` 로 "18학점 기준" 같은 안내 가능. 재수강에서 최근 성적이 F 면 평점에 0점으로 들어가고, 이수현황 학점과 다를 수 있다.
+
+### 파일 가져오기 `import` (🔒, T12)
+
+학교 시스템에서 받은 **수강신청확인서**(→ 시간표)나 **전체 성적 보기**(→ 이수내역) 파일을 올리면 저장하지 않고 미리보기를 준다. 사용자가 확인·수정한 뒤 bulk API 로 저장한다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | /api/import | multipart `file`(5MB 이하) → 미리보기 `{ type, format, timetable \| grades, warnings }` |
+| POST | /api/timetables/entries/bulk | `{ year, term, mode: "REPLACE", entries }` → **201**, 저장 후 그 학기 시간표 |
+| POST | /api/academic/completed-courses/bulk | `{ courses, replaceTerms, keepClassification: true }` → **201** |
+
+```js
+// 1) 업로드
+const form = new FormData(); form.append('file', file);
+const res = await fetch('/api/import', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+// 2-a) 시간표: data.timetable 을 표로 보여주고 저장
+await api('/api/timetables/entries/bulk', { method: 'POST', body: JSON.stringify({
+  year: t.year, term: t.term, mode: 'REPLACE', entries: t.entries }) });
+// 2-b) 성적: needs 가 있는 과목은 사용자가 고르게 한 뒤 저장
+await api('/api/academic/completed-courses/bulk', { method: 'POST', body: JSON.stringify({
+  courses: g.courses.map(c => ({ courseCode: c.courseCode, courseName: c.courseName, credits: c.credits,
+    classification: c.classification, distributionArea: c.distributionArea, grade: c.grade, year: c.year, term: c.term })),
+  replaceTerms: g.terms, keepClassification: true }) });
+```
+
+- **지원 형식**: xlsx(추천)·csv·txt. **PDF 는 받지 않는다**(표 구조가 깨져서 정확히 읽을 수 없음). 그 외도 "엑셀(xlsx)로 저장해서 올려주세요" 오류 → 그대로 보여주면 된다. 파일 선택 창에 `accept=".xlsx,.csv,.txt"` 를 걸어 두면 좋다.
+- **같은 파일을 다시 올려도 중복되지 않는다**: 시간표는 그 학기를 통째로 바꾸고(REPLACE), 성적은 `replaceTerms` 학기를 지우고 다시 넣는다. 그래서 그 학기에 직접 입력한 칸·과목도 바뀐다는 안내를 저장 버튼 옆에 띄우는 게 좋다.
+- `warnings` 는 목록으로 보여준다. `NO_TIME`(온라인 등 시간 없는 과목, 시간표에 안 들어감), `DISTRIBUTION_AREA_REQUIRED`·`UNKNOWN_CLASSIFICATION`·`UNKNOWN_GRADE`(→ 그 과목의 `needs` 값을 사용자가 고르게), `UNPARSED_ROW`(읽지 못한 줄).
+- 배분이수 과목은 영역(1~5)을 고르지 않으면 저장 시 `DISTRIBUTION_AREA_REQUIRED` 오류가 난다.
+- 파일의 학번이 내 학번과 다르면 403 `IMPORT_STUDENT_MISMATCH`.
+
+### e캠퍼스 과제 마감 `ecampus` (전부 🔒)
+
+e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자기 e캠퍼스 캘린더 피드 주소** 를 한 번 등록하면 된다(학교 비밀번호는 받지 않음).
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| PUT | /api/ecampus/feed | 피드 주소 등록·변경 `{ "feedUrl": "https://khcanvas.khu.ac.kr/feeds/calendars/user_….ics" }` → **204** |
+| DELETE | /api/ecampus/feed | 연결 해제 → **204** |
+| GET | /api/ecampus/events?from=2026-10-01&to=2026-10-31 | 기간 안의 과제 마감 (읽기 전용) |
+
+```json
+// GET /api/ecampus/events 응답 data
+{ "connected": true, "syncedAt": "2026-10-06T19:30:00",
+  "events": [ { "id": "event-assignment-123", "title": "중간 레포트", "courseName": "디자인씽킹 01분반",
+                "date": "2026-10-18", "time": null, "url": "https://khcanvas.khu.ac.kr/calendar?…" } ] }
+// 연결 안 했으면 { "connected": false, "syncedAt": null, "events": [] } → "e캠퍼스 연결하기" 안내를 띄우면 된다
+```
+
+- **마이페이지 연결 화면**: `GET /api/users/me` 의 `ecampusConnected` 로 연결 여부를 보여주고, 입력칸에 주소를 받아 `PUT`. 안내 문구 예: "e캠퍼스 → 캘린더 → 오른쪽 아래 '캘린더 피드' 를 눌러 나온 주소를 붙여넣으세요". 주소는 앞뒤 공백을 지우고 보낸다. 형식이 다르면 `INVALID_INPUT`.
+- **피드 주소는 비밀번호와 같다**: 주소만 있으면 누구나 그 사람의 일정을 볼 수 있다. 화면에 다시 보여주거나 로그·localStorage 에 남기지 않는다(서버도 응답에 넣지 않음).
+- **캘린더**: 일정 API(`/api/schedules`)와 같은 `from`·`to` 로 함께 불러 합쳐 그린다. 일정과 섞이지 않게 e캠퍼스 표시(아이콘·색)를 따로 두고, 누르면 `url`(e캠퍼스 화면)로 이동. 수정·삭제·완료 체크는 없다(피드에 제출 여부가 없음).
+- `time` 이 null 이면 "그날 23:59 마감"(하루 종일)으로 표시. 정렬은 날짜 → 시간 순, 시간 없는 것은 그날 맨 뒤.
+- 최대 10분 늦게 반영된다(서버가 10분 동안 재사용). e캠퍼스가 응답하지 않으면 예전 데이터를 주고 `syncedAt` 이 예전 시각이다. 받은 적도 없으면 502 `ECAMPUS_FEED_UNAVAILABLE` → "주소를 다시 등록해 보세요".
+
 ---
+
+### 일정 알림 웹푸시 `notification` (전부 🔒, T11)
+
+알람을 설정한 일정·할 일을 정해진 시각에 **기기 알림(푸시)** 으로 보낸다. 오르도 탭이 닫혀 있어도 온다. 기기(폰·PC 브라우저)마다 한 번 "알림 켜기"를 해야 한다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | /api/notifications/push/public-key | 구독에 쓰는 서버 공개키 `{ "publicKey": "BMx…" }` |
+| POST | /api/notifications/push/subscriptions | 브라우저 구독 정보 `subscription.toJSON()` 그대로 → **204** |
+| DELETE | /api/notifications/push/subscriptions | `{ "endpoint": sub.endpoint }` → **204** (로그아웃 때) |
+| POST | /api/notifications/push/test | 내 모든 기기로 테스트 알림 → `{ "sent": 1, "failed": 0 }` |
+
+- 서버에 알림 키가 없으면 전부 **503 `PUSH_NOT_CONFIGURED`** → "알림 기능 준비 중" 정도로 표시.
+- 언제 오나: 일정 시작 `alarmMinutesBefore` 분 전. **시간 없는 할 일**은 그날 `todoAlarmTime`(마이페이지 설정, 기본 09:00) 기준. 마이페이지 알림 스위치가 꺼져 있으면 안 온다(테스트 알림은 옴). 완료한 일은 안 온다.
+- 알림 내용: 제목 + `"10월 18일 (일) 09:00 · 예405"`(할 일은 `"… 할 일"`). 메모는 안 나간다. 누르면 오르도 홈(`/`)이 열린다.
+
+**프론트 할 일**
+
+1. `public/sw.js` (서비스워커, 아래 그대로):
+   ```js
+   self.addEventListener('push', (event) => {
+     const data = event.data ? event.data.json() : { title: '오르도' };
+     event.waitUntil(self.registration.showNotification(data.title, { body: data.body, tag: data.tag, data: { url: data.url } }));
+   });
+   self.addEventListener('notificationclick', (event) => {
+     event.notification.close();
+     event.waitUntil(clients.openWindow((event.notification.data && event.notification.data.url) || '/'));
+   });
+   ```
+2. 앱 시작 때 `navigator.serviceWorker.register('/sw.js')`.
+3. 마이페이지 "이 기기에서 알림 받기" 버튼 — **반드시 버튼 클릭 안에서** 권한을 묻는다(그냥 띄우면 브라우저가 막거나 사용자가 차단하면 다시 못 물음):
+   ```js
+   const toBytes = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+   const reg = await navigator.serviceWorker.ready;
+   if ((await Notification.requestPermission()) !== 'granted') return;   // 거부면 "브라우저 설정에서 알림 허용" 안내
+   const { data } = await api.get('/api/notifications/push/public-key');
+   const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: toBytes(data.publicKey) });
+   await api.post('/api/notifications/push/subscriptions', sub.toJSON());
+   ```
+4. 로그아웃 때: `const sub = await reg.pushManager.getSubscription(); if (sub) { await api.delete('/api/notifications/push/subscriptions', { data: { endpoint: sub.endpoint } }); await sub.unsubscribe(); }` (같은 PC 를 다른 사람이 쓰면 앞 사람 알림이 오지 않게).
+5. 로그인 후 앱을 열 때마다 `Notification.permission === 'granted'` 면 현재 구독을 다시 `POST`(같은 값이면 갱신만 된다. 서버 키가 바뀌었거나 구독이 만료됐을 때 자동 복구).
+6. 아이폰: `public/manifest.json`(`"display": "standalone"`, `name`, 아이콘) + `index.html` 에 `<link rel="manifest" href="/manifest.json">`. 아이폰은 **사파리 → 공유 → 홈 화면에 추가** 후 그 아이콘으로 열었을 때만 알림이 된다 → 버튼 옆에 안내 문구.
+7. 테스트 버튼(선택): `POST /api/notifications/push/test` 로 "이 기기에서 알림이 오는지" 바로 확인.
+
+- HTTPS 에서만 동작한다(`http://localhost` 는 예외로 허용). 휴대폰 확인은 배포 주소에서.
 
 ## 5. 프론트에 부탁할 수정 (SignUp.js / SignIn.js)
 
@@ -221,6 +517,12 @@ general-education.data: { admissionYear, basisYear, approximate,
 - 로컬 실행 전 `src/main/resources/application-local.yml` 을 직접 만들어 DB 비밀번호·JWT 키를 넣는다 (README 3장, git 에 안 올라감).
 - `catalog` 의 `College`·`Major` 엔티티와 `MajorRepository` 는 T1에서 먼저 만들었으며, T3는 이를 이어서 구현했다. 기존 가입 검증용 `countGraduationRequirements` 네이티브 쿼리는 그대로 유지했다.
 - 기존 T0~T2 공용 파일 변경: `build.gradle`(springdoc·jjwt), `application.yml`, `global/**` 전체, `ErrorCode`(2.5 전체), `SecurityConfig`(PasswordEncoder, `/error` 허용). 이번 T3 변경은 아래 7장 참고.
+- T4 일정은 공용 파일 변경 없음.
+- T5: 공용 파일 `global/common/Term.java`(학기 enum)·`AcademicTerm.java`(현재 학기 판별, `AcademicTerm.now()`)를 새로 추가했다. T6 이수내역의 `term` 도 이 `Term` 을 써 주세요.
+- T10: Flyway `V10__add_ecampus_feed_token.sql`(users 에 칸 하나), 공용 `ErrorCode` 에 `ECAMPUS_FEED_UNAVAILABLE`, `AGENTS.md` 패키지 목록에 `ecampus` 추가. `User` 에 `ecampusFeedToken` 필드가 생겼다(H2 테스트는 ddl-auto 라 영향 없음).
+- T6·T7(원래 B 담당, A 가 대신 진행): 공용 `Term` 선언 순서를 FIRST·SUMMER·SECOND·WINTER(시간 순)로 바꿔 정렬에 쓴다(DB 는 이름 저장이라 영향 없음). B 의 `CourseRepository` 에 `findFirstByUnitNameAndCourseCodeOrderByIdAsc` 하나 추가. 홈·마이페이지는 `AcademicProgressService.findSummary(userId)` 를 쓴다.
+- T12: 공용 `build.gradle` 에 Apache POI(`poi-ooxml` 5.5.1), `application.yml` 에 multipart 설정(5MB·메모리 처리), `ErrorCode` 4개(IMPORT_*), `GlobalExceptionHandler` 에 업로드 크기 초과 처리, `AGENTS.md` 패키지 목록(importer·notification). 이수내역 bulk 에 `replaceTerms`·`keepClassification`, 시간표 bulk API 추가. 테스트 사본은 `src/test/resources/import/`(익명).
+- T11: Flyway `V11__add_web_push.sql`(`push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·인덱스, `users.todo_alarm_time`), 공용 `ErrorCode` 에 `PUSH_NOT_CONFIGURED`(카카오 코드는 만들지 않음), `application.yml` 에 `app.webpush.*`·`app.notification.scheduler-enabled`(값 없이 환경변수 이름만). 새 의존성 없음(JDK 암호화 + 기존 jjwt). `@EnableScheduling` 은 `notification/config/SchedulingConfig`. `UserSettingsRequest` 의 `notificationEnabled` 가 필수 → 선택으로 바뀜.
 - 명세와 다르게/새로 정한 것은 `BACKEND_SPEC.md` 4장·4.1·4.2·8장에 반영해 두었다.
 
 ---
