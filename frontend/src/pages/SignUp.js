@@ -1,17 +1,9 @@
-import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import './SignUp.css'
 
 function SignUp() {
-    useEffect(() => {
-        document.body.style.backgroundColor = '#F9FDF9';
-        return () => {
-            document.body.style.backgroundColor = null;
-        };
-    }, []);
-
     return (
         <div className='body'>
             <div className='signup'>

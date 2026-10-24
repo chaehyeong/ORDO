@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink } from 'react-router-dom';
 import { mockUser } from "../mock/userMock";
 import Sidebar from "../components/Sidebar";
+import frodo from "../assets/frodo3.png"
 import { FiUser, FiBell, FiLogOut } from "react-icons/fi";
 import './MyPage.css';
 
@@ -75,6 +76,7 @@ function MyPage() {
                         </section>
                     </div>
                 </div>
+                <img className="my-frodo" src={frodo} alt="frodo" />
             </div>
         </div>
     );

@@ -1,6 +1,7 @@
 import './MainPage.css';
 import { Link } from 'react-router-dom';
 import ordo_logo from '../assets/ordo_logo.png';
+import frodo from '../assets/frodo1.png';
 import { FiCheckSquare } from "react-icons/fi";
 import { FiBook } from "react-icons/fi";
 import { FiBell } from "react-icons/fi";
@@ -51,18 +52,22 @@ function MainPage() {
 
     return (
         <div className='main-body'>
-            <div className='main-logo'>
-                <img src={ordo_logo} alt='ordo_logo'/>
+            <div className='hero'>
+                <div className='hero-text'>
+                    <div className='main-logo'>
+                        <img src={ordo_logo} alt='ordo_logo'/>
+                    </div>
+                    <div>
+                        <div className='slogan'>ORDO와 함께하는<br/>대학생활의 모든 순간</div>
+                        <div className='intro'>일정 관리부터 학사 정보까지, <br/>ORDO가 당신의 캠퍼스 라이프를 더 스마트하게 만들어줍니다.</div>
+                    </div>
+                    <div className='sign'>
+                        <Link className='in' to='/signin'>로그인 &nbsp; &rarr;</Link>
+                        <Link className='up' to='/signup'>회원가입 &nbsp; &rarr;</Link>
+                    </div>
+                </div>
+                <img className='hero-frodo' src={frodo} alt='frodo' />  
             </div>
-            <div>
-                <div className='slogan'>ORDO와 함께하는<br/>대학생활의 모든 순간</div>
-                <div className='intro'>일정 관리부터 학사 정보, AI 추천까지 ORDO가 스마트한 캠퍼스 라이프를 지원합니다.</div>
-            </div>
-            <div className='sign'>
-                <Link className='in' to='/signin'>로그인 &nbsp; &rarr;</Link>
-                <Link className='up' to='/signup'>회원가입 &nbsp; &rarr;</Link>
-            </div>
-
             <div className='service'>
                 <div className='service-track'>
                     {loop.map((item, index) => (
