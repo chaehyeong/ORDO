@@ -1,0 +1,131 @@
+.degree-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: stretch;
+}
+
+/* 학점 취득 현황 / 평균 학점 현황 박스 높이 맞추기 */
+.status-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.status-box h4 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+/* ---------- 학점 취득 현황 ---------- */
+.credit-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 16px;
+}
+
+.donut {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.donut-segment {
+    transition: stroke-dasharray 0.6s ease;
+}
+
+.donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.donut-label {
+    font-size: calc(var(--donut-size) * 0.087);
+    font-weight: 600;
+}
+ 
+.donut-value {
+    font-size: calc(var(--donut-size) * 0.153);
+    font-weight: 500;
+    margin: calc(var(--donut-size) * 0.02) 0;
+}
+ 
+.donut-percent {
+    font-size: calc(var(--donut-size) * 0.087);
+    color: #39B19D;
+}
+
+.credit-legend {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.credit-legend li {
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.legend-label {
+    width: 64px;
+}
+
+.legend-value {
+    margin-left: auto;
+    min-width: 36px;
+    text-align: right;
+}
+
+/* ---------- 평균 학점 현황 ---------- */
+.gpa {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.gpa-bar {
+    width: 85%;
+    height: 12px;
+    background-color: #D9D9D9;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.gpa-bar-fill {
+    height: 100%;
+    background-color: #39B19D;
+    border-radius: 999px;
+    transition: width 0.6s ease;
+}
+
+.gpa-text {
+    margin: 16px 0 0;
+}
+
+.gpa-value {
+    font-size: 40px;
+    font-weight: 800;
+}
+
+.gpa-max {
+    font-size: 16px;
+    font-weight: 600;
+    color: #555;
+}

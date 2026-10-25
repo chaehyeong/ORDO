@@ -24,9 +24,9 @@ function MyPage() {
             <div className="page">
                 <h2 className="page-title">마이페이지</h2>
 
-                <div className="page-grid">
+                <div className="mypage-grid">
                     <section className="box">
-                        <h3 className="box-title">내 정보</h3>
+                        <h3 className="mp-box-title">내 정보</h3>
 
                         <div className="profile">
                             <FiUser className="profile-img" />
@@ -50,7 +50,7 @@ function MyPage() {
 
                     <div className="side-stack">
                         <section className="box">
-                            <h3 className="box-title">알림 설정</h3>
+                            <h3 className="mp-box-title">알림 설정</h3>
                             <p className="box-desc">중요한 일정과 소식을 놓치지 않도록 설정할 수 있습니다.</p>
                             <div className="toggle-row">
                                 <span className="toggle-label"><FiBell /> 알림</span>
@@ -67,7 +67,7 @@ function MyPage() {
 
                         <section className="box logout-box">
                             <div>
-                                <h3 className="box-title">로그아웃</h3>
+                                <h3 className="mp-box-title">로그아웃</h3>
                                 <p className="box-desc">현재 계정에서 로그아웃합니다.</p>
                             </div>
                             <NavLink to='/'><button type="button" className="logout-btn">

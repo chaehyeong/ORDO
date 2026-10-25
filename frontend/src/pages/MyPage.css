@@ -1,10 +1,4 @@
-.page-title {
-    font-size: 36px;
-    font-weight: bold;
-    margin-bottom: 32px;
-}
-
-.page-grid {
+.mypage-grid {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
     gap: 24px;
@@ -12,13 +6,8 @@
     position: relative;
     z-index: 1; 
 }
-.side-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
 
-.box-title {
+.mp-box-title {
     font-size: 26px;
     font-weight: bold;
     margin: 0;
