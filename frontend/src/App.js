@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import Calendar from './pages/Calendar';
 import TimeTable from './pages/TimeTable';
 import Degree from './pages/Degree';
+import RoadMap from './pages/RoadMap';
 import MyPage from './pages/MyPage';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css'
@@ -21,6 +22,7 @@ function App() {
         <Route path='/calendar' element={<Calendar />} />
         <Route path='/timetable' element={<TimeTable />} />
         <Route path='/degree' element={<Degree />} />
+        <Route path='/roadmap' element={<RoadMap />} />
         <Route path='/mypage' element={<MyPage />} />
       </Routes>
     </BrowserRouter>

@@ -5,6 +5,7 @@ import { FiHome } from "react-icons/fi";
 import { FiCalendar } from "react-icons/fi";
 import { FiTable } from "react-icons/fi";
 import { FiAward } from "react-icons/fi";
+import { FiMapPin } from "react-icons/fi";
 import { FiUser } from "react-icons/fi";
 
 function Sidebar() {
@@ -28,6 +29,10 @@ function Sidebar() {
             <div className='index'>
                 <FiAward className='index-icon' />
                 <NavLink className='char' to='/degree'>학사관리</NavLink>
+            </div>
+            <div className='index'>
+                <FiMapPin className='index-icon' />
+                <NavLink className='char' to='/roadmap'>졸업 로드맵</NavLink>
             </div>
             <div className='index'>
                 <FiUser className='index-icon' />
