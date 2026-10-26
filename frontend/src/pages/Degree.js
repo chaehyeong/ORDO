@@ -1,48 +1,9 @@
 import Sidebar from "../components/Sidebar";
 import Progress from "../components/Progress";
 import EmptyState from "../components/EmptyState";
+import { mockDegree } from "../mock/degreeMock";
 import { FiBook, FiBookOpen } from "react-icons/fi";
 import './Degree.css';
-
-// 임시 더미 데이터: 나중에 백엔드 응답으로 이 객체만 교체하면 됨
-const degreeData = {
-    credits: {
-        totalRequired: 130,
-        categories: [
-            { key: 'majorRequired', label: '전공필수', earned: 9, required: 39, color: '#079382' },
-            { key: 'majorBasic',    label: '전공기초', earned: 9, required: 12, color: '#42B59E' },
-            { key: 'majorElective', label: '전공선택', earned: 0, required: 30, color: '#76A2F5' },
-            { key: 'generalReq',    label: '필수교양', earned: 9, required: 17, color: '#5D6CB2' },
-            { key: 'distribution',  label: '배분이수', earned: 6, required: 9, color: '#C8DC5D' },
-            { key: 'free',          label: '자유이수', earned: 3, required: 3, color: '#F5D92A' },
-        ],
-    },
-    gpa: {
-        average: 4.15,
-        max: 4.3,
-    },
-    /*
-    multiMajor: {
-        name: '산업디자인학과',
-        type: '복수전공',
-        earned: 9,
-        required: 36,
-        breakdown: [
-            { key: 'majorBasic',    label: '전공기초', earned: 3, required: 9 },
-            { key: 'majorRequired', label: '전공필수', earned: 3, required: 12 },
-            { key: 'majorElective', label: '전공선택', earned: 3, required: 15 },
-            ],
-            },
-    */
-    multiMajor : null,
-    microDegree: {
-        name: 'UX 디자인 마이크로디그리',
-        type: '마이크로디그리',
-        earned: 6,
-        required: 12,
-        period: '2026. 2학기 ~ 2027. 2학기',
-    },
-};
 
 // 원형 차트 (SVG stroke-dasharray로 카테고리별 구간 그리기)
 function CreditDonut({ categories, totalRequired }) {
@@ -133,7 +94,7 @@ function GpaBar({ average, max }) {
 }
 
 function Degree() {
-    const { credits, gpa, multiMajor, microDegree } = degreeData;
+    const { credits, gpa, multiMajor, microDegree } = mockDegree;
 
     return (
         <div className="layout">
