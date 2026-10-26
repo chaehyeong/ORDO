@@ -21,6 +21,7 @@ const degreeData = {
         average: 4.15,
         max: 4.3,
     },
+    /*
     multiMajor: {
         name: '산업디자인학과',
         type: '복수전공',
@@ -32,9 +33,8 @@ const degreeData = {
             { key: 'majorElective', label: '전공선택', earned: 3, required: 15 },
             ],
             },
-    /*
-    multiMajor : null,
     */
+    multiMajor : null,
     microDegree: {
         name: 'UX 디자인 마이크로디그리',
         type: '마이크로디그리',
