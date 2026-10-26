@@ -129,3 +129,175 @@
     font-weight: 600;
     color: #555;
 }
+
+/* ---------- 다전공 / 마이크로디그리 ---------- */
+.program-box {
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+}
+ 
+.program-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+ 
+.program-header h5 {
+    font-weight: 700;
+    margin: 0;
+}
+ 
+.program-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #E2F4F1;
+    border-radius: 16px;
+    padding: 24px 32px;
+}
+ 
+.btn-outline-ordo {
+    border: 1px solid #39B19D;
+    border-radius: 10px;
+    background-color: white;
+    color: #39B19D;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 24px;
+}
+ 
+.btn-ordo {
+    border: none;
+    border-radius: 10px;
+    background-color: #39B19D;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 28px;
+}
+ 
+.program-icon {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: #39B19D;
+    color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+ 
+/* 빈 상태 */
+.program-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+ 
+.program-empty-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 20px 0 12px;
+}
+ 
+.program-empty-desc {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.5);
+    margin-bottom: 24px;
+}
+ 
+/* 이수 중 상태 */
+.program-progress {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+ 
+.program-info {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+ 
+.program-name {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0;
+}
+ 
+.program-type {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.5);
+    margin: 4px 0 0;
+}
+ 
+.program-credit {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+ 
+.program-bar {
+    height: 14px;
+    background-color: white;
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+}
+ 
+.program-bar.small {
+    flex: 1;
+    height: 12px;
+    box-shadow: none;
+}
+ 
+.program-bar-fill {
+    height: 100%;
+    background-color: #39B19D;
+    border-radius: 999px;
+    transition: width 0.6s ease;
+}
+ 
+.program-detail {
+    flex: 1;
+    padding: 12px 0 16px;
+}
+ 
+.program-breakdown {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.5);
+    padding: 4px 0;
+}
+ 
+.program-breakdown span {
+    width: 40%;
+}
+ 
+.program-period-label {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 16px 0 6px;
+}
+ 
+.program-period {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.5);
+    margin: 0;
+}
+ 
+.program-view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+}

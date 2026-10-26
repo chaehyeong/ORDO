@@ -1,4 +1,7 @@
 import Sidebar from "../components/Sidebar";
+import Progress from "../components/Progress";
+import EmptyState from "../components/EmptyState";
+import { FiBook, FiBookOpen } from "react-icons/fi";
 import './Degree.css';
 
 // 임시 더미 데이터: 나중에 백엔드 응답으로 이 객체만 교체하면 됨
@@ -17,6 +20,27 @@ const degreeData = {
     gpa: {
         average: 4.15,
         max: 4.3,
+    },
+    multiMajor: {
+        name: '산업디자인학과',
+        type: '복수전공',
+        earned: 9,
+        required: 36,
+        breakdown: [
+            { key: 'majorBasic',    label: '전공기초', earned: 3, required: 9 },
+            { key: 'majorRequired', label: '전공필수', earned: 3, required: 12 },
+            { key: 'majorElective', label: '전공선택', earned: 3, required: 15 },
+            ],
+            },
+    /*
+    multiMajor : null,
+    */
+    microDegree: {
+        name: 'UX 디자인 마이크로디그리',
+        type: '마이크로디그리',
+        earned: 6,
+        required: 12,
+        period: '2026. 2학기 ~ 2027. 2학기',
     },
 };
 
@@ -109,7 +133,7 @@ function GpaBar({ average, max }) {
 }
 
 function Degree() {
-    const { credits, gpa } = degreeData;
+    const { credits, gpa, multiMajor, microDegree } = degreeData;
 
     return (
         <div className="layout">
@@ -132,11 +156,42 @@ function Degree() {
                         <h4>평균 학점 현황</h4>
                         <GpaBar average={gpa.average} max={gpa.max} />
                     </section>
-                    <section className="box">
-                        <h5>다전공</h5>
+                    <section className="box program-box">
+                        <div className="program-header">
+                            <h5>다전공</h5>
+                            <button type="button" className="btn-outline-ordo">+ 다전공 추가하기</button>
+                        </div>
+                        <div className="program-panel">
+                            {multiMajor ? (
+                                <Progress icon={<FiBookOpen size={28} />} data={multiMajor} />
+                            ) : (
+                                <EmptyState
+                                    icon={<FiBookOpen size={28} />}
+                                    title="추가한 다전공이 없습니다."
+                                    description={<>관심 있는 전공을 추가하여<br />이수 현황을 관리해보세요.</>}
+                                    actionLabel="다전공 알아보기"
+                                    onAction={() => window.open('https://www.khu.ac.kr/kor/user/contents/view.do?menuNo=200105', '_blank', 'noopener,noreferrer')}
+                                />
+                            )}
+                        </div>
                     </section>
-                    <section className="box">
-                        <h5>마이크로디그리</h5>
+                    <section className="box program-box">
+                        <div className="program-header">
+                            <h5>마이크로디그리</h5>
+                            <button type="button" className="btn-outline-ordo">+ 마이크로디그리 추가하기</button>
+                        </div>
+                        <div className="program-panel">
+                            {microDegree ? (
+                                <Progress icon={<FiBook size={28} />} data={microDegree} /> 
+                            ) : (
+                                <EmptyState
+                                    icon={<FiBook size={28} />}
+                                    title="이수 중인 마이크로디그리가 없습니다."
+                                    description={<>관심 분야의 마이크로디그리를<br />확인해보세요.</>}
+                                    actionLabel="마이크로디그리 알아보기"
+                                />
+                            )}
+                        </div>
                     </section>
                 </div>
             </div>
