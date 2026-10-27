@@ -122,3 +122,180 @@
     margin: 0;
 }
  
+.box.today-box {
+    background-color: rgba(57, 177, 157, 0.15);
+}
+.today-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.today-title {
+    margin: 0;
+    font-weight: bold;
+}
+.today-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    border-radius: 8px;
+    background-color: #39B19D;
+    color: black;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+}
+.today-list {
+    --today-card-height: 65px;
+    --today-card-gap: 12px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.today-row {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 16px;
+}
+.today-time-col {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--today-card-height);
+}
+.today-time {
+    font-size: 15px;
+    font-weight: 600;
+    color: #808080;
+    padding: 4px 10px;
+    border-radius: 10px;
+}
+.today-time.is-active {
+    background-color: #39B19D;
+    color: white;
+    box-shadow: 0 5px 13px 0 rgba(0, 0, 0, 0.25);
+}
+.today-line {
+    position: absolute;
+    left: calc(50% - 1px);
+    top: calc(50% + 19px);
+    height: calc(var(--today-card-height) + var(--today-card-gap) - 38px);
+    border-left: 2px dotted #808080;
+}
+.today-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: var(--today-card-height);
+    background-color: white;
+    border-radius: 16px;
+    padding: 12px 20px;
+    margin-bottom: var(--today-card-gap);
+}
+.today-name {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+}
+.today-location {
+    font-size: 13px;
+    font-weight: 600;
+    color: #363636;
+    margin: 4px 0 0;
+}
+.today-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.today-category-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+.today-empty {
+    color: #363636;
+    font-weight: 600;
+    margin: 0;
+}
+
+.box.dday-box {
+    background-color: rgba(57, 177, 157, 0.15);
+}
+.dday-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    min-height: 30px;
+    margin-bottom: 16px;
+}
+.dday-bell {
+    color: #F2C230;
+}
+.dday-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.dday-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 65px;
+    background-color: white;
+    border-radius: 16px;
+    padding: 12px 16px;
+}
+.dday-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #EEF4F2;
+    color: #1F2A27;
+}
+.dday-name {
+    font-size: 17px;
+    font-weight: 600;
+    color: #074538;
+    margin: 0;
+}
+.dday-count {
+    color: #C00F0C;
+    margin-left: 16px;
+}
+.dday-meta {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2F5E4E;
+    margin: 2px 0 0;
+}
+.dday-empty {
+    color: #8A8F8D;
+    font-weight: 600;
+    margin: 0;
+}
+
+.home-frodo {
+    position: fixed;
+    right: 10vw;
+    bottom: 3vh;
+    width: 20vw;
+    max-width: 320px;
+    height: auto;
+    z-index: 0;
+    pointer-events: none; 
+}

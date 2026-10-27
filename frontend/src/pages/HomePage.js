@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { mockUser } from "../mock/userMock";
 import { mockCalendarEvents, categoryColors } from "../mock/calendarMock";
+import { mockTimetable } from "../mock/timetableMock";
 import { mockDegree } from "../mock/degreeMock";
+import frodo from "../assets/frodo2.png";
+import { FiChevronRight, FiBell, FiBook } from "react-icons/fi";
 import Sidebar from "../components/Sidebar";
 import "./HomePage.css";
 
@@ -10,11 +13,15 @@ const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const MAX_DOTS = 3;
 const toDateKey = (date) =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const toMinutes = (time) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+const DDAY_CATEGORIES = ['과제', '개인일정'];
+const DDAY_LIMIT = 2;
 
 function Home() {
     const [user] = useState(mockUser);
     const [degree] = useState(mockDegree);
     const [events] = useState(mockCalendarEvents);
+    const [timetable] = useState(mockTimetable);
 
     // 주간 일정
 
@@ -33,6 +40,24 @@ function Home() {
             events: events.filter((e) => e.date === key),
         };
     });
+
+    // 오늘 일정
+
+    const todayLabel = WEEKDAYS[(today.getDay() + 6) % 7];
+    const todayItems = [
+        ...timetable
+            .filter((t) => t.day === todayLabel)
+            .map((t) => ({ key: `class-${t.id}`, time: t.startTime, endTime: t.endTime, title: t.courseName, location: t.location, category: '수업' })),
+        ...events
+            .filter((e) => e.date === todayKey && e.category !== '과제')
+            .map((e) => ({ key: `event-${e.id}`, time: e.time, endTime: e.time, title: e.title, location: e.location, category: e.category })),
+    ].sort((a, b) => {
+        if (!a.time) return -1;
+        if (!b.time) return 1;
+        return toMinutes(a.time) - toMinutes(b.time);
+    });
+    const nowMinutes = today.getHours() * 60 + today.getMinutes();
+    const activeKey = todayItems.find((item) => item.endTime && toMinutes(item.endTime) >= nowMinutes)?.key;
 
     // 졸업 진행률
 
@@ -59,6 +84,19 @@ function Home() {
         const angle = (arc.start + arc.len) / r;
         return { x: c + r * Math.cos(angle), y: c + r * Math.sin(angle) };
     };
+
+    // D-Day 알림
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const ddayItems = events
+        .filter((e) => DDAY_CATEGORIES.includes(e.category))
+        .map((e) => {
+            const [y, m, d] = e.date.split('-').map(Number);
+            return { ...e, days: Math.round((new Date(y, m - 1, d) - todayMidnight) / 86400000) };
+        })
+        .filter((e) => e.days > 0 || (e.days === 0 && (!e.time || toMinutes(e.time) >= nowMinutes)))
+        .sort((a, b) => a.days - b.days || toMinutes(a.time ?? '00:00') - toMinutes(b.time ?? '00:00'))
+        .slice(0, DDAY_LIMIT);
+    const ddayLabel = (e) => (e.days === 0 ? (e.time ? `오늘 ${e.time}` : 'D-Day') : `D-${e.days}`);
 
     return (
         <div className="layout">
@@ -90,6 +128,7 @@ function Home() {
                             ))}
                         </div>
                     </Link>
+                    
                     <Link to="/degree" className="box grad-box">
                         <div className="grad-header">
                             <h5 className="grad-title">졸업 진행률</h5>
@@ -128,13 +167,63 @@ function Home() {
                             </div>
                         </div>
                     </Link>
-                    <section className="box">
-                        <h5>오늘 일정</h5>
+
+                    <section className="box today-box">
+                        <div className="today-header">
+                            <h5 className="today-title">오늘 일정</h5>
+                            <Link to="/calendar" className="today-btn">일정 수정하기 <FiChevronRight /></Link>
+                        </div>
+                        {todayItems.length === 0 ? (
+                            <p className="today-empty">오늘은 일정이 없어요.</p>
+                        ) : (
+                            <ul className="today-list">
+                                {todayItems.map((item, i) => (
+                                    <li key={item.key} className="today-row">
+                                        <div className="today-time-col">
+                                            <span className={`today-time ${item.key === activeKey ? 'is-active' : ''}`}>
+                                                {item.time ?? '종일'}
+                                            </span>
+                                            {i < todayItems.length - 1 && <span className="today-line" />}
+                                        </div>
+                                        <div className="today-card">
+                                            <div>
+                                                <p className="today-name">{item.title}</p>
+                                                {item.location && <p className="today-location">{item.location}</p>}
+                                            </div>
+                                            <span className="today-category">
+                                                <span className="today-category-dot" style={{ backgroundColor: categoryColors[item.category] }} />
+                                                {item.category}
+                                            </span>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </section>
-                    <section className="box">
-                        <h5>D-Day 알림</h5>
+
+                    <section className="box dday-box">
+                        <h5 className="dday-title"><FiBell className="dday-bell" /> D-Day 알림</h5>
+                        {ddayItems.length === 0 ? (
+                            <p className="dday-empty">다가오는 일정이 없어요.</p>
+                        ) : (
+                            <ul className="dday-list">
+                                {ddayItems.map((e) => (
+                                    <li key={e.id} className="dday-card">
+                                        <span className="dday-icon"><FiBook size={22} /></span>
+                                        <div>
+                                            <p className="dday-name">
+                                                {e.title}
+                                                <span className="dday-count">{ddayLabel(e)}</span>
+                                            </p>
+                                            <p className="dday-meta">{e.subject ? `${e.subject} | ${e.category}` : e.category}</p>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </section>
                 </div>
+                <img className="home-frodo" src={frodo} alt="frodo" />
             </div>
         </div>
     );
