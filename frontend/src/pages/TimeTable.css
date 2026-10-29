@@ -1,0 +1,149 @@
+/* ===== 헤더 ===== */
+.tt-heading {
+    margin: 0 0 32px;
+    font-size: 44px;
+}
+
+.tt-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+.tt-semester {
+    width: 172px;
+    height: 36px;
+    padding: 0 10px;
+    border: none;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
+    font-family: inherit;
+    font-size: 15px;
+}
+
+.tt-add-btn {
+    padding: 8px 32px;
+    border: none;
+    border-radius: 8px;
+    background-color: #39B19D;
+    box-shadow: 0 5px 13px 0 rgba(0, 0, 0, 0.25);
+    color: white;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* 홈/캘린더 버튼과 같은 hover 효과 */
+.tt-add-btn:hover {
+    transform: translateY(3px);
+    transition-duration: 0.3s;
+    box-shadow: 0 2px 13px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* ===== 시간표 박스 ===== */
+.box.tt-box {
+    padding: 8px 20px 20px 12px;
+    border-radius: 28px;
+    background-color: #C1E8E0;
+}
+
+.tt-board {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+}
+
+.tt-days {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding: 16px 0 14px;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.tt-times {
+    position: relative;
+}
+
+.tt-times span {
+    position: absolute;
+    right: 10px;
+    transform: translateY(-50%);
+    color: #333;
+    font-size: 14px;
+}
+
+/* 가로선: --hour-h 간격으로 반복 */
+.tt-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background-color: white;
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--hour-h) - 1px),
+        #cfcfcf calc(var(--hour-h) - 1px),
+        #cfcfcf var(--hour-h)
+    );
+    outline: 1px solid #bbb;
+    outline-offset: -1px;
+}
+
+.tt-col {
+    position: relative;
+    border-left: 1px solid #cfcfcf;
+}
+
+.tt-col:first-child {
+    border-left: none;
+}
+
+/* ===== 수업 블록 ===== */
+.tt-block {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 8px 6px;
+    border-radius: 16px;
+    overflow: hidden;
+    text-align: center;
+}
+
+.tt-block-name {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.25;
+    word-break: keep-all;
+}
+
+.tt-block-room {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ===== 온라인 강의 ===== */
+.tt-online {
+    margin: 6px 0 0 52px;
+}
+
+.tt-online-item {
+    margin-top: 6px;
+    padding: 6px 30px;
+    border-radius: 20px;
+    background: white;
+    font-size: 14px;
+    font-weight: 600;
+}

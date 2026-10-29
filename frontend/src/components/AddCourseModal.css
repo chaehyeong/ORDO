@@ -1,0 +1,122 @@
+.course-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.course-modal {
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 28px 32px 32px;
+    border-radius: 20px;
+    background-color: #f2f7f6;
+    box-shadow: 0 5px 13px 0 rgba(0, 0, 0, 0.25);
+}
+
+.course-title {
+    margin: 0 0 4px;
+    font-size: 30px;
+}
+
+.course-label {
+    display: block;
+    margin: 18px 0 8px;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.course-input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 48px;
+    padding: 0 18px;
+    border: 1px solid #9aa0a0;
+    border-radius: 12px;
+    background: white;
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+}
+
+.course-input:focus {
+    border-color: #39B19D;
+}
+
+.course-input:disabled {
+    background: #eceff0;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.course-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.course-error {
+    margin: 10px 0 0;
+    color: #e5484d;
+    font-size: 13px;
+}
+
+.course-online {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 22px;
+    padding: 0 18px;
+    height: 48px;
+    box-sizing: border-box;
+    border: 1px solid #9aa0a0;
+    border-radius: 12px;
+    background: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.course-online input {
+    width: 24px;
+    height: 24px;
+    accent-color: #39B19D;
+    cursor: pointer;
+}
+
+.course-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 28px;
+}
+
+.course-actions button {
+    flex: 1;
+    height: 48px;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.course-cancel {
+    background-color: #8f9696;
+}
+
+.course-confirm {
+    background-color: #39B19D;
+}
+
+.course-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
