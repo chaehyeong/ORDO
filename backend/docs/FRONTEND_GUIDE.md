@@ -41,6 +41,7 @@
 | T17 남은 수강 과목 | ✅ 완료 (A) | `feat/remaining-courses` (feat/home-deadlines 위에서 작업) |
 | T18 학기별 배치 | ✅ 완료 (A) | `feat/plans` (feat/remaining-courses 위에서 작업) |
 | T19 복수전공 | ✅ 완료 (A) | `feat/double-major` (fix/course-names 위에서 작업) |
+| T20 마이크로디그리 | ✅ 완료 (A) | `feat/micro-degree` (feat/double-major 위에서 작업) |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
@@ -279,6 +280,7 @@ async function api(path, options = {}) {
 | /api/catalog/courses?majorId=54&classification=MAJOR_REQUIRED | 전공필수 과목 조회 |
 | /api/catalog/requirements?majorId=54&admissionYear=2026 | 졸업요건 원본 조회 (진행률·졸업 가능 판정 아님) |
 | /api/catalog/general-education?admissionYear=2025 | 교양 기본구조·필수과목, 기준 대체 여부 확인 |
+| /api/catalog/micro-degrees | 마이크로디그리 전체 + 편성 과목 ("+ 마이크로디그리 추가하기" 목록) |
 
 응답에서 사용할 구조:
 
@@ -294,6 +296,11 @@ general-education.data: { admissionYear, basisYear, approximate,
                           freeCredits, totalCredits,
                           requiredCourses: [{ id, groupName, courseName, credits,
                                               recommendedGrade, note }] }
+micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
+                       requiredCourseCount, requiredCredits, minDepartments, selective,
+                       requirementText, guideUrl,
+                       courses: [{ courseCode, courseName, departmentName, credits,
+                                   mandatory, groupKey, groupMin, groupMax }] }]
 ```
 
 위에서 `majors.data` 등은 각 요청 응답의 `data` 를 뜻한다. 모든 응답은 `{ success, data, error }` 공통 형식이다. 졸업요건 원본의 전체 필드는 명세서 4.3 참고.
@@ -408,6 +415,9 @@ general-education.data: { admissionYear, basisYear, approximate,
 | GET | /api/academic/double-major | 복수전공 진행 상황, 없으면 `data: null` (학사관리 다전공 카드) |
 | PUT | /api/academic/double-major | 복수전공 등록·변경 `{ "majorId": 12 }` |
 | DELETE | /api/academic/double-major | 복수전공 해제 → **204** |
+| GET | /api/academic/micro-degrees | 내 마이크로디그리와 진행 상황 (학사관리 마이크로디그리 카드) |
+| POST | /api/academic/micro-degrees | 등록 `{ "microDegreeId": 22 }` → **201**, 내 목록 전체 |
+| DELETE | /api/academic/micro-degrees/{microDegreeId} | 해제 → **204** |
 
 ```json
 // POST /api/academic/completed-courses
@@ -501,6 +511,36 @@ general-education.data: { admissionYear, basisYear, approximate,
 - 두 전공에 같은 과목은 양쪽 다 인정되고 졸업 총학점에는 1번만 들어간다. 그래서 주전공 + 다전공 + 교양 + 기타의 합이 `total` 보다 클 수 있다.
 - `progress` 의 `checks` 에 2026학번부터 `다전공·부전공·마이크로디그리`(1개 이상 이수) 항목이 추가된다. 다른 항목처럼 자동 판정이 아니다.
 - 오류: 주전공과 같은 전공 400 `INVALID_INPUT`, 없는 전공 404 `MAJOR_NOT_FOUND`, 입학년도·전공 없음 400 `PROFILE_INCOMPLETE`. `PATCH /api/users/me` 로 주전공을 복수전공과 같게 하거나 복수전공 요건이 없는 입학년도로 바꾸면 400 `INVALID_INPUT` → "복수전공을 먼저 해제해 주세요" 안내.
+
+**마이크로디그리 카드 (T20)**
+
+```json
+// GET /api/academic/micro-degrees 응답 data (POST 도 같은 모양). 없으면 [] → "이수 중인 마이크로디그리가 없습니다"
+[ { "id": 22, "name": "로컬브랜드매니지먼트", "hostDepartment": "시각디자인학과", "selective": false,
+    "guideUrl": "https://sdl.khu.ac.kr/bbs/board.php?bo_table=faq_global",
+    "earned": 9, "required": 9, "earnedCourses": 3, "requiredCourses": 3,
+    "completed": false, "unmet": ["DEPARTMENT_COUNT"],
+    "period": "2026. 2학기 ~ 2027. 1학기",
+    "courses": [ { "id": 7, "courseName": "아이덴티티디자인", "courseCode": "VID3038", "credits": 3, "grade": "A0", "counted": true } ] } ]
+```
+
+| `degreeMock.microDegree` | API |
+|---|---|
+| (단일 객체) | **배열, 최대 3개.** 카드를 여러 개 그려 주세요 |
+| `name` | `name` |
+| `type` | 프론트 고정 문구 |
+| `earned` / `required` | `earned` / `required` (학점) |
+| `period` | `period` (문자열이고 null 이면 숨김) |
+| "이수 과목 보기" | `courses` |
+
+- **"3과목 중 몇 과목"도 표시해 주세요**(`earnedCourses`/`requiredCourses`). 판정은 과목 수 기준이고 학점은 표시용이다. 그래서 9/9 인데 미완료일 수 있고, 그때는 `unmet` 으로 이유를 보여 준다.
+- `unmet` 문구 예: `REQUIRED_COURSE` 필수 과목을 아직 안 들었어요, `COURSE_COUNT` 과목이 더 필요해요, `GROUP_MINIMUM` 선택 묶음의 과목이 더 필요해요, `DEPARTMENT_COUNT` 다른 참여학과 과목을 1개 이상 들어야 해요.
+- `counted: false` 인 과목은 그룹 한도를 넘었거나 먼저 등록한 MD 에 배정된 과목이다. 흐리게 표시해 주세요. 같은 과목은 MD 1개에만 인정되므로 **등록·해제 후에는 목록 전체를 다시 그린다**(POST 응답이 전체 목록, DELETE 뒤에는 GET).
+- `period` 는 들은 과목으로 계산한다. 학교에 고정 기간이 없어 디자인의 미래 종료 학기(예: 2027. 2학기)는 나오지 않는다.
+- "+ 마이크로디그리 추가하기"의 목록은 `GET /api/catalog/micro-degrees`(로그인 불필요, 약 70KB). 이수요건 문구는 `requirementText`, 과목은 `courses`. `credits` null 은 "학점 확인 필요"로 표시해 주세요.
+- 오르도는 신청 창구가 아니다. "알아보기"는 `guideUrl` 로 보낸다. 신청은 포털 → 학적 → 전공 → 마이크로디그리에서 하고, `selective: true`(첨단패키징, 의료인공지능)는 선발제라 "신청하면 이수 가능"으로 안내하면 안 된다.
+- MD 과목은 전공·교양 학점에도 그대로 인정되므로 등록해도 `progress` 숫자는 바뀌지 않는다.
+- 오류: 없는 MD·등록 안 한 MD 해제 404 `NOT_FOUND`, 이미 등록했거나 4개째 400 `INVALID_INPUT`.
 
 ### 파일 가져오기 `import` (🔒, T12)
 
@@ -629,6 +669,7 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 - T12: 공용 `build.gradle` 에 Apache POI(`poi-ooxml` 5.5.1), `application.yml` 에 multipart 설정(5MB·메모리 처리), `ErrorCode` 4개(IMPORT_*), `GlobalExceptionHandler` 에 업로드 크기 초과 처리, `AGENTS.md` 패키지 목록(importer·notification). 이수내역 bulk 에 `replaceTerms`·`keepClassification`, 시간표 bulk API 추가. 테스트 사본은 `src/test/resources/import/`(익명).
 - T11: Flyway `V11__add_web_push.sql`(`push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·인덱스, `users.todo_alarm_time`), 공용 `ErrorCode` 에 `PUSH_NOT_CONFIGURED`(카카오 코드는 만들지 않음), `application.yml` 에 `app.webpush.*`·`app.notification.scheduler-enabled`(값 없이 환경변수 이름만). 새 의존성 없음(JDK 암호화 + 기존 jjwt). `@EnableScheduling` 은 `notification/config/SchedulingConfig`. `UserSettingsRequest` 의 `notificationEnabled` 가 필수 → 선택으로 바뀜.
 - T19: Flyway `V14__add_user_double_major.sql`(`users.double_major_id`). `User` 에 `doubleMajor`. B 가 만든 T3 코드도 바꿨다: `MajorRepository.findAllSelectable`·`CatalogService.getMajors` 에 `includeConvergence` 인자 추가(기본 동작은 그대로). 공용 파일(`global/**`, `ErrorCode`, `build.gradle`, `application.yml`) 변경 없음.
+- T20: Flyway `V17__add_micro_degrees.sql`, `V18__seed_micro_degrees.sql`(생성기 `tools/seed/generate_micro_degree_seed.py`). `CatalogService`·`CatalogController` 에 목록 API 추가. 공용 파일(`global/**`, `ErrorCode`, `build.gradle`, `application.yml`) 변경 없음.
 - 명세와 다르게/새로 정한 것은 `BACKEND_SPEC.md` 4장·4.1·4.2·8장에 반영해 두었다.
 
 ---

@@ -3,6 +3,7 @@ package com.ordo.catalog;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ordo.catalog.dto.MajorResponse;
+import com.ordo.catalog.dto.MicroDegreeResponse;
 import com.ordo.catalog.service.CatalogService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,8 @@ import org.springframework.test.context.jdbc.SqlConfig;
         showSql = false)
 @Import(CatalogService.class)
 @Sql(scripts = {"/db/migration/V2__seed_catalog.sql", "/db/migration/V15__fix_course_names.sql",
-        "/db/migration/V16__fix_sports_practice_course_units.sql"}, config = @SqlConfig(encoding = "UTF-8"))
+        "/db/migration/V16__fix_sports_practice_course_units.sql", "/db/migration/V18__seed_micro_degrees.sql"},
+        config = @SqlConfig(encoding = "UTF-8"))
 class CatalogSeedTest {
 
     // V2 3036행 - 잘못 들어간 전문실기 6행 + 체육대학 5개 학과 × 6행
@@ -57,6 +59,37 @@ class CatalogSeedTest {
                 "격년개설33식물·식품미생물응용학", "E40124386전문실기6(뉴스포츠)", "ClimateChangesandESGManagement");
         assertThat(names).contains("American Foreign Policy", "Introduction to EconomicsⅠ", "시각디자인졸업스튜디오1",
                 "식물·식품미생물응용학", "3D모델링", "h-STEM융합개론");
+    }
+
+    // V18: 타대학 융합 묶음은 과목·요건이 없어 뺐다. 추정 학점은 넣지 않는다
+    @Test
+    void microDegreeSeedMatchesTheSourceSheet() {
+        var degrees = service.getMicroDegrees();
+
+        assertThat(degrees).hasSize(56);
+        assertThat(degrees).extracting(MicroDegreeResponse::name).doesNotContain("타대학 융합 마이크로디그리");
+        assertThat(degrees.stream().filter(d -> d.scope().equals("공통"))).hasSize(7);
+        assertThat(degrees.stream().flatMap(d -> d.courses().stream())).hasSize(249);
+        assertThat(degrees.stream().flatMap(d -> d.courses().stream()).filter(c -> c.credits() == null)).hasSize(27);
+        assertThat(degrees.stream().flatMap(d -> d.courses().stream()).filter(c -> c.courseCode() == null)).hasSize(4);
+        assertThat(jdbc.queryForObject("select count(*) from micro_degree_courses where alias_code is not null", Integer.class))
+                .isEqualTo(12);
+        assertThat(degrees.stream().filter(MicroDegreeResponse::selective)).extracting(MicroDegreeResponse::name)
+                .containsExactlyInAnyOrder("첨단패키징", "의료인공지능-Medical AI");
+        assertThat(degrees.stream().filter(d -> d.minDepartments() == 2)).extracting(MicroDegreeResponse::name)
+                .containsExactlyInAnyOrder("로컬브랜드매니지먼트", "로컬콘텐츠마케팅", "지역공간디자인매니지먼트", "AI로봇");
+        assertThat(degrees).allSatisfy(d -> {
+            assertThat(d.courses()).isNotEmpty();
+            assertThat(d.courses().size()).isGreaterThanOrEqualTo(d.requiredCourseCount());
+        });
+    }
+
+    // 참여학과 2개 조건이 있는 MD 는 2개 학과 이상의 과목이 편성돼 있어야 채울 수 있다
+    @Test
+    void microDegreesWithDepartmentRuleOfferAtLeastTwoDepartments() {
+        assertThat(service.getMicroDegrees().stream().filter(d -> d.minDepartments() == 2)).allSatisfy(d ->
+                assertThat(d.courses().stream().map(MicroDegreeResponse.CourseItem::departmentName).distinct().count())
+                        .isGreaterThanOrEqualTo(2));
     }
 
     // V16: 전문실기는 체육대학 공통 전공선택이다

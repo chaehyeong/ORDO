@@ -6,6 +6,7 @@ import com.ordo.catalog.dto.CoursePageResponse;
 import com.ordo.catalog.dto.GeneralEducationResponse;
 import com.ordo.catalog.dto.GraduationRequirementResponse;
 import com.ordo.catalog.dto.MajorResponse;
+import com.ordo.catalog.dto.MicroDegreeResponse;
 import com.ordo.catalog.service.CatalogService;
 import com.ordo.global.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,6 +52,12 @@ public class CatalogController {
             @RequestParam @Positive Long majorId,
             @RequestParam @Positive int admissionYear) {
         return ApiResponse.ok(catalogService.getRequirements(majorId, admissionYear));
+    }
+
+    @Operation(summary = "마이크로디그리 목록과 편성 과목")
+    @GetMapping("/micro-degrees")
+    public ApiResponse<List<MicroDegreeResponse>> getMicroDegrees() {
+        return ApiResponse.ok(catalogService.getMicroDegrees());
     }
 
     @Operation(summary = "전공 교과목 검색", description = "2026 교육과정 편성 자료이며 실제 학기별 개설 확정 정보가 아닙니다.")

@@ -7,6 +7,8 @@ import com.ordo.academic.dto.CompletedCourseUpdateRequest;
 import com.ordo.academic.dto.DoubleMajorRequest;
 import com.ordo.academic.dto.DoubleMajorResponse;
 import com.ordo.academic.dto.GpaSummary;
+import com.ordo.academic.dto.MicroDegreeAddRequest;
+import com.ordo.academic.dto.MicroDegreeProgressResponse;
 import com.ordo.academic.dto.PlannedCoursesRequest;
 import com.ordo.academic.dto.PlannedCoursesResponse;
 import com.ordo.academic.dto.ProgressSummary;
@@ -15,6 +17,7 @@ import com.ordo.academic.service.AcademicGpaService;
 import com.ordo.academic.service.AcademicProgressService;
 import com.ordo.academic.service.CompletedCourseService;
 import com.ordo.academic.service.DoubleMajorService;
+import com.ordo.academic.service.MicroDegreeService;
 import com.ordo.academic.service.PlannedCourseService;
 import com.ordo.academic.service.RemainingCourseService;
 import com.ordo.global.common.ApiResponse;
@@ -45,6 +48,7 @@ public class AcademicController {
     private final RemainingCourseService remainingCourseService;
     private final PlannedCourseService plannedCourseService;
     private final DoubleMajorService doubleMajorService;
+    private final MicroDegreeService microDegreeService;
 
     @GetMapping("/completed-courses")
     public ApiResponse<List<CompletedCourseResponse>> getCourses(@LoginUser Long userId) {
@@ -117,6 +121,24 @@ public class AcademicController {
     @DeleteMapping("/double-major")
     public ResponseEntity<Void> removeDoubleMajor(@LoginUser Long userId) {
         doubleMajorService.remove(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/micro-degrees")
+    public ApiResponse<List<MicroDegreeProgressResponse>> getMicroDegrees(@LoginUser Long userId) {
+        return ApiResponse.ok(microDegreeService.getMine(userId));
+    }
+
+    @PostMapping("/micro-degrees")
+    public ResponseEntity<ApiResponse<List<MicroDegreeProgressResponse>>> addMicroDegree(
+            @LoginUser Long userId, @Valid @RequestBody MicroDegreeAddRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(microDegreeService.add(userId, request)));
+    }
+
+    @DeleteMapping("/micro-degrees/{microDegreeId}")
+    public ResponseEntity<Void> removeMicroDegree(@LoginUser Long userId, @PathVariable Long microDegreeId) {
+        microDegreeService.remove(userId, microDegreeId);
         return ResponseEntity.noContent().build();
     }
 }

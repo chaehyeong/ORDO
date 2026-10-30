@@ -13,6 +13,7 @@ import com.ordo.catalog.dto.CollegeResponse;
 import com.ordo.catalog.dto.CoursePageResponse;
 import com.ordo.catalog.dto.GeneralEducationResponse;
 import com.ordo.catalog.dto.MajorResponse;
+import com.ordo.catalog.dto.MicroDegreeResponse;
 import com.ordo.catalog.service.CatalogService;
 import com.ordo.global.config.SecurityConfig;
 import com.ordo.global.error.BusinessException;
@@ -48,6 +49,15 @@ class CatalogControllerTest {
         mvc.perform(get("/api/catalog/majors").param("admissionYear", "2026").param("collegeId", "3"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].id").value(54))
                 .andExpect(jsonPath("$.data[0].collegeName").value("소프트웨어융합대학"));
+    }
+
+    @Test
+    void microDegreesCanBeReadBeforeLogin() throws Exception {
+        given(service.getMicroDegrees()).willReturn(List.of(new MicroDegreeResponse(22L, "로컬브랜드매니지먼트", "국제",
+                "예술·디자인대학", "시각디자인학과", 3, 9, 2, false, "3과목 이수(총9학점)", "https://sdl.khu.ac.kr", List.of())));
+        mvc.perform(get("/api/catalog/micro-degrees"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].id").value(22))
+                .andExpect(jsonPath("$.data[0].minDepartments").value(2));
     }
 
     @Test

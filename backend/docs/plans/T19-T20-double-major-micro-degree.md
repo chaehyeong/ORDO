@@ -1,6 +1,6 @@
 # T19 복수전공 · T20 마이크로디그리 계획
 
-> 작성 2026-10-31 · 상태: **승인(2026-10-31)**, T19 구현 완료, T20 구현 전 · `T15-figma-final.md` 2장의 T19·T20 을 이 문서로 대체한다.
+> 작성 2026-10-31 · 상태: **승인(2026-10-31)**, T19·T20 구현 완료 · `T15-figma-final.md` 2장의 T19·T20 을 이 문서로 대체한다.
 >
 > 근거 자료: `예소/오르도_T19복수전공_T20마이크로디그리_최종.xlsx`(2026-10-31 검증본. 같은 폴더의 무접미사·`_수정전` 파일은 쓰지 않는다), `2026 교육과정(전체).pdf`.
 >
@@ -185,7 +185,7 @@ PDF 원문으로 직접 확인한 항목: p25·26(후마니타스 MD), p115~118(
 
 ### 4.4 파일
 
-- 새 파일: `V17`, `V18`, `tools/seed/generate_micro_degree_seed.py`, `catalog/domain/MicroDegree`·`MicroDegreeCourse`, `catalog/repository/MicroDegreeRepository`, `catalog/dto/MicroDegreeResponse`, `academic/domain/UserMicroDegree`, `academic/repository/UserMicroDegreeRepository`, `academic/service/MicroDegreeService`, `academic/dto/MicroDegreeAddRequest`·`MicroDegreeProgressResponse`, `MicroDegreeServiceTest`.
+- 새 파일: `V17`, `V18`, `tools/seed/generate_micro_degree_seed.py`, `catalog/domain/MicroDegree`·`MicroDegreeCourse`, `catalog/repository/MicroDegreeRepository`·`MicroDegreeCourseRepository`, `catalog/dto/MicroDegreeResponse`, `academic/domain/UserMicroDegree`, `academic/repository/UserMicroDegreeRepository`, `academic/service/MicroDegreeService`·`MicroDegreeCalculation`, `academic/dto/MicroDegreeAddRequest`·`MicroDegreeProgressResponse`, `MicroDegreeServiceTest`.
 - 수정: `catalog/service/CatalogService`, `catalog/controller/CatalogController`, `academic/controller/AcademicController`, `CatalogSeedTest`, `OrdoApplicationTests`.
 
 ### 4.5 테스트

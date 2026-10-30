@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`, `오르도_T19복수전공_T20마이크로디그리_최종.xlsx`, `2026 교육과정(전체).pdf`(전공 이수 총칙 p115~118).
-> 최종 갱신: 2026-10-31 (T19 복수전공 3.2·3.3·4.3·4.6·5·V14), 2026-10-30 (T15 시간표 온라인 강의 4.5·V12, T16 홈 D-Day 알림 4.7, T17 남은 수강 과목 4.6, T18 학기별 배치 4.6·V13, 시드 과목명·전문실기 소속 교정 6·7·9장 24·V15·V16), 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
+> 최종 갱신: 2026-10-31 (T19 복수전공 3.2·3.3·4.3·4.6·5·V14, T20 마이크로디그리 3.2·4.3·4.6·5·6·V17·V18), 2026-10-30 (T15 시간표 온라인 강의 4.5·V12, T16 홈 D-Day 알림 4.7, T17 남은 수강 과목 4.6, T18 학기별 배치 4.6·V13, 시드 과목명·전문실기 소속 교정 6·7·9장 24·V15·V16), 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
 
 ---
 
@@ -17,7 +17,7 @@
 | 프론트 | 별도 웹 프론트엔드 → 백엔드는 **REST API(JSON)만** 제공 |
 | 팀 | 백엔드 2명 (각자 AI로 코딩) — 분업은 8장 |
 | MVP 범위 | ① 회원/로그인 ② 홈 ③ 캘린더·일정·할 일(+ e캠퍼스 과제 마감 읽기) ④ 시간표 ⑤ 학사관리(이수현황) ⑥ 마이페이지 |
-| 나중에 | 카카오 로그인, AI 추천, 졸업 시뮬레이션, 마이크로디그리, STT |
+| 나중에 | 카카오 로그인, AI 추천, 졸업 시뮬레이션, STT |
 
 **이미 준비된 것 (새로 만들지 말 것)**
 
@@ -41,7 +41,7 @@
 | 캘린더 | 연/월 선택, 오늘 버튼, 월 달력, +일정추가, 날짜 클릭 → 그날 일정 상세·추가·삭제, e캠퍼스 과제 마감 표시 | `GET/POST/PATCH/DELETE /api/schedules`, `GET /api/ecampus/events` |
 | 일정(할 일) 추가 폼 | 제목, 카테고리, 날짜, 시작~종료 시간, 알람 | `POST /api/schedules` |
 | 시간표 | 학기 선택(2026년 2학기), 시간표 편집, 월~금 09:00~19:00 격자, 격자 아래 온라인 강의 줄 | `/api/timetables` |
-| 학사관리 | 학점 취득 현황(총 18/130, 13.8%, 영역 그룹별 도넛), 졸업까지 필요한 학점, 영역별 이수현황(필수교양·전공기초·전공필수·전공선택·기타·전체), 복수전공(T19), 마이크로디그리(T20 승인, 구현 전) | `GET /api/academic/progress`, `/api/academic/completed-courses`, `/api/academic/double-major` |
+| 학사관리 | 학점 취득 현황(총 18/130, 13.8%, 영역 그룹별 도넛), 졸업까지 필요한 학점, 영역별 이수현황(필수교양·전공기초·전공필수·전공선택·기타·전체), 복수전공(T19), 마이크로디그리(T20) | `GET /api/academic/progress`, `/api/academic/completed-courses`, `/api/academic/double-major`, `/api/academic/micro-degrees`, `/api/catalog/micro-degrees` |
 | 졸업 로드맵 | 학기별 곡선(학기별 평점·학점), 이수한 과목, 남은 수강 과목(T17), 학기별 배치(T18) | `GET /api/academic/gpa`, `/api/academic/completed-courses`, `/api/academic/remaining-courses`, `/api/academic/plans` |
 | 마이페이지 | 프로필(이름·학과·입학년도/학년·학번·이메일·연락처·사진), 정보 수정, 이번 학기 수강과목 수·과제 수, 학점 현황, 알림 on/off, e캠퍼스 연결, 로그아웃 | `/api/users/me`, `/api/users/me/summary`, `/api/auth/logout` |
 
@@ -210,6 +210,9 @@ enum Classification {             // 이수구분 (학교 코드)
 | timetable_entries | 사용자 | academic_year + term, day_of_week(1=월…7=일), start_time~end_time, online(T15, true 면 요일·시간 NULL) |
 | planned_courses | 사용자 | 학기별 배치(T18): academic_year + term, course_name, course_code(선택), classification(선택), credits |
 | completed_courses | 사용자 | 내가 들은 과목: course_code(선택), course_name, credits, classification, distribution_area, grade, academic_year, term |
+| micro_degrees | 기준정보(읽기) | 마이크로디그리 56개(V18): name 유일, scope(국제/공통), host_department, required_course_count(판정 기준), required_credits(표시용), min_departments(2 면 참여학과 2개 조건), selective(선발제), requirement_text, guide_url |
+| micro_degree_courses | 기준정보(읽기) | 편성 과목 249행(V18): course_code(NULL 이면 과목명으로 찾음, `courses` 와 FK 없음), alias_code(구 학수번호·오기), department_name, credits(NULL = 자료에서 확인 못함), mandatory, group_key·group_min·group_max |
+| user_micro_degrees | 사용자 | 내가 등록한 MD (user_id, micro_degree_id) 유일. 최대 3개. 등록 순서가 과목 배정 순서 |
 
 ### 3.3 도메인 규칙
 
@@ -309,6 +312,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | GET | /api/catalog/requirements?majorId=&admissionYear= | 졸업요건 원본 |
 | GET | /api/catalog/courses?majorId=&q=&classification=&page=0&size=20 | 교과목 검색 (majorId → course_unit 으로 필터, q는 과목명/학수번호 부분일치) |
 | GET | /api/catalog/general-education?admissionYear= | 교양 기본구조 + 필수과목 목록 (없으면 2026, approximate=true) |
+| GET | /api/catalog/micro-degrees | 마이크로디그리 전체 + 편성 과목, 이름 → id 순 (T20) |
 
 **T3 조회 계약**
 
@@ -351,6 +355,19 @@ enum Classification {             // 이수구분 (학교 코드)
 - `requiredCourses`: `[{ id, groupName, courseName, credits, recommendedGrade, note }]`, 실제 사용한 기준년도에 속하는 목록만 id 순으로 반환. `groupName, recommendedGrade, note` 는 null일 수 있다.
 
 프론트 호출 예시·독립 테스트 실행법은 `docs/FRONTEND_GUIDE.md` 4장 catalog 및 7장 참고.
+
+**마이크로디그리 목록 (T20)**
+
+```json
+// GET /api/catalog/micro-degrees 응답 data 의 원소
+{ "id": 22, "name": "로컬브랜드매니지먼트", "scope": "국제", "collegeName": "예술·디자인대학", "hostDepartment": "시각디자인학과",
+  "requiredCourseCount": 3, "requiredCredits": 9, "minDepartments": 2, "selective": false,
+  "requirementText": "3과목 이수(총9학점)", "guideUrl": "https://sdl.khu.ac.kr/bbs/board.php?bo_table=faq_global",
+  "courses": [ { "courseCode": "VID3038", "courseName": "아이덴티티디자인", "departmentName": "시각디자인학과", "credits": 3,
+                 "mandatory": false, "groupKey": null, "groupMin": null, "groupMax": null } ] }
+```
+
+- 페이지 나눔 없음(약 70KB). 입학년도 제한이 없어 파라미터도 없다(운영지침 제4조). `credits` null 은 자료에서 학점을 확인 못한 과목, `courseCode` null 은 학수번호 미표기 과목(타대학 등)이다.
 
 ### 4.4 일정·할 일 `schedule`
 
@@ -428,6 +445,9 @@ enum Classification {             // 이수구분 (학교 코드)
 | GET | /api/academic/double-major | 🔒 복수전공 진행 상황, 없으면 `data: null` (학사관리, T19) |
 | PUT | /api/academic/double-major | 🔒 복수전공 등록·변경 (T19) |
 | DELETE | /api/academic/double-major | 🔒 복수전공 해제 → 204 (T19) |
+| GET | /api/academic/micro-degrees | 🔒 내 마이크로디그리와 진행 상황, 등록순 (학사관리, T20) |
+| POST | /api/academic/micro-degrees | 🔒 등록 `{ "microDegreeId": 22 }` → 201, 내 목록 전체 (T20) |
+| DELETE | /api/academic/micro-degrees/{microDegreeId} | 🔒 해제 → 204 (T20) |
 
 ```json
 // POST /api/academic/completed-courses
@@ -565,6 +585,21 @@ enum Classification {             // 이수구분 (학교 코드)
 - 오류: 입학년도·주전공 없음 `PROFILE_INCOMPLETE`, 주전공과 같음 `INVALID_INPUT`, 없는 전공·내 입학년도에 요건이 없는 전공 `MAJOR_NOT_FOUND`. `majorId` 누락·0 이하는 400.
 - `PATCH /api/users/me` 로 주전공을 복수전공과 같게 하거나 복수전공 요건이 없는 입학년도로 바꾸면 `INVALID_INPUT`(복수전공을 먼저 해제). 그래서 복수전공 요건 행은 항상 있다.
 - 복수전공 1개만 저장한다(학교는 2개까지 승인). 오르도는 신청 창구가 아니라 승인받은 결과를 입력받으므로 다전공 금지 조합은 검사하지 않는다. `DELETE` 는 복수전공이 없어도 204.
+
+```json
+// GET /api/academic/micro-degrees 응답 data, POST 도 같은 모양(T20)
+[ { "id": 22, "name": "로컬브랜드매니지먼트", "hostDepartment": "시각디자인학과", "selective": false,
+    "guideUrl": "https://sdl.khu.ac.kr/bbs/board.php?bo_table=faq_global",
+    "earned": 9, "required": 9, "earnedCourses": 3, "requiredCourses": 3,
+    "completed": false, "unmet": ["DEPARTMENT_COUNT"],      // 비어 있으면 completed
+    "period": "2026. 2학기 ~ 2027. 1학기",                  // 센 과목의 첫~마지막 학기, 없으면 null
+    "courses": [ { "id": 7, "courseName": "아이덴티티디자인", "courseCode": "VID3038", "credits": 3, "grade": "A0", "counted": true } ] } ]
+```
+
+- 판정 규칙은 5장 끝의 "마이크로디그리 판정". `courses` 는 이 MD 과목 중 내가 들은 과목이고, `counted: false` 면 그룹 한도를 넘었거나 먼저 등록한 MD 에 배정된 과목이다.
+- `unmet`: `REQUIRED_COURSE`(필수 과목 미이수), `COURSE_COUNT`(과목 수 부족), `GROUP_MINIMUM`(선택그룹 최소 미달), `DEPARTMENT_COUNT`(참여학과 2개 미달).
+- 오류: 없는 MD 나 등록 안 한 MD 해제 `NOT_FOUND`, 이미 등록했거나 3개를 넘으면 `INVALID_INPUT`. `microDegreeId` 누락·0 이하는 400.
+- 오르도는 신청 창구가 아니다. 신청은 학교 포털에서 하고, 선발제(`selective`) 2개는 신청해도 선발돼야 이수할 수 있다. 신청 자격(2학기 이상)은 검사하지 않는다. 입학년도·전공이 없어도 쓸 수 있다.
 
 ### 4.7 홈 `home`
 
@@ -716,6 +751,21 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 **반드시 단위 테스트할 케이스**: 빈 이수내역 / F 제외 / 재수강 중복 제거 / NULL 요구학점 / 배분 영역 수 부족 / 2025학번 교양 근사(approximate) / 졸업 가능 케이스. 복수전공: 제1전공 요건 교체 / 공통 과목 양쪽 합산·총학점 1번 / 제2전공만 소속 과목 기타 이동 / 마스터 이수구분 / 제2전공 미충족이면 졸업 불가.
 
 > 부전공 계산, 전공 초과학점의 전공선택 인정, 타전공 인정 한도는 **MVP 제외**(9장 미결정).
+
+### 마이크로디그리 판정 (`MicroDegreeCalculation`, T20)
+
+운영지침(2026.5.8 시행)과 교육과정 p25·26 기준. 이수현황 계산(요건·학점)은 바꾸지 않는다(제5조④: MD 과목은 전공·교양 학점으로 그대로 인정).
+
+1. 인정 과목은 이수현황과 같다(F·NP 제외, 재수강 최근 1건). 신청 전 이수도 인정(제5조③). 이수구분은 보지 않는다.
+2. 과목 찾기: `course_code` 또는 `alias_code` 가 같은 기록. 학수번호 없는 기록은 공백 뺀 과목명으로 비교한다. `course_code` 가 없는 MD 과목(타대학 등 4행)은 기록의 학수번호와 상관없이 과목명으로 비교한다. 이름만 같고 학수번호가 다른 기록은 아니다.
+3. MD 간 중복(제5조⑤): 같은 과목은 **먼저 등록한 MD 에서 센 것**으로 끝난다. 뒤 MD 에 더 필요해도 넘겨주지 않는다. 앞 MD 에서 세지 않은 과목은 뒤 MD 에서 셀 수 있다.
+4. 세기: 선택그룹은 `group_max` 까지만 센다. 넘는 과목은 `counted: false` 일 뿐 **미충족 사유가 아니다.**
+5. `completed` = 필수 과목 전부 센다 AND 센 과목 수 ≥ `required_course_count` AND 그룹마다 센 과목 수 ≥ `group_min` AND 센 과목의 `department_name` 종류 ≥ `min_departments`.
+6. `earned` = 센 과목의 **내 이수 기록 학점** 합, `required_credits` 상한. `earnedCourses` 도 `required_course_count` 상한. 판정은 과목 수 기준이다(예술체험심화 11~12학점 때문).
+7. `period`: 센 과목의 첫 학기 ~ 마지막 학기(학교에 고정 기간이 없음, 제4조⑥). 같으면 학기 1개, 없으면 null.
+
+**반드시 단위 테스트할 케이스**: 필수 미이수 / 과목 수 / 그룹 상한(초과가 미충족이 아님) / 그룹 하한 / 2개 학과 / 별칭·과목명 찾기 / MD 간 중복 / 학점 상한 / 기간 / F·재수강.
+
 ### 평점 평균 (`AcademicGpaService`, T13)
 
 **등급 → 평점** (경희대 **4.3 만점**. A+·B+·B0·C+ 는 성적표 평점 칸으로 확인, 나머지는 4.3 척도 관례값 → 9장 20)
@@ -747,6 +797,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | 졸업요건 393 | 같은 파일 | 학번×전공. 2026행만 SW·영어강의·논문·TOPIK·인증 텍스트 |
 | 교양 기준 1 + 필수과목 6 | 졸업관리데이터 ② | 2026만 |
 | 교과목 3,036 (V16 후 3,060) | 졸업관리데이터 ⑤ | 2026 전공 교과목만. 교양 과목 목록 없음 → 교양은 사용자가 이수구분 직접 선택 |
+| 마이크로디그리 56 + 편성 과목 249 (V18) | `오르도_T19복수전공_T20마이크로디그리_최종.xlsx` MD목록·MD과목 | `tools/seed/generate_micro_degree_seed.py` 로 생성. 57행 중 타대학 융합 묶음 제외, 학점 추정 27행은 NULL, 구 학수번호·오기 12행은 `alias_code` |
 
 알려진 한계: 교과목은 2026 편성 기준이라 옛 학번 학생은 자동 판별이 틀릴 수 있음(수정 가능하게 함). `course_unit` 이 NULL인 전공 2개('글로벌한국학과', '스마트팜공학 융합전공')는 자동 판별 불가. 깨진 과목명은 V15, 전문실기 소속은 V16 에서 교정(9장 24). 전문실기는 종목을 나누지 않고 학수번호당 1행이다. 개설학기 미표기 18건.
 
@@ -761,7 +812,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 사용 중: `V12__add_timetable_online.sql`(A, T15: `timetable_entries` 요일·시간 NULL 허용, `online` 추가, 2026-10-30 승인).
 - 사용 중: `V13__add_planned_courses.sql`(A, T18: `planned_courses` 새 테이블, 2026-10-30 승인).
 - 사용 중: `V14__add_user_double_major.sql`(A, T19: `users.double_major_id`, 2026-10-31 승인). `out-of-order: true` 라 V15·V16 뒤에 들어와도 적용된다.
-- 예약: `V17`·`V18`(A, T20 마이크로디그리 테이블·시드, 계획서 `docs/plans/T19-T20-double-major-micro-degree.md`).
+- 사용 중: `V17__add_micro_degrees.sql`(A, T20: `micro_degrees`·`micro_degree_courses`·`user_micro_degrees` 새 테이블, 2026-10-31 승인), `V18__seed_micro_degrees.sql`(A, T20 시드, 생성기 `tools/seed/generate_micro_degree_seed.py`).
 - 사용 중: `V15__fix_course_names.sql`(A, 시드 `courses` 과목명 174행 교정, 스키마 변경 없음, 9장 24, 2026-10-30 승인).
 - 사용 중: `V16__fix_sports_practice_course_units.sql`(A, 전문실기 6행을 체육대학 5개 학과로 이동, `courses` 3,036 → 3,060행, 스키마 변경 없음, 9장 24, 2026-10-30 승인).
 - 로컬 DB가 꼬이면: `DROP DATABASE ordo;` 후 서버 재시작 → Flyway가 V1부터 다시 적용.
@@ -795,6 +846,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T17 ✅ | 남은 수강 과목 (4.6, `docs/plans/T15-figma-final.md`) | A | 필수교양·전공 중 안 들은 과목, 학수번호 → 과목명 판정, F 는 남음, course_unit 없는 전공 처리 |
 | T18 ✅ | 학기별 배치하기 (4.6, `docs/plans/T15-figma-final.md`) | A | GET·PUT(통째로 교체), V13, 빈 목록 초기화, 같은 학기 중복 400, 남의 배치 분리, 이수현황·평점에 영향 없음 |
 | T19 ✅ | 복수전공 (4.6·5장 12번, `docs/plans/T19-T20-double-major-micro-degree.md`) | A | V14, GET·PUT·DELETE, 제1전공 요건 교체, 공통 과목 양쪽 인정, 제2전공만 소속 과목 기타 이동, 융합전공 등록·`includeConvergence`, 남은 과목 합치기, 프로필 변경 충돌 400 |
+| T20 ✅ | 마이크로디그리 (4.3·4.6·5장, `docs/plans/T19-T20-double-major-micro-degree.md`) | A | V17·V18(56개·249행), 목록 API, 등록·해제·최대 3개, 필수·과목 수·그룹·참여학과 판정, 별칭·과목명 찾기, MD 간 중복, 기간 계산 |
 
 ### AI에게 줄 프롬프트 예시 (그대로 복사해서 사용)
 
@@ -839,7 +891,7 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 2 | 홈 주간일정: 회의록 1차 "오늘이 맨 왼쪽" vs 디자인 "월요일 시작" | 월요일 시작(디자인). 바뀌면 `week` 시작일만 변경 |
 | 3 | 이수내역 입력 화면이 디자인에 없음 | 학사관리에 "과목 추가" 모달 필요 → 디자인팀 요청 |
 | 4 | 가입 이메일을 학교메일(@khu.ac.kr)로 제한할지 | 제한 안 함 |
-| 5 | 마이크로디그리 화면 | **결정(2026-10-31): 목록을 시드로 넣고 자동 판정**(T20, `docs/plans/T19-T20-double-major-micro-degree.md` 4장). 구현 전 |
+| 5 | 마이크로디그리 화면 | **결정(2026-10-31): 목록을 시드로 넣고 자동 판정**(T20, 5장 끝, V17·V18). 사용자 직접 입력(B안)은 만들지 않음 |
 | 6 | 전공 초과학점 전공선택 인정, 타전공 인정 한도, 재수강 세부 규칙 | 학과 시행세칙 확인 전까지 5장 단순 규칙 |
 | 7 | 2025학번 이하 교양 기준 | 2026 값으로 근사 + approximate 표시 |
 | 8 | 다전공·부전공 | **결정(2026-10-31): 다전공 1개(복수전공·융합전공) 지원**(T19, 5장 12번). 부전공은 제외 |
@@ -864,3 +916,4 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 27 | 복수전공 학생의 실제 성적표 (T19) | 샘플 없음. 책자 코드표에 전용 코드가 없어 학수번호로 판정한다. 전용 코드가 있으면 소속 판정보다 우선하도록 고친다 |
 | 28 | 시각디자인 전공기초 학점 (T19) | 문서마다 다름: 6(교육과정 p122, 시드) vs 12(p1042·시행세칙). 합계 67/42 는 같아 시드 값을 유지. 학과 확인 필요 |
 | 29 | 졸업 판정에 아직 없는 규칙 (T19 조사) | 전공탐색 세미나 필수·면제(p22), 전공필수 초과 이월(p119), 타전공 인정 한도, 대학영어 면제 학점, 적용 교육과정 연도 선택(p119), 빅뱅·배분 대체, 외국인 대학영어 대체. 이 때문에 `graduatable` 이 실제보다 true 로 나올 수 있다 |
+| 30 | 마이크로디그리 자료에서 확인할 것 (T20) | 참여학과 2개 조건: 적용 3개는 책자 본문이 근거, **AI로봇은 2026 책자에 없어 2026 이후 신설로 추정해 적용**, 실감미디어기술·테크놀로지&디자인융합콘텐츠제작은 책자에 있어 2025 이전 신설로 추정해 미적용. 의료인공지능의 국제캠 신청 가능 여부, 디자인 소프트웨어의 `SWCON492`, 그린바이오소재의 두 과목표(사이트 기준으로 넣음), 학점 미확인 27행(NULL). 실감미디어융합전공 이수자의 추가 등록 허용은 넣지 않음(최대 3개 고정). 2026학번 의무(`checks`)는 MD 를 완료해도 자동으로 표시되지 않는다 |

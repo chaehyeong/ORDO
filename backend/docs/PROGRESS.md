@@ -150,6 +150,19 @@
 | 4. 계산 | ✅ | `DoubleMajorCalculation`(DB 조회 없음), `AcademicProgressService.calculate` 에 인자 추가, `findDoubleMajor`, 2026학번 `checks` | 단위 테스트 14개 추가 | |
 | 5. API | ✅ | `DoubleMajorService`, `GET`·`PUT`·`DELETE /api/academic/double-major`, `includeConvergence`, 프로필 변경 충돌 400, 남은 과목에 제2전공·`unitName` | 단위 테스트 14개 추가(서비스 8, 남은 과목 2, 프로필 2, 카탈로그 2). 전체 **257개 통과** | |
 | 6. 로컬 서버 확인 | ✅ | 8081 임시 서버 + 실제 MySQL·시드. 시각디자인 + 산업디자인으로 요건 교체(61→36, 67→42), 공통·산업만·시각만·모르는 과목, F·재수강, 마스터 이수구분, 홈·마이페이지, 남은 과목, 프로필 충돌 2가지, 융합전공, 교과목 자료 없는 전공 2개(2023학번), 사용자 분리, 해제 복귀, 401·입력 검증, 서버 로그 ERROR 0 | 73개 통과 | 실제 복수전공 성적표로 확인(명세 9장 27) |
-| 7. 문서 | ✅ | 명세 3.2·3.3·4.3·4.6·5·7·8장·9장 5·8·26~29, FRONTEND_GUIDE 다전공 카드·`multiMajor` 대응표·B 참고, 계획서 | 커밋 승인 대기 | |
+| 7. 문서 | ✅ | 명세 3.2·3.3·4.3·4.6·5·7·8장·9장 5·8·26~29, FRONTEND_GUIDE 다전공 카드·`multiMajor` 대응표·B 참고, 계획서 | 커밋 d4f5afe | |
 
 결정 메모: 계획서대로 구현. `findSelectable` 이 융합전공을 빼서 복수전공 등록은 요건 행을 직접 확인한다. `getMajors` 인자가 늘어 B 의 T3 테스트 호출부도 고쳤다. 다음: T20 마이크로디그리(V17·V18).
+
+## T20 마이크로디그리
+
+| 단계 | 상태 | 한 일 | 검증 | 남은 일 |
+|---|---|---|---|---|
+| 1. 브랜치 | ✅ | `feat/micro-degree` (feat/double-major 위) | | |
+| 2. DB·시드 | ✅ | `V17__add_micro_degrees.sql`, `tools/seed/generate_micro_degree_seed.py` → `V18__seed_micro_degrees.sql`(56개, 249행, 학점 NULL 27행, 별칭 12행). 연락처·내부 비고는 넣지 않음 | H2 로 먼저 적재 확인 후 적용. **V17·V18 은 로컬 DB 에 적용됨 → 수정 금지** | |
+| 3. 판정 | ✅ | `MicroDegreeCalculation`(DB 조회 없음): 필수·과목 수·그룹·참여학과, 별칭·과목명 찾기, MD 간 중복, 학점 상한, 기간 | 단위 테스트 17개 | |
+| 4. API | ✅ | `MicroDegreeService`, `GET /api/catalog/micro-degrees`, `GET`·`POST`·`DELETE /api/academic/micro-degrees`, 엔티티·리포지토리 | 단위 테스트 10개(서비스 7, 시드 2, 컨트롤러 1). 전체 **284개 통과** | |
+| 5. 로컬 서버 확인 | ✅ | 8081 임시 서버 + 실제 MySQL·시드. 목록 56개·249행, 401·입력 검증, 참여학과 조건(9/9 미완료 → 완료), 상한, 기간, 이수현황 영향 없음, 최대 3개·중복, MD 간 중복과 해제 후 재배정, 구 학수번호, F·재수강, 그룹 상한, 학수번호 없는 타대학 과목, 선발제, 사용자 분리, 서버 로그 ERROR 0 | 59개 통과 | |
+| 6. 문서 | ✅ | 명세 1·3.2·4.3·4.6·5·6·7·8장·9장 5·30, FRONTEND_GUIDE 마이크로디그리 카드·`microDegree` 대응표·B 참고, 계획서 | T20 커밋(`feat/micro-degree`) | |
+
+결정 메모: 계획서대로 구현. 임시 서버 확인 중 실패 1건은 확인 스크립트의 기대값 문제였다(앞 MD 에 배정된 공유 과목이 `counted: false` 로 함께 나오는 것이 맞음). 완료 후 남은 일: 보류 4개 동의, 디자인 질문, 학과 확인 항목(명세 9장 26~30), 실제 복수전공 성적표, 프론트 연동.
