@@ -15,7 +15,8 @@ import org.springframework.test.context.jdbc.SqlConfig;
 @DataJpaTest(properties = {"spring.flyway.enabled=false", "spring.jpa.hibernate.ddl-auto=create-drop"},
         showSql = false)
 @Import(CatalogService.class)
-@Sql(scripts = "/db/migration/V2__seed_catalog.sql", config = @SqlConfig(encoding = "UTF-8"))
+@Sql(scripts = {"/db/migration/V2__seed_catalog.sql", "/db/migration/V15__fix_course_names.sql"},
+        config = @SqlConfig(encoding = "UTF-8"))
 class CatalogSeedTest {
 
     @Autowired CatalogService service;
@@ -37,5 +38,20 @@ class CatalogSeedTest {
                 .isEqualTo(service.searchCourses(54L, null, null, 0, 20).content());
         assertThat(service.getGeneralEducation(2025).requiredCourses()).hasSize(6);
         assertThat(service.getGeneralEducation(2025).approximate()).isTrue();
+    }
+
+    // V15: 숫자로 시작해도 정상인 이름은 3D·2D·4D 과목 20행, 소문자로 시작해도 정상인 이름은 h-STEM융합개론 뿐이다
+    @Test
+    void garbledCourseNamesAreFixedAndLegitimateNamesAreKept() {
+        var names = jdbc.queryForList("select name from courses", String.class);
+
+        assertThat(names).hasSize(3036);
+        assertThat(names).filteredOn(name -> name.matches("^\\d.*")).hasSize(20)
+                .allMatch(name -> name.matches("^\\dD.*"));
+        assertThat(names).filteredOn(name -> name.matches("^[a-z].*")).containsExactly("h-STEM융합개론");
+        assertThat(names).doesNotContain("Foreign Policy", "Organization", "지도법", "졸업스튜디오1",
+                "격년개설33식물·식품미생물응용학", "E40124386전문실기6(뉴스포츠)", "ClimateChangesandESGManagement");
+        assertThat(names).contains("American Foreign Policy", "Introduction to EconomicsⅠ", "시각디자인졸업스튜디오1",
+                "식물·식품미생물응용학", "전문실기6(뉴스포츠)", "3D모델링", "h-STEM융합개론");
     }
 }
