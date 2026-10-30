@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-10-30 (T15 시간표 온라인 강의 4.5·V12, T16 홈 D-Day 알림 4.7, T17 남은 수강 과목 4.6), 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
+> 최종 갱신: 2026-10-30 (T15 시간표 온라인 강의 4.5·V12, T16 홈 D-Day 알림 4.7, T17 남은 수강 과목 4.6, T18 학기별 배치 4.6·V13), 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
 
 ---
 
@@ -42,7 +42,7 @@
 | 일정(할 일) 추가 폼 | 제목, 카테고리, 날짜, 시작~종료 시간, 알람 | `POST /api/schedules` |
 | 시간표 | 학기 선택(2026년 2학기), 시간표 편집, 월~금 09:00~19:00 격자, 격자 아래 온라인 강의 줄 | `/api/timetables` |
 | 학사관리 | 학점 취득 현황(총 18/130, 13.8%, 영역 그룹별 도넛), 졸업까지 필요한 학점, 영역별 이수현황(필수교양·전공기초·전공필수·전공선택·기타·전체), 마이크로디그리(데이터 없음·보류) | `GET /api/academic/progress`, `/api/academic/completed-courses` |
-| 졸업 로드맵 | 학기별 곡선(학기별 평점·학점), 이수한 과목, 남은 수강 과목(T17), 학기별 배치(T18) | `GET /api/academic/gpa`, `/api/academic/completed-courses`, `/api/academic/remaining-courses` |
+| 졸업 로드맵 | 학기별 곡선(학기별 평점·학점), 이수한 과목, 남은 수강 과목(T17), 학기별 배치(T18) | `GET /api/academic/gpa`, `/api/academic/completed-courses`, `/api/academic/remaining-courses`, `/api/academic/plans` |
 | 마이페이지 | 프로필(이름·학과·입학년도/학년·학번·이메일·연락처·사진), 정보 수정, 이번 학기 수강과목 수·과제 수, 학점 현황, 알림 on/off, e캠퍼스 연결, 로그아웃 | `/api/users/me`, `/api/users/me/summary`, `/api/auth/logout` |
 
 ---
@@ -208,6 +208,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | schedules | 사용자 | schedule_date, start_time/end_time(NULL 가능), category, done, alarm_minutes_before, alarm_sent_for(V11, 알림 중복 방지·내부용) |
 | push_subscriptions | 사용자 | 기기(브라우저)별 웹푸시 구독: endpoint(유일), p256dh, auth (V11, 4.10) |
 | timetable_entries | 사용자 | academic_year + term, day_of_week(1=월…7=일), start_time~end_time, online(T15, true 면 요일·시간 NULL) |
+| planned_courses | 사용자 | 학기별 배치(T18): academic_year + term, course_name, course_code(선택), classification(선택), credits |
 | completed_courses | 사용자 | 내가 들은 과목: course_code(선택), course_name, credits, classification, distribution_area, grade, academic_year, term |
 
 ### 3.3 도메인 규칙
@@ -421,6 +422,8 @@ enum Classification {             // 이수구분 (학교 코드)
 | GET | /api/academic/progress | 🔒 **이수현황 계산 결과** (학사관리 화면·홈·마이페이지의 원천) |
 | GET | /api/academic/gpa | 🔒 평점 평균 요약 (학사관리 학점 박스, T13) |
 | GET | /api/academic/remaining-courses | 🔒 남은 수강 과목 (졸업 로드맵, T17) |
+| GET | /api/academic/plans | 🔒 학기별 배치 조회 (졸업 로드맵, T18) |
+| PUT | /api/academic/plans | 🔒 학기별 배치 **통째로 교체**, 빈 목록 = 초기화 (T18) |
 
 ```json
 // POST /api/academic/completed-courses
@@ -518,6 +521,25 @@ enum Classification {             // 이수구분 (학교 코드)
 - 정렬: 이수구분(필수교양 → 전공기초 → 전공필수 → 전공선택) → `targetGrade`(없으면 맨 뒤) → 과목명. 페이지 나눔 없음(학과당 최대 약 130과목), 이수구분 필터는 프론트에서 한다.
 - `targetGrade`: "1", "3-4", 교양은 "전학년"도 있다. `openSemester`: "1", "2", "1,2". 없으면 null. `credits` 0 인 과목도 있다(졸업논문 등 0학점 전공필수).
 - 교과목 마스터는 **2026 자료뿐**이라 다른 학번도 2026 교육과정으로 나온다. 필수교양은 `approximate` 면 2026 기준. 학사 프로필이 없으면 `PROFILE_INCOMPLETE`, 졸업요건이 없으면 `REQUIREMENT_NOT_FOUND`(`progress` 와 같음).
+
+```json
+// PUT /api/academic/plans (T18)
+{ "courses": [
+    { "year": 2027, "term": "FIRST", "courseName": "성찰과표현", "courseCode": null, "classification": "GEN_REQUIRED", "credits": 3 },
+    { "year": 2027, "term": "FIRST", "courseName": "타이포그래피1", "courseCode": "VID1004", "classification": "MAJOR_ELECTIVE", "credits": 3 }
+] }
+// GET·PUT 응답 data
+{ "totalCredits": 6,
+  "terms": [ { "year": 2027, "term": "FIRST", "label": "2027년 1학기", "credits": 6,
+               "courses": [ { "id": 7, "courseName": "성찰과표현", "courseCode": null, "classification": "GEN_REQUIRED", "credits": 3 },
+                            { "id": 8, "courseName": "타이포그래피1", "courseCode": "VID1004", "classification": "MAJOR_ELECTIVE", "credits": 3 } ] } ] }
+```
+
+- PUT 은 내 배치 전체를 보낸 목록으로 바꾼다(개별 이동 API 없음). 저장할 때마다 `id` 가 새로 나온다. `courses: []` = 초기화, `courses` 자체가 없으면 400.
+- 입력: `courses` 최대 100개, `year` 2000~2100, `term` 필수, `courseName` 필수 100자, `courseCode` 20자(빈 값은 null), `classification` 선택(직접 추가한 과목), `credits` 필수 **0~30**(0 은 T17 의 0학점 졸업논문 때문). 앞뒤 공백 제거.
+- 같은 학기에 같은 과목(학수번호, 없으면 공백 뺀 과목명)이 두 번이면 `INVALID_INPUT` 이고 아무것도 바꾸지 않는다. 다른 학기에는 다시 넣을 수 있다.
+- 응답은 **과목이 있는 학기만** 시간 순(학년도 → 1학기·여름·2학기·겨울), 학기 안은 보낸 순서. 학기 칸은 제한하지 않고, 화면의 빈 학기 칸은 프론트가 만든다.
+- 계획일 뿐이라 이수현황·평점·남은 수강 과목에 영향이 없다. 배치한 과목을 남은 과목 카드에서 뺄지는 프론트가 정한다. 졸업 시뮬레이션은 이번 범위가 아니다(`calculate` 로 나중에 붙일 수 있음).
 
 ### 4.7 홈 `home`
 
@@ -706,6 +728,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 사용 중: `V10__add_ecampus_feed_token.sql`(A, users 에 e캠퍼스 피드 토큰 칸 추가).
 - 사용 중: `V11__add_web_push.sql`(A, T11: `push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·`idx_schedules_date`, `users.todo_alarm_time`, 2026-10-21 승인).
 - 사용 중: `V12__add_timetable_online.sql`(A, T15: `timetable_entries` 요일·시간 NULL 허용, `online` 추가, 2026-10-30 승인).
+- 사용 중: `V13__add_planned_courses.sql`(A, T18: `planned_courses` 새 테이블, 2026-10-30 승인).
 - 로컬 DB가 꼬이면: `DROP DATABASE ordo;` 후 서버 재시작 → Flyway가 V1부터 다시 적용.
 
 ---
@@ -735,7 +758,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T15 ✅ | 시간표 온라인 강의 (4.5, `docs/plans/T15-figma-final.md`) | A | 요일·시간 없는 칸 저장, 겹침 검사 제외, 온라인 맨 뒤 정렬, 홈에서 제외, 파일 가져오기의 시간 없는 과목이 온라인 칸으로 저장 |
 | T16 ✅ | 홈 D-Day 알림 (4.7, `docs/plans/T15-figma-final.md`) | A | 7일 이내 미완료 과제·개인일정 + e캠퍼스 과제, 최대 5개, 지난 시각 제외, e캠퍼스 호출 1번 |
 | T17 ✅ | 남은 수강 과목 (4.6, `docs/plans/T15-figma-final.md`) | A | 필수교양·전공 중 안 들은 과목, 학수번호 → 과목명 판정, F 는 남음, course_unit 없는 전공 처리 |
-| T18 | 학기별 배치하기 (계획서 2장, 승인 2026-10-30) | A | GET·PUT(통째로 교체), V13 |
+| T18 ✅ | 학기별 배치하기 (4.6, `docs/plans/T15-figma-final.md`) | A | GET·PUT(통째로 교체), V13, 빈 목록 초기화, 같은 학기 중복 400, 남의 배치 분리, 이수현황·평점에 영향 없음 |
 
 ### AI에게 줄 프롬프트 예시 (그대로 복사해서 사용)
 
@@ -800,3 +823,4 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 22 | 시간표의 시간 없는 수업 (T15) | **결정(2026-10-30): 온라인 강의 = 요일·시간 없음.** 디자인의 수업 추가 창에는 시간 칸과 온라인 체크가 함께 있지만, 온라인 수업은 표 아래 줄에 시간 없이 나오므로 시간은 저장하지 않는다. 파일 가져오기의 시간 없는 과목도 온라인 칸으로 넣는다 |
 | 23 | 남은 수강 과목의 전공선택 (T17) | **결정(2026-10-30): 전공선택도 전부 넣는다**(디자인 카드에 있음). 졸업에 다 들어야 하는 과목은 아니다. 필요한 학점은 `remainingCredits`·`progress` 로 본다 |
 | 24 | 교과목 시드의 깨진 과목명 (T3, T17 에서 발견) | V2 `courses` 3036행 중 74행이 숫자로 시작(`0캡스톤디자인(시각디자인학)1`), 49행이 소문자로 시작(`toEconomicsⅠ`). 로드맵 카드·과목 검색에 그대로 보인다. `tools/seed/generate_seed.py` 수정 + 새 마이그레이션 필요(V2 수정 금지), B 와 확인 |
+| 25 | 졸업 로드맵 "수업 추가" 창 (T18) | 디자인이 시간표 창(강의실·요일·시간·온라인)과 똑같다. 학기별 배치에 저장하는 값은 **과목명·학수번호·이수구분·학점**이라 강의실·시간은 받지 않는다. 디자인 수정 여부 확인 필요 |

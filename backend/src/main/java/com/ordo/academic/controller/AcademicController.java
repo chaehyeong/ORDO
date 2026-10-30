@@ -5,11 +5,14 @@ import com.ordo.academic.dto.CompletedCourseRequest;
 import com.ordo.academic.dto.CompletedCourseResponse;
 import com.ordo.academic.dto.CompletedCourseUpdateRequest;
 import com.ordo.academic.dto.GpaSummary;
+import com.ordo.academic.dto.PlannedCoursesRequest;
+import com.ordo.academic.dto.PlannedCoursesResponse;
 import com.ordo.academic.dto.ProgressSummary;
 import com.ordo.academic.dto.RemainingCoursesResponse;
 import com.ordo.academic.service.AcademicGpaService;
 import com.ordo.academic.service.AcademicProgressService;
 import com.ordo.academic.service.CompletedCourseService;
+import com.ordo.academic.service.PlannedCourseService;
 import com.ordo.academic.service.RemainingCourseService;
 import com.ordo.global.common.ApiResponse;
 import com.ordo.global.security.LoginUser;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,6 +40,7 @@ public class AcademicController {
     private final AcademicProgressService academicProgressService;
     private final AcademicGpaService academicGpaService;
     private final RemainingCourseService remainingCourseService;
+    private final PlannedCourseService plannedCourseService;
 
     @GetMapping("/completed-courses")
     public ApiResponse<List<CompletedCourseResponse>> getCourses(@LoginUser Long userId) {
@@ -81,5 +86,16 @@ public class AcademicController {
     @GetMapping("/remaining-courses")
     public ApiResponse<RemainingCoursesResponse> getRemainingCourses(@LoginUser Long userId) {
         return ApiResponse.ok(remainingCourseService.getRemainingCourses(userId));
+    }
+
+    @GetMapping("/plans")
+    public ApiResponse<PlannedCoursesResponse> getPlans(@LoginUser Long userId) {
+        return ApiResponse.ok(plannedCourseService.getPlans(userId));
+    }
+
+    @PutMapping("/plans")
+    public ApiResponse<PlannedCoursesResponse> replacePlans(@LoginUser Long userId,
+                                                            @Valid @RequestBody PlannedCoursesRequest request) {
+        return ApiResponse.ok(plannedCourseService.replaceAll(userId, request));
     }
 }

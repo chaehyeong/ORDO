@@ -14,6 +14,7 @@
 > T15 시간표 온라인 강의 추가: 2026-10-30 (백엔드 A)
 > T16 홈 D-Day 알림 추가: 2026-10-30 (백엔드 A)
 > T17 남은 수강 과목 추가: 2026-10-30 (백엔드 A)
+> T18 학기별 배치 추가: 2026-10-30 (백엔드 A)
 > T11 일정 알림 웹푸시 추가: 2026-10-21 (백엔드 A)
 
 ---
@@ -38,6 +39,7 @@
 | T15 시간표 온라인 강의 | ✅ 완료 (A) | `feat/timetable-online` |
 | T16 홈 D-Day 알림 | ✅ 완료 (A) | `feat/home-deadlines` (feat/timetable-online 위에서 작업) |
 | T17 남은 수강 과목 | ✅ 완료 (A) | `feat/remaining-courses` (feat/home-deadlines 위에서 작업) |
+| T18 학기별 배치 | ✅ 완료 (A) | `feat/plans` (feat/remaining-courses 위에서 작업) |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
@@ -399,6 +401,8 @@ general-education.data: { admissionYear, basisYear, approximate,
 | GET | /api/academic/progress | 이수현황 계산 결과 (학사관리 화면·홈·마이페이지 학점) |
 | GET | /api/academic/gpa | 평점 평균 (학사관리 학점·성적 박스) |
 | GET | /api/academic/remaining-courses | 남은 수강 과목 (졸업 로드맵 카드) |
+| GET | /api/academic/plans | 학기별 배치 조회 (졸업 로드맵) |
+| PUT | /api/academic/plans | 학기별 배치 저장 — **통째로 교체**, 빈 목록 = 초기화 |
 
 ```json
 // POST /api/academic/completed-courses
@@ -438,6 +442,30 @@ general-education.data: { admissionYear, basisYear, approximate,
 - F·NP 받은 과목은 남은 과목에 있고, 성적 미정(수강 중)은 들은 것으로 친다. 이수 과목을 추가·수정·삭제하면 다시 불러오면 된다.
 - 2025학번 이하도 2026 교육과정 기준이다(자료가 2026뿐). `progress` 의 `approximate: true` 면 안내 문구를 같이 보여 주세요.
 - 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE`.
+
+**학기별 배치하기 (T18)**
+
+```json
+// PUT /api/academic/plans — 지금 화면에 놓인 과목 전부를 보낸다
+{ "courses": [ { "year": 2027, "term": "FIRST",
+                 "courseName": "타이포그래피1",   // 필수, 100자 이하
+                 "courseCode": "VID1004",        // 선택 (남은 과목 카드의 값을 그대로)
+                 "classification": "MAJOR_ELECTIVE",  // 선택 (직접 추가한 수업은 생략 가능)
+                 "credits": 3 } ] }               // 필수 0~30
+// GET·PUT 응답 data
+{ "totalCredits": 3,
+  "terms": [ { "year": 2027, "term": "FIRST", "label": "2027년 1학기", "credits": 3,
+               "courses": [ { "id": 7, "courseName": "타이포그래피1", "courseCode": "VID1004",
+                              "classification": "MAJOR_ELECTIVE", "credits": 3 } ] } ] }
+```
+
+- **끌어 놓기가 끝날 때마다 전체 목록을 PUT** 한다(과목 1개 이동 API 없음). "초기화" 버튼은 `{ "courses": [] }`. 한 번에 최대 100과목.
+- 응답에는 **과목이 있는 학기만** 온다. 빈 학기 칸("과목을 여기로 드래그하세요")과 칸의 범위는 `GET /api/users/me` 의 `admissionYear`·`currentSemester` 로 프론트가 만든다. 학기별 합은 `credits`.
+- 같은 학기에 같은 과목(학수번호, 없으면 이름)을 두 번 넣으면 400 `INVALID_INPUT` 이고 저장되지 않는다. 다른 학기에는 넣을 수 있다.
+- 저장할 때마다 `id` 가 바뀌므로 오래 들고 있지 말고 응답으로 화면을 다시 그린다.
+- 남은 수강 과목 응답은 배치와 무관하다. 이미 배치한 과목을 카드에서 빼려면 `courseCode`(없으면 이름)로 프론트에서 거른다. 배치는 이수현황·평점에 들어가지 않는다.
+- "수업 추가" 버튼은 목록에 없는 과목을 PUT 목록에 더하는 것이다. 받는 값은 과목명·학수번호·이수구분·학점이고 강의실·시간은 저장하지 않는다(디자인 창 확인 중, 명세 9장 25).
+- **브라우저 PUT 은 CORS 수정(`fix/cors-put`)이 병합돼야 동작한다.**
 
 ### 파일 가져오기 `import` (🔒, T12)
 

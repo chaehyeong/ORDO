@@ -111,4 +111,16 @@
 | 2. 시드 데이터 점검 | ✅ | `courses` 전공 행에 (편성 단위, 학수번호) 중복 없음, 학수번호 빈 값 없음, 0학점 67행은 모두 전공필수(졸업논문 등), 전공 자료 없는 전공 2개 | V2 분석 | 깨진 과목명 123행(명세 9장 24) |
 | 3. 서비스·API | ✅ | `RemainingCourseService`, `GET /api/academic/remaining-courses`, `CourseRepository.findByUnitNameAndClassificationIn`. DB 변경 없음. `AcademicProgressService` 의 `NOT_RECOGNIZED_GRADES`·`withoutSpaces` 를 패키지 범위로 | 단위 테스트 9개 추가. 전체 **219개 통과** | |
 | 4. 로컬 서버 확인 | ✅ | 8081 임시 서버 + 실제 시드. 시각디자인학과 56과목(필수교양 6 + 전공 50), 학수번호·이름·F·재수강·미정 판정, 이수현황과 남은 학점 일치, 401 | 17개 통과 | course_unit 없는 전공은 2026 가입 목록에 없어 단위 테스트만 |
-| 5. 문서 | ✅ | 명세 1·4.6·8장·9장 23·24, FRONTEND_GUIDE 학사관리 절 | | 커밋 승인 |
+| 5. 문서 | ✅ | 명세 1·4.6·8장·9장 23·24, FRONTEND_GUIDE 학사관리 절 | 커밋 2af9d15 | |
+
+## T18 학기별 배치하기
+
+| 단계 | 상태 | 한 일 | 검증 | 남은 일 |
+|---|---|---|---|---|
+| 1. 브랜치 | ✅ | `feat/plans` (feat/remaining-courses 위) | | |
+| 2. DB·엔티티 | ✅ | `V13__add_planned_courses.sql`, `PlannedCourse`, `PlannedCourseRepository` | **V13 은 로컬 DB 에 적용됨 → 수정 금지** | |
+| 3. 서비스·API | ✅ | `PlannedCourseService`, `GET`·`PUT /api/academic/plans`, 학기별 묶음 응답 | 단위 테스트 8개 추가. 전체 **227개 통과** | |
+| 4. 로컬 서버 확인 | ✅ | 8081 임시 서버 + 실제 MySQL. 저장·교체·초기화, 남의 배치 분리, 입력 검증 13가지, 실패 시 기존 유지, 100과목, 이수현황·평점·남은 과목에 영향 없음, 401 | 31개 통과 | 브라우저 PUT 은 `fix/cors-put` 병합 후 |
+| 5. 문서 | ✅ | 명세 1·3.2·4.6·7·8장·9장 25, FRONTEND_GUIDE 졸업 로드맵, 계획서 | | 커밋 승인 |
+
+결정 메모: 계획서는 학점 1~30 이었으나 **0~30** 으로 구현(T17 이 0학점 졸업논문을 돌려주므로 1~30 이면 그 카드를 놓을 때 400). 완료 후 남은 일: T19(규칙 확인), T20(방식 결정), 보류 4개 동의, 디자인 질문(9장 25·1.4), 시드 과목명(9장 24).
