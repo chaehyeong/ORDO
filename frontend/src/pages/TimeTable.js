@@ -6,6 +6,7 @@ import "./TimeTable.css";
 
 const DAYS = ["월", "화", "수", "목", "금"];
 const HOUR_H = 66; // 1시간당 높이(px) — 클수록 세로로 길어짐
+const GRID_BOTTOM = 20; // 마지막 시간선 아래로 흰 격자를 더 늘리는 높이(px)
 const DEFAULT_START = 9; // 기본 표시 범위 09:00 ~ 18:00 (이 범위 밖 수업이 있으면 자동 확장)
 const DEFAULT_END = 18;
 
@@ -14,6 +15,10 @@ const SEMESTERS = ["2025-1", "2025-2", "2026-1", "2026-2"];
 
 // 수업별 블록 색 (수업 이름 순서대로 돌아가며 배정)
 const COLORS = ["#86C0CB", "#C3EDE5", "#F2F3D9", "#F4F8F9", "#F6DCDC", "#E3DCF5"];
+
+// 블록 투명도 (색 코드 뒤에 붙는 2자리). 낮을수록 더 투명
+// FF=100%, E6=90%, CC=80%, B3=70%, 99=60%, 80=50%
+const BLOCK_ALPHA = "FF";
 
 const toMinutes = (time) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
 const semesterLabel = (s) => {
@@ -47,12 +52,12 @@ function TimeTable() {
     const startHour = Math.min(DEFAULT_START, ...classes.map((c) => Math.floor(toMinutes(c.startTime) / 60)));
     const endHour = Math.max(DEFAULT_END, ...classes.map((c) => Math.ceil(toMinutes(c.endTime) / 60)));
     const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
-    const gridHeight = (endHour - startHour) * HOUR_H;
+    const gridHeight = (endHour - startHour) * HOUR_H + GRID_BOTTOM;
 
     const blockStyle = (c) => ({
         top: ((toMinutes(c.startTime) - startHour * 60) / 60) * HOUR_H,
         height: ((toMinutes(c.endTime) - toMinutes(c.startTime)) / 60) * HOUR_H,
-        backgroundColor: colorOf[c.courseName],
+        backgroundColor: `${colorOf[c.courseName]}${BLOCK_ALPHA}`,
     });
 
     const handleAdd = (course) => {

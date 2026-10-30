@@ -1,7 +1,7 @@
 /* ===== 헤더 ===== */
 .tt-heading {
     margin: 0 0 32px;
-    font-size: 48 px;
+    font-size: 48px;
 }
 
 .tt-toolbar {
@@ -12,15 +12,14 @@
 }
 
 .tt-semester {
-    width: 172px;
-    height: 36px;
-    padding: 0 10px;
-    border: none;
-    border-radius: 8px;
+    width: 150px;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid #aaa; /* 캘린더 연/월 드롭다운과 같은 테두리 (그림자 없음) */
+    border-radius: 6px;
     background: white;
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
     font-family: inherit;
-    font-size: 15px;
+    font-size: 14px;
 }
 
 .tt-add-btn {
@@ -46,7 +45,7 @@
 
 /* ===== 시간표 박스 ===== */
 .box.tt-box {
-    max-width: 760px; /* 가로 폭 (줄이려면 숫자를 낮추세요). 오른쪽은 여백으로 남음 */
+    max-width: 1064px; /* 가로 폭 (줄이려면 숫자를 낮추세요). 오른쪽은 여백으로 남음 */
     padding: 8px 18px 14px 12px;
     border-radius: 28px;
     background-color: #C1E8E0;
@@ -72,8 +71,10 @@
 
 .tt-times span {
     position: absolute;
-    right: 24px;
+    right: 24px; /* 시간 글자와 격자 사이 간격 */
     line-height: 1.2;
+    margin-top: -0.5px; /* 1px 가로선의 정중앙에 맞춤 */
+    transform: translateY(-50%); /* 글자 높이의 절반만큼 올려서 선이 글자 가운데에 오게 함 */
     color: #333;
     font-size: 14px;
 }
@@ -138,7 +139,7 @@
 
 /* ===== 온라인 강의 ===== */
 .tt-online {
-    margin: 6px 0 0 64px;
+    margin: 6px 0 0 64px; /* 격자 왼쪽 끝(시간 열 폭 64px)에 맞춤 */
 }
 
 .tt-online-item {
@@ -154,8 +155,8 @@
 .tt-semester {
     appearance: none;
     -webkit-appearance: none;
-    padding-right: 36px;
+    padding-right: 30px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23222' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 18px center;
+    background-position: right 14px center;
 }
