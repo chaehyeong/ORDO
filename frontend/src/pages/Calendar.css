@@ -218,3 +218,13 @@
 .cal-toggle.is-on .cal-toggle-knob {
     transform: translateX(22px);
 }
+
+/* 드롭다운 화살표 위치: 오른쪽 끝에서 띄움 (background-position의 right 값으로 조절) */
+.cal-selects select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 30px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23222' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+}
