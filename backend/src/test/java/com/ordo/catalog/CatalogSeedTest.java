@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ordo.catalog.dto.MajorResponse;
 import com.ordo.catalog.service.CatalogService;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -15,9 +16,12 @@ import org.springframework.test.context.jdbc.SqlConfig;
 @DataJpaTest(properties = {"spring.flyway.enabled=false", "spring.jpa.hibernate.ddl-auto=create-drop"},
         showSql = false)
 @Import(CatalogService.class)
-@Sql(scripts = {"/db/migration/V2__seed_catalog.sql", "/db/migration/V15__fix_course_names.sql"},
-        config = @SqlConfig(encoding = "UTF-8"))
+@Sql(scripts = {"/db/migration/V2__seed_catalog.sql", "/db/migration/V15__fix_course_names.sql",
+        "/db/migration/V16__fix_sports_practice_course_units.sql"}, config = @SqlConfig(encoding = "UTF-8"))
 class CatalogSeedTest {
+
+    // V2 3036행 - 잘못 들어간 전문실기 6행 + 체육대학 5개 학과 × 6행
+    private static final int COURSES_AFTER_V16 = 3060;
 
     @Autowired CatalogService service;
     @Autowired JdbcTemplate jdbc;
@@ -27,7 +31,7 @@ class CatalogSeedTest {
         assertThat(service.getColleges()).hasSize(10);
         assertThat(jdbc.queryForObject("select count(*) from majors", Integer.class)).isEqualTo(76);
         assertThat(jdbc.queryForObject("select count(*) from graduation_requirements", Integer.class)).isEqualTo(393);
-        assertThat(jdbc.queryForObject("select count(*) from courses", Integer.class)).isEqualTo(3036);
+        assertThat(jdbc.queryForObject("select count(*) from courses", Integer.class)).isEqualTo(COURSES_AFTER_V16);
         assertThat(service.getMajors(2026, null)).extracting(MajorResponse::id).contains(35L, 54L);
         assertThat(service.searchCourses(54L, null, null, 0, 20).content())
                 .isNotEmpty().allSatisfy(course ->
@@ -45,13 +49,29 @@ class CatalogSeedTest {
     void garbledCourseNamesAreFixedAndLegitimateNamesAreKept() {
         var names = jdbc.queryForList("select name from courses", String.class);
 
-        assertThat(names).hasSize(3036);
+        assertThat(names).hasSize(COURSES_AFTER_V16);
         assertThat(names).filteredOn(name -> name.matches("^\\d.*")).hasSize(20)
                 .allMatch(name -> name.matches("^\\dD.*"));
         assertThat(names).filteredOn(name -> name.matches("^[a-z].*")).containsExactly("h-STEM융합개론");
         assertThat(names).doesNotContain("Foreign Policy", "Organization", "지도법", "졸업스튜디오1",
                 "격년개설33식물·식품미생물응용학", "E40124386전문실기6(뉴스포츠)", "ClimateChangesandESGManagement");
         assertThat(names).contains("American Foreign Policy", "Introduction to EconomicsⅠ", "시각디자인졸업스튜디오1",
-                "식물·식품미생물응용학", "전문실기6(뉴스포츠)", "3D모델링", "h-STEM융합개론");
+                "식물·식품미생물응용학", "3D모델링", "h-STEM융합개론");
+    }
+
+    // V16: 전문실기는 체육대학 공통 전공선택이다
+    @Test
+    void sportsPracticeCoursesBelongToEverySportsDepartment() {
+        for (String code : List.of("CPE201", "CPE202", "CPE301", "CPE302", "CPE401", "CPE402")) {
+            assertThat(jdbc.queryForList("select unit_name from courses where course_code = ?", String.class, code))
+                    .containsExactlyInAnyOrder("체육학과", "스포츠의학과", "스포츠지도학과", "골프산업학과", "태권도학과");
+        }
+        assertThat(jdbc.queryForList("select name from courses where course_code = 'CPE402'", String.class))
+                .containsOnly("전문실기6");
+        assertThat(jdbc.queryForList("select distinct college_name from courses where course_code like 'CPE%'", String.class))
+                .containsExactly("체육대학");
+        assertThat(jdbc.queryForObject(
+                "select count(*) from courses where unit_name = '포스트모던음악학과' and course_code like 'CPE%'", Integer.class))
+                .isZero();
     }
 }

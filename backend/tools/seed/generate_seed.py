@@ -12,7 +12,7 @@ ORDO 학사 기준정보 시드 생성기
   python tools/seed/generate_seed.py --data-dir "<예소 폴더 경로>" --out src/main/resources/db/migration/V2__seed_catalog.sql
 
 이미 적용된 V2 는 덮어쓰지 않는다. 고칠 데이터는 새 마이그레이션으로 낸다(A V10~V49, B V50~V89).
-(엑셀 ⑤교과목마스터의 깨진 과목명은 V15 에서 교정. 엑셀과 이 스크립트는 그대로 둔다)
+(엑셀 ⑤교과목마스터의 깨진 과목명은 V15, 전문실기 소속은 V16 에서 교정. 엑셀과 이 스크립트는 그대로 둔다)
 """
 import argparse
 import os

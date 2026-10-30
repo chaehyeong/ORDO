@@ -17,12 +17,12 @@ class OrdoApplicationTests {
     void contextLoads() {
     }
 
-    // 부팅 시 Flyway 가 V1(스키마)·V2(시드)를 적용했는지 확인
+    // 부팅 시 Flyway 가 V1(스키마)·V2(시드)와 시드 교정 V16 을 적용했는지 확인
     @Test
     void flywaySeedApplied() {
         assertThat(count("colleges")).isEqualTo(10);
         assertThat(count("majors")).isEqualTo(76);
-        assertThat(count("courses")).isEqualTo(3036);
+        assertThat(count("courses")).isEqualTo(3060);
     }
 
     private Integer count(String table) {
