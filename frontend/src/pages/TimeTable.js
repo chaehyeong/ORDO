@@ -5,7 +5,7 @@ import AddCourseModal from "../components/AddCourseModal";
 import "./TimeTable.css";
 
 const DAYS = ["월", "화", "수", "목", "금"];
-const HOUR_H = 66; // 1시간당 높이(px)
+const HOUR_H = 66; // 1시간당 높이(px) — 클수록 세로로 길어짐
 const DEFAULT_START = 9; // 기본 표시 범위 09:00 ~ 18:00 (이 범위 밖 수업이 있으면 자동 확장)
 const DEFAULT_END = 18;
 
