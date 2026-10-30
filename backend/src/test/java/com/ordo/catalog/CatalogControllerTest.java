@@ -40,7 +40,7 @@ class CatalogControllerTest {
     @Test
     void collegesAndMajorsCanBeReadBeforeLogin() throws Exception {
         given(service.getColleges()).willReturn(List.of(new CollegeResponse(3L, "소프트웨어융합대학")));
-        given(service.getMajors(2026, 3L))
+        given(service.getMajors(2026, 3L, false))
                 .willReturn(List.of(new MajorResponse(54L, "컴퓨터공학부 컴퓨터공학과", 3L, "소프트웨어융합대학")));
         mvc.perform(get("/api/catalog/colleges"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
@@ -48,6 +48,14 @@ class CatalogControllerTest {
         mvc.perform(get("/api/catalog/majors").param("admissionYear", "2026").param("collegeId", "3"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].id").value(54))
                 .andExpect(jsonPath("$.data[0].collegeName").value("소프트웨어융합대학"));
+    }
+
+    @Test
+    void majorsAcceptIncludeConvergenceForDoubleMajorPicker() throws Exception {
+        given(service.getMajors(2026, null, true))
+                .willReturn(List.of(new MajorResponse(70L, "실감미디어 융합전공", 9L, "융합전공")));
+        mvc.perform(get("/api/catalog/majors").param("admissionYear", "2026").param("includeConvergence", "true"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].id").value(70));
     }
 
     @Test

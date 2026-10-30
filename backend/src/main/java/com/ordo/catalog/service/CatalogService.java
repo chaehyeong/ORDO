@@ -43,8 +43,9 @@ public class CatalogService {
         return collegeRepository.findAllByOrderByNameAscIdAsc().stream().map(CollegeResponse::from).toList();
     }
 
-    public List<MajorResponse> getMajors(int admissionYear, Long collegeId) {
-        return majorRepository.findAllSelectable(admissionYear, collegeId).stream().map(MajorResponse::from).toList();
+    public List<MajorResponse> getMajors(int admissionYear, Long collegeId, boolean includeConvergence) {
+        return majorRepository.findAllSelectable(admissionYear, collegeId, includeConvergence).stream()
+                .map(MajorResponse::from).toList();
     }
 
     public GraduationRequirementResponse getRequirements(Long majorId, int admissionYear) {

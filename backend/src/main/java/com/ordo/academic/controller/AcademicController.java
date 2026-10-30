@@ -4,6 +4,8 @@ import com.ordo.academic.dto.CompletedCourseBulkRequest;
 import com.ordo.academic.dto.CompletedCourseRequest;
 import com.ordo.academic.dto.CompletedCourseResponse;
 import com.ordo.academic.dto.CompletedCourseUpdateRequest;
+import com.ordo.academic.dto.DoubleMajorRequest;
+import com.ordo.academic.dto.DoubleMajorResponse;
 import com.ordo.academic.dto.GpaSummary;
 import com.ordo.academic.dto.PlannedCoursesRequest;
 import com.ordo.academic.dto.PlannedCoursesResponse;
@@ -12,6 +14,7 @@ import com.ordo.academic.dto.RemainingCoursesResponse;
 import com.ordo.academic.service.AcademicGpaService;
 import com.ordo.academic.service.AcademicProgressService;
 import com.ordo.academic.service.CompletedCourseService;
+import com.ordo.academic.service.DoubleMajorService;
 import com.ordo.academic.service.PlannedCourseService;
 import com.ordo.academic.service.RemainingCourseService;
 import com.ordo.global.common.ApiResponse;
@@ -41,6 +44,7 @@ public class AcademicController {
     private final AcademicGpaService academicGpaService;
     private final RemainingCourseService remainingCourseService;
     private final PlannedCourseService plannedCourseService;
+    private final DoubleMajorService doubleMajorService;
 
     @GetMapping("/completed-courses")
     public ApiResponse<List<CompletedCourseResponse>> getCourses(@LoginUser Long userId) {
@@ -97,5 +101,22 @@ public class AcademicController {
     public ApiResponse<PlannedCoursesResponse> replacePlans(@LoginUser Long userId,
                                                             @Valid @RequestBody PlannedCoursesRequest request) {
         return ApiResponse.ok(plannedCourseService.replaceAll(userId, request));
+    }
+
+    @GetMapping("/double-major")
+    public ApiResponse<DoubleMajorResponse> getDoubleMajor(@LoginUser Long userId) {
+        return ApiResponse.ok(doubleMajorService.get(userId));
+    }
+
+    @PutMapping("/double-major")
+    public ApiResponse<DoubleMajorResponse> registerDoubleMajor(@LoginUser Long userId,
+                                                                @Valid @RequestBody DoubleMajorRequest request) {
+        return ApiResponse.ok(doubleMajorService.register(userId, request));
+    }
+
+    @DeleteMapping("/double-major")
+    public ResponseEntity<Void> removeDoubleMajor(@LoginUser Long userId) {
+        doubleMajorService.remove(userId);
+        return ResponseEntity.noContent().build();
     }
 }

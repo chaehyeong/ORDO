@@ -32,11 +32,11 @@ class CatalogSeedTest {
         assertThat(jdbc.queryForObject("select count(*) from majors", Integer.class)).isEqualTo(76);
         assertThat(jdbc.queryForObject("select count(*) from graduation_requirements", Integer.class)).isEqualTo(393);
         assertThat(jdbc.queryForObject("select count(*) from courses", Integer.class)).isEqualTo(COURSES_AFTER_V16);
-        assertThat(service.getMajors(2026, null)).extracting(MajorResponse::id).contains(35L, 54L);
+        assertThat(service.getMajors(2026, null, false)).extracting(MajorResponse::id).contains(35L, 54L);
         assertThat(service.searchCourses(54L, null, null, 0, 20).content())
                 .isNotEmpty().allSatisfy(course ->
                         assertThat(course.unitName()).isEqualTo("컴퓨터공학부 컴퓨터공학과"));
-        var oldMajor = service.getMajors(2020, null).stream()
+        var oldMajor = service.getMajors(2020, null, false).stream()
                 .filter(major -> major.displayName().equals("컴퓨터공학과")).findFirst().orElseThrow();
         assertThat(service.searchCourses(oldMajor.id(), null, null, 0, 20).content())
                 .isEqualTo(service.searchCourses(54L, null, null, 0, 20).content());

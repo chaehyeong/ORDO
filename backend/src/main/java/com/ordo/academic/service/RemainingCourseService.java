@@ -7,6 +7,7 @@ import com.ordo.academic.dto.RemainingCoursesResponse.RemainingCourse;
 import com.ordo.academic.repository.CompletedCourseRepository;
 import com.ordo.catalog.domain.Classification;
 import com.ordo.catalog.domain.Course;
+import com.ordo.catalog.domain.Major;
 import com.ordo.catalog.repository.CourseRepository;
 import com.ordo.catalog.repository.GeneralEducationRequiredCourseRepository;
 import com.ordo.global.error.BusinessException;
@@ -14,6 +15,7 @@ import com.ordo.global.error.ErrorCode;
 import com.ordo.user.domain.User;
 import com.ordo.user.repository.UserRepository;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -29,10 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RemainingCourseService {
 
-    private static final List<Classification> MAJOR_CLASSIFICATIONS =
-            List.of(Classification.MAJOR_BASIC, Classification.MAJOR_REQUIRED, Classification.MAJOR_ELECTIVE);
     private static final List<Classification> CLASSIFICATION_ORDER = Stream
-            .concat(Stream.of(Classification.GEN_REQUIRED), MAJOR_CLASSIFICATIONS.stream()).toList();
+            .concat(Stream.of(Classification.GEN_REQUIRED), AcademicProgressService.MAJOR_CLASSIFICATIONS.stream()).toList();
     private static final Comparator<RemainingCourse> DISPLAY_ORDER = Comparator
             .comparingInt((RemainingCourse c) -> CLASSIFICATION_ORDER.indexOf(c.classification()))
             .thenComparing(RemainingCourse::targetGrade, Comparator.nullsLast(Comparator.naturalOrder()))
@@ -48,11 +48,13 @@ public class RemainingCourseService {
     public RemainingCoursesResponse getRemainingCourses(Long userId) {
         ProgressSummary summary = academicProgressService.getSummary(userId);
         User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        String courseUnit = user.getMajor().getCourseUnit();
-        List<RemainingCourse> courses = Stream.concat(generalCourses(summary), majorCourses(userId, courseUnit))
+        Major doubleMajor = user.getDoubleMajor();
+        List<String> courseUnits = Stream.of(user.getMajor(), doubleMajor).filter(Objects::nonNull)
+                .map(Major::getCourseUnit).filter(Objects::nonNull).toList();
+        List<RemainingCourse> courses = Stream.concat(generalCourses(summary), majorCourses(userId, courseUnits))
                 .sorted(DISPLAY_ORDER)
                 .toList();
-        return new RemainingCoursesResponse(summary.total().remaining(), courseUnit != null, courses);
+        return new RemainingCoursesResponse(summary.total().remaining(), courseUnits.size() == (doubleMajor == null ? 1 : 2), courses);
     }
 
     // 이수현황 체크리스트에서 아직 done 이 아닌 과목. 권장 학년은 그 체크리스트에 없어 같은 기준 연도의 행에서 읽는다
@@ -65,11 +67,12 @@ public class RemainingCourseService {
         return generalEducationRequiredCourseRepository.findAllByAdmissionYearOrderByIdAsc(year).stream()
                 .filter(course -> notDone.contains(course.getCourseName()))
                 .map(course -> new RemainingCourse(course.getCourseName(), null, Classification.GEN_REQUIRED,
-                        course.getCredits(), course.getRecommendedGrade(), null));
+                        course.getCredits(), course.getRecommendedGrade(), null, null));
     }
 
-    private Stream<RemainingCourse> majorCourses(Long userId, String courseUnit) {
-        if (courseUnit == null) {
+    // 두 전공에 같은 과목이 있으면 제1전공 쪽 1행만 남긴다
+    private Stream<RemainingCourse> majorCourses(Long userId, List<String> courseUnits) {
+        if (courseUnits.isEmpty()) {
             return Stream.empty();
         }
         List<CompletedCourse> taken = completedCourseRepository.findByUserId(userId).stream()
@@ -80,10 +83,14 @@ public class RemainingCourseService {
                 .filter(Objects::nonNull).collect(Collectors.toSet());
         Set<String> namesWithoutCode = taken.stream().filter(course -> course.getCourseCode() == null)
                 .map(course -> AcademicProgressService.withoutSpaces(course.getCourseName())).collect(Collectors.toSet());
-        return courseRepository.findByUnitNameAndClassificationIn(courseUnit, MAJOR_CLASSIFICATIONS).stream()
+        Set<String> seenCodes = new HashSet<>();
+        return courseUnits.stream()
+                .flatMap(courseUnit -> courseRepository
+                        .findByUnitNameAndClassificationIn(courseUnit, AcademicProgressService.MAJOR_CLASSIFICATIONS).stream())
+                .filter(course -> seenCodes.add(course.getCourseCode()))
                 .filter(course -> !takenCodes.contains(course.getCourseCode())
                         && !namesWithoutCode.contains(AcademicProgressService.withoutSpaces(course.getName())))
                 .map(course -> new RemainingCourse(course.getName(), course.getCourseCode(), course.getClassification(),
-                        course.getCredits(), course.getTargetGrade(), course.getOpenSemester()));
+                        course.getCredits(), course.getTargetGrade(), course.getOpenSemester(), course.getUnitName()));
     }
 }

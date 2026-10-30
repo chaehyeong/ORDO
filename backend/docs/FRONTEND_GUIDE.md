@@ -40,6 +40,7 @@
 | T16 홈 D-Day 알림 | ✅ 완료 (A) | `feat/home-deadlines` (feat/timetable-online 위에서 작업) |
 | T17 남은 수강 과목 | ✅ 완료 (A) | `feat/remaining-courses` (feat/home-deadlines 위에서 작업) |
 | T18 학기별 배치 | ✅ 완료 (A) | `feat/plans` (feat/remaining-courses 위에서 작업) |
+| T19 복수전공 | ✅ 완료 (A) | `feat/double-major` (fix/course-names 위에서 작업) |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
@@ -273,6 +274,7 @@ async function api(path, options = {}) {
 | /api/catalog/colleges | 단과대 목록 |
 | /api/catalog/majors?admissionYear=2026 | 입학년도별 전공 목록 |
 | /api/catalog/majors?admissionYear=2026&collegeId=3 | 단과대까지 선택한 경우 목록 필터 (id는 colleges 응답 사용) |
+| /api/catalog/majors?admissionYear=2026&includeConvergence=true | 복수전공 고르기: 융합전공까지 포함한 목록 (기본값 false 는 회원가입용) |
 | /api/catalog/courses?majorId=54&q=CSE204&page=0&size=20 | 전공별 과목명·학수번호 검색 |
 | /api/catalog/courses?majorId=54&classification=MAJOR_REQUIRED | 전공필수 과목 조회 |
 | /api/catalog/requirements?majorId=54&admissionYear=2026 | 졸업요건 원본 조회 (진행률·졸업 가능 판정 아님) |
@@ -403,6 +405,9 @@ general-education.data: { admissionYear, basisYear, approximate,
 | GET | /api/academic/remaining-courses | 남은 수강 과목 (졸업 로드맵 카드) |
 | GET | /api/academic/plans | 학기별 배치 조회 (졸업 로드맵) |
 | PUT | /api/academic/plans | 학기별 배치 저장 — **통째로 교체**, 빈 목록 = 초기화 |
+| GET | /api/academic/double-major | 복수전공 진행 상황, 없으면 `data: null` (학사관리 다전공 카드) |
+| PUT | /api/academic/double-major | 복수전공 등록·변경 `{ "majorId": 12 }` |
+| DELETE | /api/academic/double-major | 복수전공 해제 → **204** |
 
 ```json
 // POST /api/academic/completed-courses
@@ -429,16 +434,17 @@ general-education.data: { admissionYear, basisYear, approximate,
 
 ```json
 { "remainingCredits": 28,          // 졸업까지 남은 학점. courses 학점의 합이 아니다
-  "majorCoursesAvailable": true,   // false 면 전공 과목 자료가 없는 전공 → 필수교양만 온다. "전공 과목 정보가 없어요" 안내
+  "majorCoursesAvailable": true,   // false 면 전공 과목 자료가 없는 전공이 있어 그 전공 과목이 빠진다. "전공 과목 정보가 없어요" 안내
   "courses": [ { "courseName": "주제연구", "courseCode": null, "classification": "GEN_REQUIRED", "credits": 3,
-                 "targetGrade": "2", "openSemester": null },
+                 "targetGrade": "2", "openSemester": null, "unitName": null },
                { "courseName": "디지털디자인", "courseCode": "FD105", "classification": "MAJOR_BASIC", "credits": 3,
-                 "targetGrade": "1", "openSemester": "1,2" } ] }
+                 "targetGrade": "1", "openSemester": "1,2", "unitName": "시각디자인학과" } ] }
 ```
 
 - 순서는 필수교양 → 전공기초 → 전공필수 → 전공선택, 그 안에서 권장 학년 → 이름. **이수구분 필터는 프론트에서** 거른다(`classification` 값 기준, 한 번에 전부 옴, 학과당 최대 약 130과목).
 - 태그 글자: `GEN_REQUIRED`=필수교양, `MAJOR_BASIC`=전공기초, `MAJOR_REQUIRED`=전공필수, `MAJOR_ELECTIVE`=전공선택.
 - 전공선택은 전부 나온다. 다 들어야 한다는 뜻이 아니므로 필요한 학점은 `remainingCredits`·`progress` 로 보여 주세요. 0학점 과목(졸업논문 등)도 온다.
+- 복수전공이 있으면 두 전공 과목이 함께 온다. 같은 과목은 1행이고, `unitName` 으로 어느 전공 과목인지 구분한다(필수교양은 null).
 - F·NP 받은 과목은 남은 과목에 있고, 성적 미정(수강 중)은 들은 것으로 친다. 이수 과목을 추가·수정·삭제하면 다시 불러오면 된다.
 - 2025학번 이하도 2026 교육과정 기준이다(자료가 2026뿐). `progress` 의 `approximate: true` 면 안내 문구를 같이 보여 주세요.
 - 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE`.
@@ -466,6 +472,35 @@ general-education.data: { admissionYear, basisYear, approximate,
 - 남은 수강 과목 응답은 배치와 무관하다. 이미 배치한 과목을 카드에서 빼려면 `courseCode`(없으면 이름)로 프론트에서 거른다. 배치는 이수현황·평점에 들어가지 않는다.
 - "수업 추가" 버튼은 목록에 없는 과목을 PUT 목록에 더하는 것이다. 받는 값은 과목명·학수번호·이수구분·학점이고 강의실·시간은 저장하지 않는다(디자인 창 확인 중, 명세 9장 25).
 - **브라우저 PUT 은 CORS 수정(`fix/cors-put`)이 병합돼야 동작한다.**
+
+**다전공 카드 (T19)**
+
+```json
+// GET·PUT /api/academic/double-major 응답 data. 복수전공이 없으면 GET 은 data: null → "추가한 다전공이 없습니다"
+{ "major": { "id": 12, "displayName": "산업디자인학과" },
+  "majorCoursesAvailable": true,   // false 면 교과목 자료가 없는 전공: 요건만 보여 주고 "과목 정보가 없어요" 안내
+  "total": { "earned": 6, "required": 42 },
+  "groups": [ { "key": "MAJOR_BASIC", "label": "전공기초", "earned": 6, "required": 9 },
+              { "key": "MAJOR_REQUIRED", "label": "전공필수", "earned": 0, "required": 12 },
+              { "key": "MAJOR_ELECTIVE", "label": "전공선택", "earned": 0, "required": 21 } ],
+  "courses": [ { "id": 3, "courseName": "드로잉", "courseCode": "FD101", "classification": "MAJOR_BASIC",
+                 "credits": 3, "grade": "A+" } ] }
+```
+
+| `degreeMock.multiMajor` | API |
+|---|---|
+| `name` | `major.displayName` |
+| `type` | 프론트 고정 문구 |
+| `earned` / `required` | `total.earned` / `total.required` |
+| `breakdown` | `groups` (`label`·`earned`·`required` 는 같고, `key` 는 `majorBasic` 대신 `MAJOR_BASIC`) |
+| "이수 과목 보기" | `courses` |
+
+- mock 의 36 은 예시 값이다. 산업디자인 2026학번의 실제 요건은 **42**(9·12·21).
+- "+ 다전공 추가하기"의 전공 목록은 `GET /api/catalog/majors?admissionYear=&includeConvergence=true`. 오르도는 학교 신청 창구가 아니라 **학교에서 승인받은 전공을 입력하는 곳**이다. "신청하기" 문구를 쓰려면 디자인팀과 확인해 주세요.
+- **등록·해제 후 `progress`·`home`·`summary` 를 다시 불러오세요.** 복수전공을 등록하면 주전공 요건도 다전공 기준으로 바뀐다(시각디자인 67 → 42). 제2전공에만 있는 과목은 주전공 영역에서 빠지고 `기타`로 간다.
+- 두 전공에 같은 과목은 양쪽 다 인정되고 졸업 총학점에는 1번만 들어간다. 그래서 주전공 + 다전공 + 교양 + 기타의 합이 `total` 보다 클 수 있다.
+- `progress` 의 `checks` 에 2026학번부터 `다전공·부전공·마이크로디그리`(1개 이상 이수) 항목이 추가된다. 다른 항목처럼 자동 판정이 아니다.
+- 오류: 주전공과 같은 전공 400 `INVALID_INPUT`, 없는 전공 404 `MAJOR_NOT_FOUND`, 입학년도·전공 없음 400 `PROFILE_INCOMPLETE`. `PATCH /api/users/me` 로 주전공을 복수전공과 같게 하거나 복수전공 요건이 없는 입학년도로 바꾸면 400 `INVALID_INPUT` → "복수전공을 먼저 해제해 주세요" 안내.
 
 ### 파일 가져오기 `import` (🔒, T12)
 
@@ -593,6 +628,7 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 - T6·T7(원래 B 담당, A 가 대신 진행): 공용 `Term` 선언 순서를 FIRST·SUMMER·SECOND·WINTER(시간 순)로 바꿔 정렬에 쓴다(DB 는 이름 저장이라 영향 없음). B 의 `CourseRepository` 에 `findFirstByUnitNameAndCourseCodeOrderByIdAsc` 하나 추가. 홈·마이페이지는 `AcademicProgressService.findSummary(userId)` 를 쓴다.
 - T12: 공용 `build.gradle` 에 Apache POI(`poi-ooxml` 5.5.1), `application.yml` 에 multipart 설정(5MB·메모리 처리), `ErrorCode` 4개(IMPORT_*), `GlobalExceptionHandler` 에 업로드 크기 초과 처리, `AGENTS.md` 패키지 목록(importer·notification). 이수내역 bulk 에 `replaceTerms`·`keepClassification`, 시간표 bulk API 추가. 테스트 사본은 `src/test/resources/import/`(익명).
 - T11: Flyway `V11__add_web_push.sql`(`push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·인덱스, `users.todo_alarm_time`), 공용 `ErrorCode` 에 `PUSH_NOT_CONFIGURED`(카카오 코드는 만들지 않음), `application.yml` 에 `app.webpush.*`·`app.notification.scheduler-enabled`(값 없이 환경변수 이름만). 새 의존성 없음(JDK 암호화 + 기존 jjwt). `@EnableScheduling` 은 `notification/config/SchedulingConfig`. `UserSettingsRequest` 의 `notificationEnabled` 가 필수 → 선택으로 바뀜.
+- T19: Flyway `V14__add_user_double_major.sql`(`users.double_major_id`). `User` 에 `doubleMajor`. B 가 만든 T3 코드도 바꿨다: `MajorRepository.findAllSelectable`·`CatalogService.getMajors` 에 `includeConvergence` 인자 추가(기본 동작은 그대로). 공용 파일(`global/**`, `ErrorCode`, `build.gradle`, `application.yml`) 변경 없음.
 - 명세와 다르게/새로 정한 것은 `BACKEND_SPEC.md` 4장·4.1·4.2·8장에 반영해 두었다.
 
 ---

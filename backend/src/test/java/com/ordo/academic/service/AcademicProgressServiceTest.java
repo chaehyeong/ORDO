@@ -12,11 +12,14 @@ import com.ordo.academic.dto.ProgressSummary.Area;
 import com.ordo.academic.dto.ProgressSummary.Group;
 import com.ordo.academic.dto.ProgressSummary.Total;
 import com.ordo.academic.repository.CompletedCourseRepository;
+import com.ordo.academic.dto.DoubleMajorResponse;
 import com.ordo.catalog.domain.Classification;
+import com.ordo.catalog.domain.Course;
 import com.ordo.catalog.domain.GeneralEducationRequiredCourse;
 import com.ordo.catalog.domain.GeneralEducationRequirement;
 import com.ordo.catalog.domain.GraduationRequirement;
 import com.ordo.catalog.domain.Major;
+import com.ordo.catalog.repository.CourseRepository;
 import com.ordo.catalog.repository.GeneralEducationRequiredCourseRepository;
 import com.ordo.catalog.repository.GeneralEducationRequirementRepository;
 import com.ordo.catalog.repository.GraduationRequirementRepository;
@@ -49,11 +52,27 @@ class AcademicProgressServiceTest {
     GeneralEducationRequirementRepository generalEducationRequirementRepository;
     @Mock
     GeneralEducationRequiredCourseRepository generalEducationRequiredCourseRepository;
+    @Mock
+    CourseRepository courseRepository;
     @InjectMocks
     AcademicProgressService academicProgressService;
 
     final Major major = lenientMock(Major.class);
     final GraduationRequirement requirement = requirement(130, 12, 42, 27, 81);
+    // 시각디자인(제1전공) 다전공 6/-/36 합 42 + 산업디자인(제2전공) 다전공 9/12/21 합 42
+    final GraduationRequirement firstRequirement = doubleCredits(requirement(130, 6, null, 61, 67), 6, null, 36, 42);
+    final GraduationRequirement secondRequirement = doubleCredits(lenientMock(GraduationRequirement.class), 9, 12, 21, 42);
+    final Major secondMajor = lenientMock(Major.class);
+    final List<Course> firstCourses = List.of(
+            master("FD101", "드로잉", Classification.MAJOR_BASIC),
+            master("FD113", "시각디자인연구", Classification.MAJOR_BASIC),
+            master("VID3001", "편집디자인", Classification.MAJOR_ELECTIVE));
+    final List<Course> secondCourses = List.of(
+            master("FD101", "드로잉", Classification.MAJOR_BASIC),
+            master("FD112", "산업디자인리서치", Classification.MAJOR_BASIC),
+            master("ID201", "제품디자인", Classification.MAJOR_REQUIRED),
+            master("ID301", "디자인경영", Classification.MAJOR_ELECTIVE),
+            master("VID3001", "편집디자인", Classification.MAJOR_REQUIRED));
     final GeneralEducationRequirement generalEducation = generalEducation();
     final List<GeneralEducationRequiredCourse> requiredCourses =
             List.of(requiredCourse("인간의가치탐색", 3), requiredCourse("대학영어", 2));
@@ -61,6 +80,10 @@ class AcademicProgressServiceTest {
     {
         given(major.getId()).willReturn(54L);
         given(major.getDisplayName()).willReturn("컴퓨터공학부 컴퓨터공학과");
+        given(major.getCourseUnit()).willReturn("시각디자인학과");
+        given(secondMajor.getId()).willReturn(12L);
+        given(secondMajor.getDisplayName()).willReturn("산업디자인학과");
+        given(secondMajor.getCourseUnit()).willReturn("산업디자인학과");
     }
 
     @Test
@@ -105,7 +128,7 @@ class AcademicProgressServiceTest {
     @Test
     void nullRequirementCreditsAreZero() {
         ProgressSummary summary = AcademicProgressService.calculate(2026, major, requirement(null, null, 42, 27, null),
-                generalEducation, false, requiredCourses, List.of());
+                generalEducation, false, requiredCourses, List.of(), null);
 
         assertThat(area(summary, "MAJOR_BASIC").required()).isZero();
         assertThat(summary.total()).isEqualTo(new Total(0, 0, 0, 0.0));
@@ -156,7 +179,8 @@ class AcademicProgressServiceTest {
                 new Group("MAJOR", "전공", 81, 81), new Group("GENERAL", "교양", 29, 29), new Group("OTHER", "기타", 20, 20));
         assertThat(area(summary, "OTHER").required()).isNull();
         assertThat(summary.requiredGeneralCourses()).allMatch(ProgressSummary.RequiredCourse::done);  // "인간의 가치탐색" 공백 무시
-        assertThat(summary.checks()).extracting(ProgressSummary.Check::name).containsExactly("SW기초교육", "졸업논문");
+        assertThat(summary.checks()).extracting(ProgressSummary.Check::name)
+                .containsExactly("SW기초교육", "졸업논문", "다전공·부전공·마이크로디그리");
         assertThat(summary.major()).isEqualTo(new ProgressSummary.MajorInfo(54L, "컴퓨터공학부 컴퓨터공학과"));
     }
 
@@ -179,8 +203,205 @@ class AcademicProgressServiceTest {
         assertThat(AcademicProgressService.percent(5, 0)).isZero();
     }
 
+    @Test
+    void multiProgramCheckIsOnlyFor2026AdmissionOnward() {
+        ProgressSummary summary = AcademicProgressService.calculate(2025, major, requirement, generalEducation, true,
+                requiredCourses, List.of(), null);
+
+        assertThat(summary.checks()).extracting(ProgressSummary.Check::name).containsExactly("SW기초교육", "졸업논문");
+    }
+
+    @Test
+    void doubleMajorSwapsFirstMajorRequirementToDoubleCredits() {
+        ProgressSummary summary = calculateDouble(List.of());
+
+        assertThat(area(summary, "MAJOR_BASIC").required()).isEqualTo(6);
+        assertThat(area(summary, "MAJOR_REQUIRED").required()).isZero();  // 시각디자인 전공필수 NULL = 요건 없음
+        assertThat(area(summary, "MAJOR_ELECTIVE").required()).isEqualTo(36);
+        assertThat(summary.groups()).containsExactly(
+                new Group("MAJOR", "전공", 0, 42), new Group("GENERAL", "교양", 0, 29), new Group("OTHER", "기타", 0, 59));
+        assertThat(summary.total().required()).isEqualTo(130);
+    }
+
+    @Test
+    void courseInBothCurriculaCountsForBothMajorsButOnceTowardTotal() {
+        List<CompletedCourse> courses = List.of(course("FD101", "드로잉", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST));
+
+        ProgressSummary summary = calculateDouble(courses);
+        DoubleMajorResponse second = doubleMajor().progress(courses);
+
+        assertThat(area(summary, "MAJOR_BASIC").earned()).isEqualTo(3);
+        assertThat(second.groups().get(0)).isEqualTo(new Group("MAJOR_BASIC", "전공기초", 3, 9));
+        assertThat(second.total()).isEqualTo(new DoubleMajorResponse.Total(3, 42));
+        assertThat(summary.total().earned()).isEqualTo(3);
+    }
+
+    @Test
+    void secondMajorOnlyCourseLeavesFirstMajorAreaAndCountsAsOther() {
+        List<CompletedCourse> courses = List.of(course("FD112", "산업디자인리서치", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST));
+
+        ProgressSummary summary = calculateDouble(courses);
+
+        assertThat(area(summary, "MAJOR_BASIC").earned()).isZero();
+        assertThat(area(summary, "OTHER").earned()).isEqualTo(3);
+        assertThat(summary.groups()).contains(new Group("MAJOR", "전공", 0, 42), new Group("OTHER", "기타", 3, 59));
+        assertThat(summary.total().earned()).isEqualTo(3);
+        assertThat(doubleMajor().progress(courses).groups().get(0).earned()).isEqualTo(3);
+    }
+
+    @Test
+    void firstMajorOnlyAndUnknownCoursesStayInFirstMajor() {
+        List<CompletedCourse> courses = List.of(
+                course("FD113", "시각디자인연구", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST),
+                course("OLD100", "옛 전공과목", 3, Classification.MAJOR_ELECTIVE, null, "A0", 2026, Term.FIRST));
+
+        ProgressSummary summary = calculateDouble(courses);
+
+        assertThat(area(summary, "MAJOR_BASIC").earned()).isEqualTo(3);
+        assertThat(area(summary, "MAJOR_ELECTIVE").earned()).isEqualTo(3);
+        assertThat(doubleMajor().progress(courses).courses()).isEmpty();
+    }
+
+    // 공통 과목: 제1전공은 성적표 이수구분, 제2전공은 그 학과 마스터의 이수구분 (교육과정 p116)
+    @Test
+    void eachMajorUsesItsOwnClassification() {
+        List<CompletedCourse> courses = List.of(course("VID3001", "편집디자인", 3, Classification.MAJOR_ELECTIVE, null, "A0", 2026, Term.FIRST));
+
+        assertThat(area(calculateDouble(courses), "MAJOR_ELECTIVE").earned()).isEqualTo(3);
+        DoubleMajorResponse second = doubleMajor().progress(courses);
+        assertThat(second.groups().get(1).earned()).isEqualTo(3);
+        assertThat(second.groups().get(2).earned()).isZero();
+        assertThat(second.courses().get(0).classification()).isEqualTo(Classification.MAJOR_REQUIRED);
+    }
+
+    @Test
+    void generalElectiveOnTranscriptCountsForSecondMajorAndStaysOther() {
+        List<CompletedCourse> courses = List.of(course("ID301", "디자인경영", 3, Classification.GENERAL_ELECTIVE, null, "A0", 2026, Term.FIRST));
+
+        assertThat(area(calculateDouble(courses), "OTHER").earned()).isEqualTo(3);
+        assertThat(doubleMajor().progress(courses).groups().get(2).earned()).isEqualTo(3);
+    }
+
+    @Test
+    void generalEducationCourseInSecondCatalogKeepsItsArea() {
+        List<CompletedCourse> courses = List.of(course("ID301", "디자인경영", 3, Classification.GEN_FREE, null, "P", 2026, Term.FIRST));
+
+        ProgressSummary summary = calculateDouble(courses);
+
+        assertThat(area(summary, "GEN_FREE").earned()).isEqualTo(3);
+        assertThat(area(summary, "OTHER").earned()).isZero();
+    }
+
+    @Test
+    void sameNameWithDifferentCodeIsNotRecognizedButCodelessRecordMatchesByName() {
+        DoubleMajorResponse second = doubleMajor().progress(List.of(
+                course("OLD100", "드로잉", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST),
+                course(null, "제품 디자인", 3, Classification.MAJOR_REQUIRED, null, "A0", 2026, Term.FIRST)));
+
+        assertThat(second.courses()).extracting(DoubleMajorResponse.CourseItem::courseName).containsExactly("제품 디자인");
+    }
+
+    @Test
+    void secondMajorSeesRecognizedCoursesOnlyThroughService() {
+        givenUser(2026);
+        User user = userRepository.findById(1L).orElseThrow();
+        user.changeDoubleMajor(secondMajor);
+        given(graduationRequirementRepository.findByMajorIdAndAdmissionYear(12L, 2026)).willReturn(Optional.of(secondRequirement));
+        given(courseRepository.findByUnitNameAndClassificationIn("시각디자인학과", AcademicProgressService.MAJOR_CLASSIFICATIONS)).willReturn(firstCourses);
+        given(courseRepository.findByUnitNameAndClassificationIn("산업디자인학과", AcademicProgressService.MAJOR_CLASSIFICATIONS)).willReturn(secondCourses);
+        given(completedCourseRepository.findByUserId(1L)).willReturn(List.of(
+                course("ID201", "제품디자인", 3, Classification.MAJOR_REQUIRED, null, "F", 2026, Term.FIRST),
+                course("FD112", "산업디자인리서치", 3, Classification.MAJOR_BASIC, null, "C0", 2025, Term.SECOND),
+                course("FD112", "산업디자인리서치", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST)));
+
+        DoubleMajorResponse second = academicProgressService.findDoubleMajor(1L).orElseThrow();
+
+        assertThat(second.major()).isEqualTo(new ProgressSummary.MajorInfo(12L, "산업디자인학과"));
+        assertThat(second.majorCoursesAvailable()).isTrue();
+        assertThat(second.total()).isEqualTo(new DoubleMajorResponse.Total(3, 42));
+        assertThat(second.courses()).singleElement().satisfies(c -> assertThat(c.grade()).isEqualTo("A0"));
+    }
+
+    @Test
+    void summaryThroughServiceUsesDoubleMajor() {
+        givenUser(2026);
+        User user = userRepository.findById(1L).orElseThrow();
+        user.changeDoubleMajor(secondMajor);
+        given(graduationRequirementRepository.findByMajorIdAndAdmissionYear(54L, 2026)).willReturn(Optional.of(firstRequirement));
+        given(graduationRequirementRepository.findByMajorIdAndAdmissionYear(12L, 2026)).willReturn(Optional.of(secondRequirement));
+        given(generalEducationRequirementRepository.findByAdmissionYear(2026)).willReturn(Optional.of(generalEducation));
+        given(generalEducationRequiredCourseRepository.findAllByAdmissionYearOrderByIdAsc(2026)).willReturn(requiredCourses);
+        given(courseRepository.findByUnitNameAndClassificationIn("시각디자인학과", AcademicProgressService.MAJOR_CLASSIFICATIONS)).willReturn(firstCourses);
+        given(courseRepository.findByUnitNameAndClassificationIn("산업디자인학과", AcademicProgressService.MAJOR_CLASSIFICATIONS)).willReturn(secondCourses);
+        given(completedCourseRepository.findByUserId(1L)).willReturn(List.of(
+                course("FD112", "산업디자인리서치", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST)));
+
+        ProgressSummary summary = academicProgressService.getSummary(1L);
+
+        assertThat(area(summary, "MAJOR_ELECTIVE").required()).isEqualTo(36);
+        assertThat(area(summary, "MAJOR_BASIC").earned()).isZero();
+        assertThat(area(summary, "OTHER").earned()).isEqualTo(3);
+    }
+
+    @Test
+    void findDoubleMajorIsEmptyWithoutOne() {
+        givenUser(2026);
+
+        assertThat(academicProgressService.findDoubleMajor(1L)).isEmpty();
+    }
+
+    @Test
+    void secondMajorWithoutCourseUnitShowsRequirementOnly() {
+        Major noCourses = lenientMock(Major.class);
+        given(noCourses.getCourseUnit()).willReturn(null);
+        DoubleMajorCalculation calculation = new DoubleMajorCalculation(noCourses, secondRequirement, firstCourses, List.of());
+        List<CompletedCourse> courses = List.of(course("FD101", "드로잉", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST));
+
+        DoubleMajorResponse second = calculation.progress(courses);
+
+        assertThat(second.majorCoursesAvailable()).isFalse();
+        assertThat(second.courses()).isEmpty();
+        assertThat(second.total()).isEqualTo(new DoubleMajorResponse.Total(0, 42));
+        assertThat(calculation.met(courses)).isFalse();
+    }
+
+    @Test
+    void bothMajorsMustBeMetToGraduate() {
+        ProgressSummary met = calculateDouble(doubleMajorGraduatableCourses("ID301", "디자인경영"));
+        assertThat(met.total()).isEqualTo(new Total(130, 130, 0, 100.0));
+        assertThat(met.graduatable()).isTrue();
+
+        // 같은 학점이라도 제2전공 전공선택을 채우지 못하면 졸업 불가
+        ProgressSummary notMet = calculateDouble(doubleMajorGraduatableCourses("OTHER100", "다른학과과목"));
+        assertThat(notMet.total()).isEqualTo(new Total(130, 130, 0, 100.0));
+        assertThat(notMet.graduatable()).isFalse();
+    }
+
     private ProgressSummary calculate(List<CompletedCourse> courses) {
-        return AcademicProgressService.calculate(2026, major, requirement, generalEducation, false, requiredCourses, courses);
+        return AcademicProgressService.calculate(2026, major, requirement, generalEducation, false, requiredCourses, courses, null);
+    }
+
+    private ProgressSummary calculateDouble(List<CompletedCourse> courses) {
+        return AcademicProgressService.calculate(2026, major, firstRequirement, generalEducation, false, requiredCourses,
+                courses, doubleMajor());
+    }
+
+    private DoubleMajorCalculation doubleMajor() {
+        return new DoubleMajorCalculation(secondMajor, secondRequirement, firstCourses, secondCourses);
+    }
+
+    /** 총 130 = 교양 29 + 제1전공 42(6·36) + 제2전공 42(9·12·21) + 일반선택 17 */
+    private List<CompletedCourse> doubleMajorGraduatableCourses(String secondElectiveCode, String secondElectiveName) {
+        List<CompletedCourse> courses = graduatableCourses();
+        courses.removeIf(c -> AcademicProgressService.MAJOR_CLASSIFICATIONS.contains(c.getClassification())
+                || c.getClassification() == Classification.GENERAL_ELECTIVE);
+        courses.add(course("FD113", "시각디자인연구", 6, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST));
+        courses.add(course(null, "시각 전공선택", 36, Classification.MAJOR_ELECTIVE, null, "A0", 2026, Term.FIRST));
+        courses.add(course("FD112", "산업디자인리서치", 9, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST));
+        courses.add(course("ID201", "제품디자인", 12, Classification.MAJOR_REQUIRED, null, "A0", 2026, Term.FIRST));
+        courses.add(course(secondElectiveCode, secondElectiveName, 21, Classification.GENERAL_ELECTIVE, null, "A0", 2026, Term.FIRST));
+        courses.add(course(null, "일반선택", 17, Classification.GENERAL_ELECTIVE, null, "A0", 2026, Term.FIRST));
+        return courses;
     }
 
     /** 총 130 = 교양 29(필수 17·배분 9·3영역·자유 3) + 전공 81(12·42·27) + 기타 20 */
@@ -227,6 +448,23 @@ class AcademicProgressServiceTest {
         given(r.getSwRequirement()).willReturn("6학점");
         given(r.getThesisRequirement()).willReturn("필요");
         return r;
+    }
+
+    private static GraduationRequirement doubleCredits(GraduationRequirement r, Integer basic, Integer required,
+                                                       Integer elective, Integer total) {
+        given(r.getDoubleBasicCredits()).willReturn(basic);
+        given(r.getDoubleRequiredCredits()).willReturn(required);
+        given(r.getDoubleElectiveCredits()).willReturn(elective);
+        given(r.getDoubleTotalCredits()).willReturn(total);
+        return r;
+    }
+
+    private static Course master(String code, String name, Classification classification) {
+        Course c = lenientMock(Course.class);
+        given(c.getCourseCode()).willReturn(code);
+        given(c.getName()).willReturn(name);
+        given(c.getClassification()).willReturn(classification);
+        return c;
     }
 
     private static GeneralEducationRequirement generalEducation() {

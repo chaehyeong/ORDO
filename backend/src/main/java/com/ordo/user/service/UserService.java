@@ -78,8 +78,15 @@ public class UserService {
         }
         Long majorId = request.majorId() != null ? request.majorId() : user.getMajor().getId();
         int admissionYear = request.admissionYear() != null ? request.admissionYear() : user.getAdmissionYear();
-        return majorRepository.findSelectable(majorId, admissionYear)
+        Major major = majorRepository.findSelectable(majorId, admissionYear)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MAJOR_NOT_FOUND));
+        // 복수전공과 겹치거나 복수전공 요건이 없는 입학년도면 복수전공을 먼저 해제해야 한다 (T19)
+        Major doubleMajor = user.getDoubleMajor();
+        if (doubleMajor != null && (doubleMajor.getId().equals(majorId)
+                || majorRepository.countGraduationRequirements(doubleMajor.getId(), admissionYear) == 0)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        return major;
     }
 
     private User getUser(Long userId) {

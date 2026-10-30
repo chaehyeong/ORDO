@@ -36,12 +36,13 @@ public class CatalogController {
         return ApiResponse.ok(catalogService.getColleges());
     }
 
-    @Operation(summary = "입학년도별 선택 가능한 전공 목록")
+    @Operation(summary = "입학년도별 선택 가능한 전공 목록", description = "복수전공을 고를 때는 includeConvergence=true 로 융합전공까지 받는다.")
     @GetMapping("/majors")
     public ApiResponse<List<MajorResponse>> getMajors(
             @RequestParam @Positive int admissionYear,
-            @RequestParam(required = false) @Positive Long collegeId) {
-        return ApiResponse.ok(catalogService.getMajors(admissionYear, collegeId));
+            @RequestParam(required = false) @Positive Long collegeId,
+            @RequestParam(defaultValue = "false") boolean includeConvergence) {
+        return ApiResponse.ok(catalogService.getMajors(admissionYear, collegeId, includeConvergence));
     }
 
     @Operation(summary = "입학년도·전공별 졸업요건 원본")
