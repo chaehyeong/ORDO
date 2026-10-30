@@ -17,6 +17,7 @@ import com.ordo.global.error.BusinessException;
 import com.ordo.global.error.ErrorCode;
 import com.ordo.home.dto.HomeResponse;
 import com.ordo.home.dto.HomeResponse.Day;
+import com.ordo.home.dto.HomeResponse.Deadline;
 import com.ordo.home.dto.HomeResponse.Graduation;
 import com.ordo.home.dto.HomeResponse.TimelineItem;
 import com.ordo.home.dto.HomeResponse.Todo;
@@ -27,8 +28,10 @@ import com.ordo.timetable.domain.TimetableEntry;
 import com.ordo.timetable.repository.TimetableEntryRepository;
 import com.ordo.user.domain.User;
 import com.ordo.user.repository.UserRepository;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -43,6 +46,7 @@ class HomeServiceTest {
     static final LocalDate WEDNESDAY = LocalDate.of(2026, 10, 7);
     static final LocalDate MONDAY = LocalDate.of(2026, 10, 5);
     static final LocalDate SUNDAY = LocalDate.of(2026, 10, 11);
+    static final LocalDate DEADLINE_END = WEDNESDAY.plusDays(7);
 
     @Mock
     UserRepository userRepository;
@@ -129,7 +133,7 @@ class HomeServiceTest {
                 ScheduleCategory.ASSIGNMENT, at(15), null, null, "디자인씽킹", "https://khcanvas.khu.ac.kr/courses/1"));
         assertThat(home.week().get(4).categories()).containsExactly(ScheduleCategory.ASSIGNMENT);  // 금요일은 점만
         assertThat(home.todos()).isEmpty();
-        then(ecampusService).should(times(1)).getEvents(1L, MONDAY, SUNDAY);
+        then(ecampusService).should(times(1)).getEvents(1L, MONDAY, DEADLINE_END);
     }
 
     @Test
@@ -158,11 +162,11 @@ class HomeServiceTest {
     @Test
     void ecampusFailureOnlyHidesItsDots() {
         given(userRepository.findById(1L)).willReturn(Optional.of(user("하은")));
-        given(scheduleRepository.findInPeriod(1L, MONDAY, SUNDAY, null))
+        given(scheduleRepository.findInPeriod(1L, MONDAY, DEADLINE_END, null))
                 .willReturn(List.of(schedule("보고서", WEDNESDAY, null, ScheduleCategory.ASSIGNMENT)));
         given(timetableEntryRepository.findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(1L, 2026, Term.SECOND))
                 .willReturn(List.of());
-        given(ecampusService.getEvents(1L, MONDAY, SUNDAY))
+        given(ecampusService.getEvents(1L, MONDAY, DEADLINE_END))
                 .willThrow(new BusinessException(ErrorCode.ECAMPUS_FEED_UNAVAILABLE));
 
         HomeResponse home = homeService.getHome(1L, WEDNESDAY);
@@ -170,6 +174,71 @@ class HomeServiceTest {
         assertThat(home.week().get(2).categories()).containsExactly(ScheduleCategory.ASSIGNMENT);
         assertThat(home.todos()).hasSize(1);
         assertThat(home.timeline()).isEmpty();
+        assertThat(home.deadlines()).extracting(Deadline::title).containsExactly("보고서");  // 직접 등록한 일정은 그대로
+    }
+
+    @Test
+    void deadlinesAreUndoneAssignmentsAndPersonalSchedulesFromTheBaseDate() {
+        Schedule done = schedule("끝낸 과제", WEDNESDAY, null, ScheduleCategory.ASSIGNMENT);
+        done.changeDone(true);
+        givenHome(user("하은"),
+                List.of(schedule("보고서", WEDNESDAY.plusDays(2), null, ScheduleCategory.ASSIGNMENT),
+                        schedule("팀플 모임", DEADLINE_END, at(10), ScheduleCategory.PERSONAL),
+                        schedule("휴강", WEDNESDAY.plusDays(1), at(9), ScheduleCategory.LECTURE),
+                        schedule("지난 과제", MONDAY, null, ScheduleCategory.ASSIGNMENT),
+                        done),
+                List.of(), List.of());
+
+        List<Deadline> deadlines = homeService.getHome(1L, WEDNESDAY).deadlines();
+
+        assertThat(deadlines).extracting(Deadline::title, Deadline::dday).containsExactly(tuple("보고서", 2), tuple("팀플 모임", 7));
+        assertThat(deadlines.get(0).time()).isNull();
+        assertThat(deadlines.get(1).source()).isEqualTo("SCHEDULE");
+        assertThat(deadlines.get(1).time()).isEqualTo(at(10));
+    }
+
+    @Test
+    void deadlinesIncludeEcampusDueAtTheEndOfTheDayWhenItHasNoTime() {
+        givenHomeWithEvents(user("하은"), List.of(), List.of(), List.of(event("3주차 과제 제출", WEDNESDAY.plusDays(6), null),
+                event("지난 과제", MONDAY, null)));
+
+        List<Deadline> deadlines = homeService.getHome(1L, WEDNESDAY).deadlines();
+
+        assertThat(deadlines).containsExactly(new Deadline("ECAMPUS", null, "3주차 과제 제출", ScheduleCategory.ASSIGNMENT,
+                WEDNESDAY.plusDays(6), LocalTime.of(23, 59), 6, "디자인씽킹", "https://khcanvas.khu.ac.kr/courses/1"));
+    }
+
+    @Test
+    void deadlinesSortByDateThenTimeAndStopAtFive() {
+        givenHomeWithEvents(user("하은"),
+                List.of(schedule("목요일 시간 없음", WEDNESDAY.plusDays(1), null, ScheduleCategory.PERSONAL),
+                        schedule("목요일 15시", WEDNESDAY.plusDays(1), at(15), ScheduleCategory.PERSONAL),
+                        schedule("금요일 9시", WEDNESDAY.plusDays(2), at(9), ScheduleCategory.PERSONAL),
+                        schedule("수요일 15시", WEDNESDAY, at(15), ScheduleCategory.PERSONAL),
+                        schedule("토요일 9시", WEDNESDAY.plusDays(3), at(9), ScheduleCategory.PERSONAL)),
+                List.of(),
+                List.of(event("수요일 15시 과제", WEDNESDAY, at(15))));
+
+        List<Deadline> deadlines = homeService.getHome(1L, WEDNESDAY).deadlines();
+
+        assertThat(deadlines).extracting(Deadline::title).containsExactly("수요일 15시", "수요일 15시 과제", "목요일 15시",
+                "목요일 시간 없음", "금요일 9시");
+    }
+
+    @Test
+    void deadlinesDropTimesAlreadyPassedToday() {
+        homeService.clock = Clock.fixed(WEDNESDAY.atTime(10, 0).atZone(ZoneId.of("Asia/Seoul")).toInstant(), ZoneId.of("Asia/Seoul"));
+        givenHomeWithEvents(user("하은"),
+                List.of(schedule("지난 회의", WEDNESDAY, at(9), ScheduleCategory.PERSONAL),
+                        schedule("지금 회의", WEDNESDAY, at(10), ScheduleCategory.PERSONAL),
+                        schedule("시간 없는 할 일", WEDNESDAY, null, ScheduleCategory.ASSIGNMENT),
+                        schedule("내일 회의", WEDNESDAY.plusDays(1), at(9), ScheduleCategory.PERSONAL)),
+                List.of(),
+                List.of(event("지난 과제", WEDNESDAY, at(8))));
+
+        List<Deadline> deadlines = homeService.getHome(1L, WEDNESDAY).deadlines();
+
+        assertThat(deadlines).extracting(Deadline::title).containsExactly("지금 회의", "시간 없는 할 일", "내일 회의");
     }
 
     private void givenHome(User user, List<Schedule> schedules, List<TimetableEntry> entries, List<LocalDate> ecampusDays) {
@@ -179,10 +248,10 @@ class HomeServiceTest {
     private void givenHomeWithEvents(User user, List<Schedule> schedules, List<TimetableEntry> entries,
                                      List<EcampusEventResponse> events) {
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(scheduleRepository.findInPeriod(1L, MONDAY, SUNDAY, null)).willReturn(schedules);
+        given(scheduleRepository.findInPeriod(1L, MONDAY, DEADLINE_END, null)).willReturn(schedules);
         given(timetableEntryRepository.findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(1L, 2026, Term.SECOND))
                 .willReturn(entries);
-        given(ecampusService.getEvents(1L, MONDAY, SUNDAY)).willReturn(new EcampusEventsResponse(!events.isEmpty(), null, events));
+        given(ecampusService.getEvents(1L, MONDAY, DEADLINE_END)).willReturn(new EcampusEventsResponse(!events.isEmpty(), null, events));
     }
 
     private static EcampusEventResponse event(String title, LocalDate date, LocalTime time) {

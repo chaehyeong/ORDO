@@ -12,6 +12,7 @@
 > T13 학사관리 평점 평균 추가: 2026-10-16 (백엔드 A)
 > T14 홈 오늘 일정에 e캠퍼스 과제 추가: 2026-10-16 (백엔드 A)
 > T15 시간표 온라인 강의 추가: 2026-10-30 (백엔드 A)
+> T16 홈 D-Day 알림 추가: 2026-10-30 (백엔드 A)
 > T11 일정 알림 웹푸시 추가: 2026-10-21 (백엔드 A)
 
 ---
@@ -34,6 +35,7 @@
 | T13 학사관리 평점 평균 (4.3 만점) | ✅ 완료 (A) | `feat/gpa` (feat/import 위에서 작업) |
 | T14 홈 오늘 일정에 e캠퍼스 과제 | ✅ 완료 (A) | `feat/home-assignments` (feat/gpa 위에서 작업) |
 | T15 시간표 온라인 강의 | ✅ 완료 (A) | `feat/timetable-online` |
+| T16 홈 D-Day 알림 | ✅ 완료 (A) | `feat/home-deadlines` (feat/timetable-online 위에서 작업) |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
@@ -230,6 +232,10 @@ async function api(path, options = {}) {
                   "startTime": "23:59", "endTime": null, "location": null,
                   "courseName": "디자인씽킹", "url": "https://khcanvas.khu.ac.kr/..." } ],
   "todos": [ { "id": 60, "title": "자료 조사", "category": "ASSIGNMENT", "done": false } ],
+  "deadlines": [ { "source": "SCHEDULE", "id": 12, "title": "팀플 모임", "category": "PERSONAL", "date": "2026-10-07",
+                   "time": "10:00", "dday": 0, "courseName": null, "url": null },
+                 { "source": "ECAMPUS", "id": null, "title": "3주차 과제 제출", "category": "ASSIGNMENT", "date": "2026-10-09",
+                   "time": "23:59", "dday": 2, "courseName": "디자인씽킹", "url": "https://khcanvas.khu.ac.kr/..." } ],
   "graduation": { "earned": 102, "required": 130, "percent": 78.4, "remaining": 28 } }   // 학사 프로필 미완성이면 null
 ```
 
@@ -237,6 +243,10 @@ async function api(path, options = {}) {
 - `timeline` 항목을 누르면 `source` 로 구분해 시간표(`/api/timetables`) 또는 일정(`/api/schedules/{id}`)으로 이동. "일정 수정하기" 버튼은 캘린더로.
 - **(T14 새 값) `source: "ECAMPUS"`** = 오늘 마감인 e캠퍼스 과제. `startTime` 이 **마감 시각**(시각 없으면 23:59)이고 `endTime`·`location`·`id` 는 null. "23:59 마감 · 디자인씽킹"처럼 `courseName` 을 같이 보여주고, 누르면 `url`(e캠퍼스 과제 페이지)을 새 탭으로 연다. 수정·삭제·완료 체크는 없다. 제출한 과제도 보이므로 "e캠퍼스 마감" 표시를 붙여 주세요. 모르는 `source` 값은 무시하도록 처리하면 앞으로 값이 늘어도 안전하다.
 - `todos` 체크박스는 `PATCH /api/schedules/{id}/done` 을 부르고 홈을 다시 불러오면 된다.
+- **(T16 새 값) `deadlines`** = "D-Day 알림" 카드. 7일 안의 완료 안 한 과제·개인일정 + e캠퍼스 과제 마감, 가까운 순 최대 5개(수업·이미 지난 시각은 빠짐). 없으면 빈 배열.
+  - 표기는 프론트가 만든다: `dday` 가 0 이면 "오늘 10:00"(`time` 이 null 이면 "오늘"), 1 이상이면 "D-2".
+  - 아랫줄은 `courseName` 이 있으면 "디자인씽킹 | 과제", 없으면 카테고리(`ASSIGNMENT`=과제, `PERSONAL`=개인일정)만. 직접 등록한 일정에는 과목 칸이 없어서 디자인의 "세계와 시민 | 팀플"처럼 나오지 않는다.
+  - 누르면 `SCHEDULE` 은 `/api/schedules/{id}`, `ECAMPUS` 는 `url` 을 새 탭으로. `ECAMPUS` 는 제출한 과제도 보인다(T14 와 같음).
 - AI 추천 카드는 **보류**(응답에 없음).
 
 ### 마이페이지 요약 (🔒)
