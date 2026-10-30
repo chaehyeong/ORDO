@@ -41,7 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AcademicProgressService {
 
     static final int GENERAL_EDUCATION_FALLBACK_YEAR = 2026;  // 교양 기준은 2026만 있음 (명세 3.3)
-    private static final Set<String> NOT_RECOGNIZED_GRADES = Set.of("F", "NP");
+    static final Set<String> NOT_RECOGNIZED_GRADES = Set.of("F", "NP");
     private static final Set<Classification> OTHER = Set.of(
             Classification.GENERAL_ELECTIVE, Classification.TEACHING, Classification.TEACHING_MAJOR);
 
@@ -183,7 +183,7 @@ public class AcademicProgressService {
         return value == null ? 0 : value;
     }
 
-    private static String withoutSpaces(String value) {
+    static String withoutSpaces(String value) {
         return value.replaceAll("\\s+", "");
     }
 }

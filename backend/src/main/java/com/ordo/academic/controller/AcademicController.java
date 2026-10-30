@@ -6,9 +6,11 @@ import com.ordo.academic.dto.CompletedCourseResponse;
 import com.ordo.academic.dto.CompletedCourseUpdateRequest;
 import com.ordo.academic.dto.GpaSummary;
 import com.ordo.academic.dto.ProgressSummary;
+import com.ordo.academic.dto.RemainingCoursesResponse;
 import com.ordo.academic.service.AcademicGpaService;
 import com.ordo.academic.service.AcademicProgressService;
 import com.ordo.academic.service.CompletedCourseService;
+import com.ordo.academic.service.RemainingCourseService;
 import com.ordo.global.common.ApiResponse;
 import com.ordo.global.security.LoginUser;
 import jakarta.validation.Valid;
@@ -33,6 +35,7 @@ public class AcademicController {
     private final CompletedCourseService completedCourseService;
     private final AcademicProgressService academicProgressService;
     private final AcademicGpaService academicGpaService;
+    private final RemainingCourseService remainingCourseService;
 
     @GetMapping("/completed-courses")
     public ApiResponse<List<CompletedCourseResponse>> getCourses(@LoginUser Long userId) {
@@ -73,5 +76,10 @@ public class AcademicController {
     @GetMapping("/gpa")
     public ApiResponse<GpaSummary> getGpa(@LoginUser Long userId) {
         return ApiResponse.ok(academicGpaService.getGpa(userId));
+    }
+
+    @GetMapping("/remaining-courses")
+    public ApiResponse<RemainingCoursesResponse> getRemainingCourses(@LoginUser Long userId) {
+        return ApiResponse.ok(remainingCourseService.getRemainingCourses(userId));
     }
 }

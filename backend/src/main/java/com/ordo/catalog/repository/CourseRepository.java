@@ -2,6 +2,8 @@ package com.ordo.catalog.repository;
 
 import com.ordo.catalog.domain.Classification;
 import com.ordo.catalog.domain.Course;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +15,9 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     /** 이수구분 자동 판별(명세 4.6): (편성 단위, 학수번호)는 유일하지 않아 첫 행을 쓴다 */
     Optional<Course> findFirstByUnitNameAndCourseCodeOrderByIdAsc(String unitName, String courseCode);
+
+    /** 남은 수강 과목(T17): 내 전공 편성의 전공기초·전공필수·전공선택 */
+    List<Course> findByUnitNameAndClassificationIn(String unitName, Collection<Classification> classifications);
 
     // 학수번호만으로 조회하면 다른 학과의 동일 과목이 섞이므로 편성 단위를 반드시 제한한다.
     @Query("""

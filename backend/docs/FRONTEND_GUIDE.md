@@ -13,6 +13,7 @@
 > T14 홈 오늘 일정에 e캠퍼스 과제 추가: 2026-10-16 (백엔드 A)
 > T15 시간표 온라인 강의 추가: 2026-10-30 (백엔드 A)
 > T16 홈 D-Day 알림 추가: 2026-10-30 (백엔드 A)
+> T17 남은 수강 과목 추가: 2026-10-30 (백엔드 A)
 > T11 일정 알림 웹푸시 추가: 2026-10-21 (백엔드 A)
 
 ---
@@ -36,6 +37,7 @@
 | T14 홈 오늘 일정에 e캠퍼스 과제 | ✅ 완료 (A) | `feat/home-assignments` (feat/gpa 위에서 작업) |
 | T15 시간표 온라인 강의 | ✅ 완료 (A) | `feat/timetable-online` |
 | T16 홈 D-Day 알림 | ✅ 완료 (A) | `feat/home-deadlines` (feat/timetable-online 위에서 작업) |
+| T17 남은 수강 과목 | ✅ 완료 (A) | `feat/remaining-courses` (feat/home-deadlines 위에서 작업) |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
@@ -396,6 +398,7 @@ general-education.data: { admissionYear, basisYear, approximate,
 | DELETE | /api/academic/completed-courses/{id} | 삭제 → **204** |
 | GET | /api/academic/progress | 이수현황 계산 결과 (학사관리 화면·홈·마이페이지 학점) |
 | GET | /api/academic/gpa | 평점 평균 (학사관리 학점·성적 박스) |
+| GET | /api/academic/remaining-courses | 남은 수강 과목 (졸업 로드맵 카드) |
 
 ```json
 // POST /api/academic/completed-courses
@@ -414,6 +417,27 @@ general-education.data: { admissionYear, basisYear, approximate,
 - `approximate: true` 면 "해당 학번 교양 기준이 없어 2026 기준으로 계산했어요" 안내. 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE` → 마이페이지 정보 수정으로 안내.
 - 성적 미정(null)인 과목도 학점에 들어간다(이번 학기 수강 중인 과목). F·NP 는 빠지고, 같은 과목은 가장 최근 것 1번만 센다.
 - **평점 박스(`gpa`)**: 응답 모양은 명세 4.6 예시. 숫자는 4.3 만점, 소수 셋째 자리까지(예: `3.417` → "3.417 / 4.3"). `gpa`·`majorGpa` 는 성적 있는 과목이 없으면 **null** → "-" 로 표시. 학기별 그래프는 `terms`(학기 순). P/NP·성적 미정 과목은 평점에서 빠지므로 `gradedCredits` 로 "18학점 기준" 같은 안내 가능. 재수강에서 최근 성적이 F 면 평점에 0점으로 들어가고, 이수현황 학점과 다를 수 있다.
+
+**졸업 로드맵 화면 (T17)**
+
+- 학기별 곡선: `gpa` 의 `terms`(학기별 `gpa`·`earnedCredits`). "1-1" 표기와 "지금 여기"는 `GET /api/users/me` 의 `admissionYear`·`currentSemester` 로 만든다. 이수한 과목 표는 `completed-courses`.
+- 남은 수강 과목 카드: `GET /api/academic/remaining-courses`.
+
+```json
+{ "remainingCredits": 28,          // 졸업까지 남은 학점. courses 학점의 합이 아니다
+  "majorCoursesAvailable": true,   // false 면 전공 과목 자료가 없는 전공 → 필수교양만 온다. "전공 과목 정보가 없어요" 안내
+  "courses": [ { "courseName": "주제연구", "courseCode": null, "classification": "GEN_REQUIRED", "credits": 3,
+                 "targetGrade": "2", "openSemester": null },
+               { "courseName": "디지털디자인", "courseCode": "FD105", "classification": "MAJOR_BASIC", "credits": 3,
+                 "targetGrade": "1", "openSemester": "1,2" } ] }
+```
+
+- 순서는 필수교양 → 전공기초 → 전공필수 → 전공선택, 그 안에서 권장 학년 → 이름. **이수구분 필터는 프론트에서** 거른다(`classification` 값 기준, 한 번에 전부 옴, 학과당 최대 약 130과목).
+- 태그 글자: `GEN_REQUIRED`=필수교양, `MAJOR_BASIC`=전공기초, `MAJOR_REQUIRED`=전공필수, `MAJOR_ELECTIVE`=전공선택.
+- 전공선택은 전부 나온다. 다 들어야 한다는 뜻이 아니므로 필요한 학점은 `remainingCredits`·`progress` 로 보여 주세요. 0학점 과목(졸업논문 등)도 온다.
+- F·NP 받은 과목은 남은 과목에 있고, 성적 미정(수강 중)은 들은 것으로 친다. 이수 과목을 추가·수정·삭제하면 다시 불러오면 된다.
+- 2025학번 이하도 2026 교육과정 기준이다(자료가 2026뿐). `progress` 의 `approximate: true` 면 안내 문구를 같이 보여 주세요.
+- 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE`.
 
 ### 파일 가져오기 `import` (🔒, T12)
 
