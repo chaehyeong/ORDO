@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalTime;
 
-/** 보낸 필드만 변경 (null = 그대로, 값을 비우는 기능은 없음) */
+/** 보낸 필드만 변경 (null = 그대로, 값을 비우는 기능은 없음). online=true 면 요일·시간을 지우고, 끌 때는 요일·시간을 같이 보낸다 */
 public record TimetableEntryUpdateRequest(
         @Min(2000) @Max(2100) Integer year,
         Term term,
@@ -18,5 +18,6 @@ public record TimetableEntryUpdateRequest(
         LocalTime endTime,
         @Size(max = 100) String location,
         @Size(max = 50) String professor,
-        @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "#RRGGBB 형식이어야 합니다.") String color) {
+        @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "#RRGGBB 형식이어야 합니다.") String color,
+        Boolean online) {
 }

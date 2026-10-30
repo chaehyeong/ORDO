@@ -151,7 +151,7 @@ class TimetableServiceTest {
         givenTermEntries(existing);
 
         TimetableResponse response = timetableService.saveAll(1L, bulk(TimetableEntryBulkRequest.Mode.MERGE,
-                new TimetableEntryBulkRequest.Entry("타이포그래피 I", null, TUESDAY, at(9, 0), at(10, 30), null, null, null),
+                new TimetableEntryBulkRequest.Entry("타이포그래피 I", null, TUESDAY, at(9, 0), at(10, 30), null, null, null, false),
                 bulkEntry("색채학", 3, at(9, 0))));
 
         verify(timetableEntryRepository, never()).deleteAll(any());
@@ -170,6 +170,82 @@ class TimetableServiceTest {
         verify(timetableEntryRepository, never()).saveAll(any());
     }
 
+    @Test
+    void onlineEntryKeepsNoDayOrTimeAndSkipsOverlapCheck() {
+        given(userRepository.getReferenceById(1L)).willReturn(user());
+        given(timetableEntryRepository.save(any(TimetableEntry.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        TimetableEntryResponse response = timetableService.create(1L, new TimetableEntryCreateRequest(2026, Term.SECOND,
+                "빅뱅에서 문명까지", null, TUESDAY, at(9, 0), at(10, 0), null, null, null, true));
+
+        assertThat(response.online()).isTrue();
+        assertThat(response.dayOfWeek()).isNull();
+        assertThat(response.startTime()).isNull();
+        assertThat(response.endTime()).isNull();
+        verify(timetableEntryRepository, never()).findByUserIdAndAcademicYearAndTermAndDayOfWeek(
+                any(), org.mockito.ArgumentMatchers.anyInt(), any(), org.mockito.ArgumentMatchers.anyInt());
+    }
+
+    @Test
+    void entryThatIsNotOnlineNeedsDayAndTime() {
+        given(userRepository.getReferenceById(1L)).willReturn(user());
+
+        assertErrorCode(() -> timetableService.create(1L, new TimetableEntryCreateRequest(2026, Term.SECOND,
+                "타이포그래피 I", null, null, null, null, null, null, null, null)), ErrorCode.INVALID_TIME_RANGE);
+    }
+
+    @Test
+    void patchTurnsEntryOnlineAndClearsDayAndTime() {
+        TimetableEntry entry = entry(at(9, 0), at(10, 30));
+        given(timetableEntryRepository.findByIdAndUserId(3L, 1L)).willReturn(Optional.of(entry));
+
+        TimetableEntryResponse response = timetableService.update(1L, 3L, onlineOnly(true));
+
+        assertThat(response.online()).isTrue();
+        assertThat(response.dayOfWeek()).isNull();
+        assertThat(response.startTime()).isNull();
+    }
+
+    @Test
+    void turningOnlineOffNeedsDayAndTime() {
+        TimetableEntry entry = onlineEntry("빅뱅에서 문명까지");
+        given(timetableEntryRepository.findByIdAndUserId(3L, 1L)).willReturn(Optional.of(entry));
+
+        assertErrorCode(() -> timetableService.update(1L, 3L, onlineOnly(false)), ErrorCode.INVALID_TIME_RANGE);
+    }
+
+    @Test
+    void turningOnlineOffWithDayAndTimeChecksOverlap() {
+        TimetableEntry entry = onlineEntry("빅뱅에서 문명까지");
+        given(timetableEntryRepository.findByIdAndUserId(3L, 1L)).willReturn(Optional.of(entry));
+        givenTuesdayEntries(entry(at(9, 0), at(10, 30)));
+
+        assertErrorCode(() -> timetableService.update(1L, 3L, new TimetableEntryUpdateRequest(null, null, null, null,
+                TUESDAY, at(10, 0), at(11, 0), null, null, null, false)), ErrorCode.TIMETABLE_OVERLAP);
+    }
+
+    @Test
+    void timetableListsOnlineEntriesLastByName() {
+        given(timetableEntryRepository.findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(1L, 2026, Term.SECOND))
+                .willReturn(List.of(onlineEntry("빅뱅에서 문명까지"), onlineEntry("문명과 감염 그리고 진화"), entry(at(9, 0), at(10, 30))));
+
+        TimetableResponse response = timetableService.getTimetable(1L, 2026, Term.SECOND);
+
+        assertThat(response.entries()).extracting(TimetableEntryResponse::courseName)
+                .containsExactly("타이포그래피 I", "문명과 감염 그리고 진화", "빅뱅에서 문명까지");
+    }
+
+    @Test
+    void bulkSavesOnlineEntriesAndSkipsTheSameOne() {
+        givenTermEntries(onlineEntry("빅뱅에서 문명까지"));
+
+        TimetableResponse response = timetableService.saveAll(1L, bulk(TimetableEntryBulkRequest.Mode.MERGE,
+                onlineBulkEntry("빅뱅에서 문명까지"), onlineBulkEntry("문명과 감염 그리고 진화"), bulkEntry("색채학", 3, at(9, 0))));
+
+        assertThat(response.entries()).extracting(TimetableEntryResponse::courseName)
+                .containsExactly("색채학", "문명과 감염 그리고 진화", "빅뱅에서 문명까지");
+    }
+
     private void givenTermEntries(TimetableEntry... entries) {
         given(userRepository.getReferenceById(1L)).willReturn(user());
         given(timetableEntryRepository.findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(1L, 2026, Term.SECOND))
@@ -181,7 +257,11 @@ class TimetableServiceTest {
     }
 
     private static TimetableEntryBulkRequest.Entry bulkEntry(String name, int dayOfWeek, LocalTime start) {
-        return new TimetableEntryBulkRequest.Entry(name, null, dayOfWeek, start, start.plusMinutes(75), null, null, null);
+        return new TimetableEntryBulkRequest.Entry(name, null, dayOfWeek, start, start.plusMinutes(75), null, null, null, false);
+    }
+
+    private static TimetableEntryBulkRequest.Entry onlineBulkEntry(String name) {
+        return new TimetableEntryBulkRequest.Entry(name, null, null, null, null, null, null, null, true);
     }
 
     private void givenTuesdayEntries(TimetableEntry... entries) {
@@ -197,11 +277,19 @@ class TimetableServiceTest {
 
     private TimetableEntryCreateRequest createRequest(LocalTime startTime, LocalTime endTime) {
         return new TimetableEntryCreateRequest(2026, Term.SECOND, "타이포그래피 I", "DES201", TUESDAY,
-                startTime, endTime, "예405", "김교수", "#3BB39A");
+                startTime, endTime, "예405", "김교수", "#3BB39A", null);
     }
 
     private TimetableEntryUpdateRequest endTimeOnly(LocalTime endTime) {
-        return new TimetableEntryUpdateRequest(null, null, null, null, null, null, endTime, null, null, null);
+        return new TimetableEntryUpdateRequest(null, null, null, null, null, null, endTime, null, null, null, null);
+    }
+
+    private TimetableEntryUpdateRequest onlineOnly(boolean online) {
+        return new TimetableEntryUpdateRequest(null, null, null, null, null, null, null, null, null, null, online);
+    }
+
+    private TimetableEntry onlineEntry(String name) {
+        return TimetableEntry.builder().user(user()).academicYear(2026).term(Term.SECOND).courseName(name).online(true).build();
     }
 
     private TimetableEntry entry(LocalTime startTime, LocalTime endTime) {

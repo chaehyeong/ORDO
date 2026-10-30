@@ -11,6 +11,7 @@
 > T12 성적·시간표 파일 가져오기 추가: 2026-10-08 (백엔드 A)
 > T13 학사관리 평점 평균 추가: 2026-10-16 (백엔드 A)
 > T14 홈 오늘 일정에 e캠퍼스 과제 추가: 2026-10-16 (백엔드 A)
+> T15 시간표 온라인 강의 추가: 2026-10-30 (백엔드 A)
 > T11 일정 알림 웹푸시 추가: 2026-10-21 (백엔드 A)
 
 ---
@@ -32,6 +33,7 @@
 | T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
 | T13 학사관리 평점 평균 (4.3 만점) | ✅ 완료 (A) | `feat/gpa` (feat/import 위에서 작업) |
 | T14 홈 오늘 일정에 e캠퍼스 과제 | ✅ 완료 (A) | `feat/home-assignments` (feat/gpa 위에서 작업) |
+| T15 시간표 온라인 강의 | ✅ 완료 (A) | `feat/timetable-online` |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
@@ -347,25 +349,31 @@ general-education.data: { admissionYear, basisYear, approximate,
   "term": "SECOND",               // 필수: FIRST / SECOND / SUMMER(여름계절) / WINTER(겨울계절)
   "courseName": "타이포그래피 I",  // 필수, 100자 이하
   "courseCode": null,             // 선택, 20자 이하
-  "dayOfWeek": 2,                 // 필수: 1=월 … 7=일
-  "startTime": "09:00",           // 필수
-  "endTime": "10:30",             // 필수, startTime 보다 늦어야 함
+  "dayOfWeek": 2,                 // 1=월 … 7=일. 온라인 강의가 아니면 필수
+  "startTime": "09:00",           // 온라인 강의가 아니면 필수
+  "endTime": "10:30",             // 온라인 강의가 아니면 필수, startTime 보다 늦어야 함
   "location": "예405",            // 선택, 100자 이하
   "professor": "김교수",           // 선택, 50자 이하
-  "color": "#3BB39A" }            // 선택, #RRGGBB
+  "color": "#3BB39A",             // 선택, #RRGGBB
+  "online": false }                // 선택. true = 온라인 강의(요일·시간을 저장하지 않음)
 
 // GET 응답 data
 { "year": 2026, "term": "SECOND", "label": "2026년 2학기",
   "entries": [ { "id": 3, "courseName": "타이포그래피 I", "courseCode": null, "dayOfWeek": 2,
                  "startTime": "09:00", "endTime": "10:30", "location": "예405",
-                 "professor": "김교수", "color": "#3BB39A" } ] }
+                 "professor": "김교수", "color": "#3BB39A", "online": false },
+               { "id": 4, "courseName": "빅뱅에서 문명까지", "courseCode": null, "dayOfWeek": null,
+                 "startTime": null, "endTime": null, "location": null,
+                 "professor": null, "color": null, "online": true } ] }
 // POST·PATCH 응답 data 는 entries 원소 하나와 같은 모양
 ```
 
 - 현재 학기: 3~8월 → 그해 1학기, 9~12월 → 그해 2학기, 1~2월 → 전년도 2학기. 학기 선택의 기본값은 파라미터 없이 `GET /api/timetables` 한 응답의 `year`·`term` 을 쓰면 된다.
 - `entries` 는 요일 → 시작시간 순. 격자(월~금 09:00~19:00) 밖의 칸(토·일, 이른 시간)도 올 수 있다.
+- **온라인 강의**(수업 추가 창의 "온라인 강의" 체크): `online: true` 로 보내고, 응답의 `dayOfWeek`·`startTime`·`endTime` 은 null 이다. `entries` 맨 뒤에 이름 순으로 오므로 **격자 아래 줄에** 그린다(격자에 그리면 안 됨). 겹침 검사가 없고 홈의 주간 점·오늘일정에 나오지 않는다. 체크하면 시간·요일 입력칸을 비활성으로 두는 게 맞다.
+- 온라인 강의가 아닌데 요일·시간을 빠뜨리면 `INVALID_TIME_RANGE`(400).
 - 겹침: 같은 학기·요일에서 시간이 겹치면 `TIMETABLE_OVERLAP`. 09:00~10:30 다음 10:30~12:00 처럼 딱 붙는 건 괜찮다.
-- PATCH 로 값을 지울 수는 없다(null = 그대로). 장소·교수·색 지우기는 삭제 후 다시 만든다.
+- PATCH 로 값을 지울 수는 없다(null = 그대로). 장소·교수·색 지우기는 삭제 후 다시 만든다. 예외: `online: true` 를 보내면 요일·시간이 지워지고, `online: false` 는 `dayOfWeek`·`startTime`·`endTime` 을 같이 보내야 한다.
 
 ### 학사관리 `academic` (전부 🔒)
 
@@ -423,7 +431,7 @@ await api('/api/academic/completed-courses/bulk', { method: 'POST', body: JSON.s
 
 - **지원 형식**: xlsx(추천)·csv·txt. **PDF 는 받지 않는다**(표 구조가 깨져서 정확히 읽을 수 없음). 그 외도 "엑셀(xlsx)로 저장해서 올려주세요" 오류 → 그대로 보여주면 된다. 파일 선택 창에 `accept=".xlsx,.csv,.txt"` 를 걸어 두면 좋다.
 - **같은 파일을 다시 올려도 중복되지 않는다**: 시간표는 그 학기를 통째로 바꾸고(REPLACE), 성적은 `replaceTerms` 학기를 지우고 다시 넣는다. 그래서 그 학기에 직접 입력한 칸·과목도 바뀐다는 안내를 저장 버튼 옆에 띄우는 게 좋다.
-- `warnings` 는 목록으로 보여준다. `NO_TIME`(온라인 등 시간 없는 과목, 시간표에 안 들어감), `DISTRIBUTION_AREA_REQUIRED`·`UNKNOWN_CLASSIFICATION`·`UNKNOWN_GRADE`(→ 그 과목의 `needs` 값을 사용자가 고르게), `UNPARSED_ROW`(읽지 못한 줄).
+- `warnings` 는 목록으로 보여준다. `NO_TIME`(시간 없는 과목. `entries` 에 `online: true` 칸으로 들어 있어 그대로 저장하면 온라인 강의가 된다), `DISTRIBUTION_AREA_REQUIRED`·`UNKNOWN_CLASSIFICATION`·`UNKNOWN_GRADE`(→ 그 과목의 `needs` 값을 사용자가 고르게), `UNPARSED_ROW`(읽지 못한 줄).
 - 배분이수 과목은 영역(1~5)을 고르지 않으면 저장 시 `DISTRIBUTION_AREA_REQUIRED` 오류가 난다.
 - 파일의 학번이 내 학번과 다르면 403 `IMPORT_STUDENT_MISMATCH`.
 

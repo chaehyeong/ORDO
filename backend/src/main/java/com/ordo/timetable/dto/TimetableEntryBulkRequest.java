@@ -27,11 +27,12 @@ public record TimetableEntryBulkRequest(
     public record Entry(
             @NotBlank @Size(max = 100) String courseName,
             @Size(max = 20) String courseCode,
-            @NotNull @Min(1) @Max(7) Integer dayOfWeek,
-            @NotNull LocalTime startTime,
-            @NotNull LocalTime endTime,
+            @Min(1) @Max(7) Integer dayOfWeek,
+            LocalTime startTime,
+            LocalTime endTime,
             @Size(max = 100) String location,
             @Size(max = 50) String professor,
-            @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "#RRGGBB 형식이어야 합니다.") String color) {
+            @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "#RRGGBB 형식이어야 합니다.") String color,
+            Boolean online) {
     }
 }

@@ -78,6 +78,18 @@ class HomeServiceTest {
     }
 
     @Test
+    void onlineClassesAreNotOnWeekOrTimeline() {
+        givenHome(user("하은"), List.of(),
+                List.of(TimetableEntry.builder().academicYear(2026).term(Term.SECOND).courseName("빅뱅에서 문명까지").online(true).build()),
+                List.of());
+
+        HomeResponse home = homeService.getHome(1L, WEDNESDAY);
+
+        assertThat(home.timeline()).isEmpty();
+        assertThat(home.week()).allSatisfy(day -> assertThat(day.categories()).isEmpty());
+    }
+
+    @Test
     void timelineMergesClassesAndTimedSchedulesAndTodosAreUntimed() {
         givenHome(user("하은"),
                 List.of(schedule("팀플 모임", WEDNESDAY, at(12), ScheduleCategory.PERSONAL),

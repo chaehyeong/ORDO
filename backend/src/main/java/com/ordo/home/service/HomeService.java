@@ -114,7 +114,7 @@ public class HomeService {
         return timetables.computeIfAbsent(term, t -> timetableEntryRepository
                         .findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(userId, t.year(), t.term()))
                 .stream()
-                .filter(e -> e.getDayOfWeek() == day.getDayOfWeek().getValue())
+                .filter(e -> !e.isOnline() && e.getDayOfWeek() == day.getDayOfWeek().getValue())
                 .toList();
     }
 

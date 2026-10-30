@@ -1,6 +1,6 @@
 # T15~T20 최종 디자인 대비 빠진 API 계획
 
-> 작성 2026-10-30 · 상태: **승인 대기** · 기준: Figma "웹디자인 최종"(node 381:751) 12개 화면, master `cad1390`(PR #1~#12 병합, 테스트 198개)
+> 작성 2026-10-30 · 상태: **T15~T18 승인(추천안 그대로, 2026-10-30)**, T19·T20·1.3 보류 동의·1.4 질문은 대기 · 기준: Figma "웹디자인 최종"(node 381:751) 12개 화면, master `cad1390`(PR #1~#12 병합, 테스트 198개)
 >
 > 승인 전에는 코드를 쓰지 않는다. 승인되면 기능마다 브랜치를 따로 만들고, 단계마다 `docs/PROGRESS.md` 를 갱신한다. 승인된 내용은 BACKEND_SPEC·FRONTEND_GUIDE 에 반영한다.
 
@@ -173,7 +173,7 @@
 | 5 | T19 복수전공 | 큼 | V14 | 규칙 확인(2장 T19) 후 시작 |
 | 6 | T20 마이크로디그리 | 중간(B안) | V15 | 방식 결정 후 |
 
-브랜치는 기능마다 master 에서 따로 만든다(`feat/timetable-online`, `feat/home-deadlines`, `feat/remaining-courses`, `feat/plans`, `feat/double-major`, `feat/micro-degree`). 지난번처럼 깊게 쌓으면 문서 충돌이 나므로, 하나 머지되면 다음 것을 master 에서 시작한다.
+브랜치는 기능마다 master 에서 따로 만든다(T15 는 이 계획서 커밋을 포함하려고 `feat/figma-gap` 위에 만듦. `feat/timetable-online`, `feat/home-deadlines`, `feat/remaining-courses`, `feat/plans`, `feat/double-major`, `feat/micro-degree`). 지난번처럼 깊게 쌓으면 문서 충돌이 나므로, 하나 머지되면 다음 것을 master 에서 시작한다.
 
 ## 4. 공용 파일 변경 (B 에게 알릴 것)
 

@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
+> 최종 갱신: 2026-10-30 (T15 시간표 온라인 강의 4.5·V12), 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
 
 ---
 
@@ -40,7 +40,7 @@
 | **홈** | "안녕하세요 (닉네임)님", 주간일정(요일·날짜·카테고리 점), 오늘일정 타임라인(시간·제목·장소·카테고리), ~~AI 오르도 추천 카드~~(보류, 최종 디자인에도 없음), 졸업 진행률(78%, 102/130, 남은 학점), 오늘 할 일 | `GET /api/home` |
 | 캘린더 | 연/월 선택, 오늘 버튼, 월 달력, +일정추가, 날짜 클릭 → 그날 일정 상세·추가·삭제, e캠퍼스 과제 마감 표시 | `GET/POST/PATCH/DELETE /api/schedules`, `GET /api/ecampus/events` |
 | 일정(할 일) 추가 폼 | 제목, 카테고리, 날짜, 시작~종료 시간, 알람 | `POST /api/schedules` |
-| 시간표 | 학기 선택(2026년 2학기), 시간표 편집, 월~금 09:00~19:00 격자 | `/api/timetables` |
+| 시간표 | 학기 선택(2026년 2학기), 시간표 편집, 월~금 09:00~19:00 격자, 격자 아래 온라인 강의 줄 | `/api/timetables` |
 | 학사관리 | 학점 취득 현황(총 18/130, 13.8%, 영역 그룹별 도넛), 졸업까지 필요한 학점, 영역별 이수현황(필수교양·전공기초·전공필수·전공선택·기타·전체), 마이크로디그리(데이터 없음·보류) | `GET /api/academic/progress`, `/api/academic/completed-courses` |
 | 마이페이지 | 프로필(이름·학과·입학년도/학년·학번·이메일·연락처·사진), 정보 수정, 이번 학기 수강과목 수·과제 수, 학점 현황, 알림 on/off, e캠퍼스 연결, 로그아웃 | `/api/users/me`, `/api/users/me/summary`, `/api/auth/logout` |
 
@@ -206,7 +206,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | refresh_tokens | 인증 | token 유일, 만료일. 로그아웃·재발급 시 삭제 |
 | schedules | 사용자 | schedule_date, start_time/end_time(NULL 가능), category, done, alarm_minutes_before, alarm_sent_for(V11, 알림 중복 방지·내부용) |
 | push_subscriptions | 사용자 | 기기(브라우저)별 웹푸시 구독: endpoint(유일), p256dh, auth (V11, 4.10) |
-| timetable_entries | 사용자 | academic_year + term, day_of_week(1=월…7=일), start_time~end_time |
+| timetable_entries | 사용자 | academic_year + term, day_of_week(1=월…7=일), start_time~end_time, online(T15, true 면 요일·시간 NULL) |
 | completed_courses | 사용자 | 내가 들은 과목: course_code(선택), course_name, credits, classification, distribution_area, grade, academic_year, term |
 
 ### 3.3 도메인 규칙
@@ -392,16 +392,21 @@ enum Classification {             // 이수구분 (학교 코드)
 { "year": 2026, "term": "SECOND", "courseName": "타이포그래피 I", "courseCode": null,
   "dayOfWeek": 2, "startTime": "09:00", "endTime": "10:30",
   "location": "예405", "professor": "김교수", "color": "#3BB39A" }
+// POST /api/timetables/entries (온라인 강의, T15)
+{ "year": 2026, "term": "SECOND", "courseName": "빅뱅에서 문명까지", "online": true }
 // GET 응답 data
 { "year": 2026, "term": "SECOND", "label": "2026년 2학기",
   "entries": [ { "id": 3, "courseName": "타이포그래피 I", "courseCode": null, "dayOfWeek": 2, "startTime": "09:00",
-                 "endTime": "10:30", "location": "예405", "professor": "김교수", "color": "#3BB39A" } ] }
+                 "endTime": "10:30", "location": "예405", "professor": "김교수", "color": "#3BB39A", "online": false },
+               { "id": 4, "courseName": "빅뱅에서 문명까지", "courseCode": null, "dayOfWeek": null, "startTime": null,
+                 "endTime": null, "location": null, "professor": null, "color": null, "online": true } ] }
 ```
 - GET: `year`·`term` 중 생략한 값만 현재 학기(3.3) 값으로 채운다. `label` 은 "2026년 1학기 / 2학기 / 여름계절학기 / 겨울계절학기".
-- 칸 객체(`entries` 원소, POST·PATCH 응답 data): `id, courseName, courseCode, dayOfWeek, startTime, endTime, location, professor, color`. 요일 → 시작시간 순.
+- 칸 객체(`entries` 원소, POST·PATCH 응답 data): `id, courseName, courseCode, dayOfWeek, startTime, endTime, location, professor, color, online`. 요일 → 시작시간 순, 온라인 강의는 맨 뒤에 이름 순.
 - 입력: `year` 2000~2100, `dayOfWeek` 1(월)~7(일), `courseName` 100자, `courseCode` 20자, `location` 100자, `professor` 50자, `color` `#RRGGBB`. 종료 ≤ 시작이면 `INVALID_TIME_RANGE`.
+- **온라인 강의(T15)**: 시간 없는 수업. `online=true` 면 요일·시간을 보내도 저장하지 않는다(null). `online` 이 false·생략이면 `dayOfWeek`·`startTime`·`endTime` 이 모두 필수이고 없으면 `INVALID_TIME_RANGE`. 온라인 강의는 겹침 검사를 하지 않고, 홈 주간 점·오늘 타임라인에 나오지 않는다. `POST .../bulk` 의 칸에도 같은 `online` 이 있다.
 - 겹침: 같은 학기·요일에서 `start < 다른 칸 end` 이고 `다른 칸 start < end` 이면 `TIMETABLE_OVERLAP`(409). 끝과 시작이 같은 칸은 허용. 수정은 바꾼 뒤의 값으로 검사하고 자기 자신은 제외.
-- PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음). 남의 칸 → `TIMETABLE_ENTRY_NOT_FOUND`(404).
+- PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음). 예외로 `online: true` 는 요일·시간을 지우고, `online: false` 는 요일·시간을 같이 보내야 한다(없으면 `INVALID_TIME_RANGE`). 남의 칸 → `TIMETABLE_ENTRY_NOT_FOUND`(404).
 
 ### 4.6 학사관리 `academic`
 
@@ -568,7 +573,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
   - `grades`: `{ terms: [{ year, term }], courseCount, totalCredits, courses: [{ year, term, courseCode, section, courseName, credits, grade, classificationText, classification, distributionArea, needs }] }`
   - `warnings`: `[{ code, message }]`, code = NO_TIME / OVERLAP / UNKNOWN_CLASSIFICATION / DISTRIBUTION_AREA_REQUIRED / UNKNOWN_GRADE / DISCARDED / UNPARSED_ROW
 - 읽는 법: 모든 형식을 "행과 칸의 목록"으로 바꾼 뒤 같은 해석기로 읽는다. xlsx 는 **병합 영역 1개 = 칸 1개**(csv·txt 와 같은 행이 됨), txt 는 탭 구분, csv 는 따옴표·칸 안 줄바꿈 지원. 칸이 모두 빈 행은 빈 행.
-- 수강신청확인서: 머리글 글자로 열을 찾고, 수업 칸을 쉼표로 나눠 `교수 요일HH:MM-HH:MM 강의실` 마다 시간표 1칸(월=1…일=7). 시간이 없으면(온라인) 칸을 만들지 않고 NO_TIME. `학수번호-분반` 은 하이픈으로 나눔.
+- 수강신청확인서: 머리글 글자로 열을 찾고, 수업 칸을 쉼표로 나눠 `교수 요일HH:MM-HH:MM 강의실` 마다 시간표 1칸(월=1…일=7). 시간이 없으면 `online: true` 칸(요일·시간 null, 수업 칸의 첫 낱말을 교수명으로, 2026-10-30 T15)을 만들고 NO_TIME 경고로 알린다. `학수번호-분반` 은 하이픈으로 나눔.
 - 전체 성적 보기: `평점/등급` 머리글 다음부터 다른 요약 표 제목 전까지가 과목 표. 과목 행은 **뒤에서부터 센 위치**(-13 학수번호 … -5 등급, -3 폐기사유)로 읽고, 앞 두 칸이 `2026`·`1학기` 모양일 때만 학기를 새로 잡아 아래로 이어 쓴다. 폐기사유가 있으면 제외, 쪽 번호·반복 머리글은 건너뜀. 분반은 끝이 G두자리면 그것, 아니면 마지막 두 자리. 이수구분은 글자(없으면 학교 코드 04·05·08·11·14·15·16·17·06·20)로 매핑, 모르면 null + `needs: CLASSIFICATION`. 배분이수는 `needs: DISTRIBUTION_AREA`.
 - 5MB 초과는 Spring 업로드 한도에서도 `IMPORT_TOO_LARGE`. 업로드는 디스크 임시파일 없이 메모리에서만(`multipart.file-size-threshold`).
 - **PDF 는 받지 않는다**(9장 19): PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음.
@@ -671,6 +676,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 새 마이그레이션 번호: **A 담당 V10~V49, B 담당 V50~V89**. 파일명 `V{번호}__{영문_설명}.sql`.
 - 사용 중: `V10__add_ecampus_feed_token.sql`(A, users 에 e캠퍼스 피드 토큰 칸 추가).
 - 사용 중: `V11__add_web_push.sql`(A, T11: `push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·`idx_schedules_date`, `users.todo_alarm_time`, 2026-10-21 승인).
+- 사용 중: `V12__add_timetable_online.sql`(A, T15: `timetable_entries` 요일·시간 NULL 허용, `online` 추가, 2026-10-30 승인).
 - 로컬 DB가 꼬이면: `DROP DATABASE ordo;` 후 서버 재시작 → Flyway가 V1부터 다시 적용.
 
 ---
@@ -692,10 +698,15 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T8 ✅ | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
 | T9 ✅ | users/me/summary | A | |
 | T11 | 일정 알림 웹푸시 (4.10) | A | 구독 API 4개, 1분 스케줄러, 중복 발송 없음(선점 UPDATE), RFC 8291 테스트 벡터, 허용 주소 검증, 할 일 알림 시각 설정, 실기기(PC·안드로이드·아이폰) 수신 확인 |
-| T12 ✅ | 성적·시간표 파일 가져오기 (4.9) | A | 샘플 기대값(신청 6과목 18학점·7칸·경고 1, 성적 8과목 20학점), xlsx·csv·txt 결과 동일, 학번 대조, 재업로드 중복 없음 |
+| T12 ✅ | 성적·시간표 파일 가져오기 (4.9) | A | 샘플 기대값(신청 6과목 18학점·7칸(T15 후 온라인 1칸 추가)·경고 1, 성적 8과목 20학점), xlsx·csv·txt 결과 동일, 학번 대조, 재업로드 중복 없음 |
 | T10 ✅ | e캠퍼스 피드 연동 (4.8) | A | 피드 주소 검증, 10분 캐시, 실패 시 예전 데이터, 토큰 비노출 |
 | T14 ✅ | 홈 오늘 일정에 e캠퍼스 과제 (4.7) | A | ECAMPUS 항목, 23:59 규칙, 같은 시각 정렬(수업→일정→e캠퍼스), 미연동·실패 시 정상, e캠퍼스 호출 1번 |
 | T13 ✅ | 학사관리 평점 평균 (4.6, 5장 평점 평균) | A | 등급표(4.3), P·NP 제외, 재수강 최근 1건(F 포함), 학기별, 전공 평점, 셋째 자리 반올림, 성적표 샘플 대조(3.417·3.3), 빈 이수내역 |
+
+| T15 ✅ | 시간표 온라인 강의 (4.5, `docs/plans/T15-figma-final.md`) | A | 요일·시간 없는 칸 저장, 겹침 검사 제외, 온라인 맨 뒤 정렬, 홈에서 제외, 파일 가져오기의 시간 없는 과목이 온라인 칸으로 저장 |
+| T16 | 홈 D-Day 알림 (계획서 2장, 승인 2026-10-30) | A | 7일 이내 미완료 과제·개인일정 + e캠퍼스 과제, 최대 5개 |
+| T17 | 남은 수강 과목 (계획서 2장, 승인 2026-10-30) | A | 필수교양·전공 중 안 들은 과목, 학수번호 → 과목명 판정 |
+| T18 | 학기별 배치하기 (계획서 2장, 승인 2026-10-30) | A | GET·PUT(통째로 교체), V13 |
 
 ### AI에게 줄 프롬프트 예시 (그대로 복사해서 사용)
 
@@ -757,3 +768,4 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 19 | PDF 가져오기 (T12) | **결정(2026-10-08): 거절.** PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음. 원본 PDF 의 칸 테두리로 표를 재구성하는 방법은 여러 학기 성적표 샘플이 생기면 재검토 |
 | 20 | 평점 척도·반올림 (T13) | **결정(2026-10-16): 4.3 만점, 소수 셋째 자리 반올림**(성적표로 확인). A0·C0·D+·D0 점수(4.0·2.0·1.3·1.0)는 샘플에 없어 관례값 → 실제 성적표에 나오면 대조 |
 | 21 | 재수강 처리: 평점 vs 이수현황 (T13) | 평점은 최근 1건(최근이 F 면 0점), 이수현황은 F 를 먼저 빼고 최근 1건(5장 4번) → 결과가 다를 수 있음. 학과 시행세칙(재수강 성적 상한 등) 확인 후 맞춤 |
+| 22 | 시간표의 시간 없는 수업 (T15) | **결정(2026-10-30): 온라인 강의 = 요일·시간 없음.** 디자인의 수업 추가 창에는 시간 칸과 온라인 체크가 함께 있지만, 온라인 수업은 표 아래 줄에 시간 없이 나오므로 시간은 저장하지 않는다. 파일 가져오기의 시간 없는 과목도 온라인 칸으로 넣는다 |

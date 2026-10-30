@@ -43,16 +43,18 @@ public class TimetableEntry extends BaseTimeEntity {
 
     private String courseName;
     private String courseCode;
-    private int dayOfWeek;  // 1=월 … 7=일 (ISO)
+    private Integer dayOfWeek;  // 1=월 … 7=일 (ISO). 온라인 강의는 null
     private LocalTime startTime;
     private LocalTime endTime;
     private String location;
     private String professor;
     private String color;   // #RRGGBB
+    private boolean online;  // 시간 없는 수업 (T15). true 면 요일·시간이 null
 
     @Builder
-    private TimetableEntry(User user, int academicYear, Term term, String courseName, String courseCode, int dayOfWeek,
-                           LocalTime startTime, LocalTime endTime, String location, String professor, String color) {
+    private TimetableEntry(User user, int academicYear, Term term, String courseName, String courseCode, Integer dayOfWeek,
+                           LocalTime startTime, LocalTime endTime, String location, String professor, String color,
+                           boolean online) {
         this.user = user;
         this.academicYear = academicYear;
         this.term = term;
@@ -64,12 +66,14 @@ public class TimetableEntry extends BaseTimeEntity {
         this.location = location;
         this.professor = professor;
         this.color = color;
+        this.online = online;
         validate();
     }
 
     /** PATCH: null 인 값은 그대로 둔다. 바꾼 뒤의 값으로 다시 검증 */
     public void update(Integer academicYear, Term term, String courseName, String courseCode, Integer dayOfWeek,
-                       LocalTime startTime, LocalTime endTime, String location, String professor, String color) {
+                       LocalTime startTime, LocalTime endTime, String location, String professor, String color,
+                       Boolean online) {
         if (academicYear != null) this.academicYear = academicYear;
         if (term != null) this.term = term;
         if (courseName != null) this.courseName = courseName;
@@ -80,16 +84,23 @@ public class TimetableEntry extends BaseTimeEntity {
         if (location != null) this.location = location;
         if (professor != null) this.professor = professor;
         if (color != null) this.color = color;
+        if (online != null) this.online = online;
         validate();
     }
 
-    /** 시간이 겹치는지 (같은 학기·요일인지는 호출하는 쪽에서 거른다). 끝과 시작이 딱 붙는 건 겹침이 아니다 */
+    /** 시간이 겹치는지 (같은 학기·요일인지는 호출하는 쪽에서 거른다). 끝과 시작이 딱 붙는 건 겹침이 아니고, 온라인 강의는 겹치지 않는다 */
     public boolean overlaps(TimetableEntry other) {
-        return startTime.isBefore(other.endTime) && other.startTime.isBefore(endTime);
+        return !online && !other.online && startTime.isBefore(other.endTime) && other.startTime.isBefore(endTime);
     }
 
     private void validate() {
-        if (!endTime.isAfter(startTime)) {
+        if (online) {  // 온라인 강의는 요일·시간을 저장하지 않는다
+            dayOfWeek = null;
+            startTime = null;
+            endTime = null;
+            return;
+        }
+        if (dayOfWeek == null || startTime == null || endTime == null || !endTime.isAfter(startTime)) {
             throw new BusinessException(ErrorCode.INVALID_TIME_RANGE);
         }
     }
