@@ -17,7 +17,7 @@ public record CompletedCourseRequest(
         @Size(max = 100) String courseName,
         @NotNull @Min(0) @Max(30) Integer credits,
         Classification classification,
-        @Min(1) @Max(5) Integer distributionArea,
+        @Min(1) @Max(7) Integer distributionArea,  // 2024학번부터는 서비스에서 5까지만 받는다
         @Pattern(regexp = GRADE_PATTERN, message = "A+ A0 A- B+ B0 B- C+ C0 C- D+ D0 D- F P NP 중 하나여야 합니다.") String grade,
         @NotNull @Min(2000) @Max(2100) Integer year,
         @NotNull Term term) {

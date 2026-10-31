@@ -210,6 +210,14 @@
 |---|---|---|---|---|
 | 1. 수정 | ✅ | 프론트(김채형) 요청으로 `fix/signup-terms`(master f091e6d 위). `SignupRequest` 에 필수 필드 `termsAgreed`·`passwordConfirm` 추가(저장하지 않음), 전화번호를 선택에서 필수로 바꾸고 형식 검사, 점 없는 이메일 도메인 거절, 칸마다 한국어 문구 하나로 통일(영어 환경에서도 한국어). DB 변경 없음. 공용 파일 변경 없음 | 단위 테스트 3개 추가, 전체 **338개 통과**. 8081 임시 서버 + 실제 MySQL 65개 통과(칸별 빈값·형식 오류 거절과 계정 미생성, 여러 칸 오류, 정상 가입·로그인, 이메일 중복, Swagger 스키마), 서버 로그 ERROR 0. cb8f47a, PR #18 병합(bf375d8) | 프론트: 가입 API 호출, `termsAgreed`·`passwordConfirm` 전송. 팀: 약관 문구, 학번 중복 정책 |
 
+## 최종 검토 수정 (높음·중간)
+
+| 단계 | 상태 | 한 일 | 검증 | 남은 일 |
+|---|---|---|---|---|
+| 1. 원인 | ✅ | master 10def97 최종 검토. 동시 요청이 같은 행을 지우면 `StaleObjectStateException` 이 처리되지 않아 500, 유일 제약 위반 메시지의 입력값이 로그에 남음, `users` 전체 컬럼 UPDATE 로 값 유실, 시간표 겹침 검사 경쟁, 수강 중 재수강이 평점을 먼저 바꿈, 학수번호 기록과 이름 기록 이중 계산, 2020~2023학번을 2026 교양 기준으로 판정(교육과정 p45) | 8081 임시 서버 + 실제 MySQL 재현 | |
+| 2. 수정 | ✅ | `fix/final-review`(master 12f094b 위). `GlobalExceptionHandler` 에 행 사라짐 404·DB 제약 400(내용은 로그에 안 남김), `SqlExceptionHelper` 로그 끔, refresh·logout 조건부 DELETE(발급 뒤 삭제라 교착 없음), 가입 동시 요청 409, 배치·이수내역 bulk·시간표·웹푸시 구독에 사용자 행 잠금, `User` `@DynamicUpdate`, `CompletedCourse.latestOfEachCourse`, 평점은 성적 미정을 재수강으로 안 고름, `V20`(2020~2023 교양 기준, **로컬 DB 에 적용됨 → 수정 금지**), 2023학번까지 배분 영역 1~7. 공용 파일: `global/error`, `application.yml` | 전체 **361개 통과**(346 + 15, `ConcurrentRequestsTest` 실제 MySQL 5개, `GlobalExceptionHandlerTest` 2개). 8081 재현: 동시 refresh·logout·가입·PUT·bulk·DELETE·구독 500 0건, 시간표 동시 저장 1칸, 값 유실 0회(수정 전 18/40, 26/30), 로그의 이메일·endpoint 0건, 2023학번 판정이 p45 와 일치 | 낮음 B9~B18. 프론트: 동시 refresh 1번으로(가이드 3장) |
+| 3. 문서 | ✅ | 명세 2.3·2.5·3.2·3.3·4.1·4.6·5·6·7장·9장 7, FRONTEND_GUIDE 2·3장·학사관리 | | |
+
 ## 전공탐색세미나 필수 판정
 
 | 단계 | 상태 | 한 일 | 검증 | 남은 일 |

@@ -109,7 +109,7 @@
 | IMPORT_UNRECOGNIZED | 400 | 수강신청확인서·전체 성적 보기가 아님 |
 | IMPORT_STUDENT_MISMATCH | 403 | 내 학번의 파일이 아님 |
 | PUSH_NOT_CONFIGURED | 503 | 서버에 알림(웹푸시) 키가 없음 → 알림 기능 숨기거나 "준비 중" |
-| NOT_FOUND | 404 | 없는 경로·리소스 |
+| NOT_FOUND | 404 | 없는 경로·리소스. 삭제를 두 번 눌러 이미 지워진 경우도 올 수 있다 |
 | INTERNAL_ERROR | 500 | 서버 오류 (백엔드에 알려주세요) |
 
 ---
@@ -121,6 +121,7 @@
 2. 🔒 API 호출 때 `Authorization: Bearer {accessToken}` 헤더를 붙인다.
 3. 401 + `EXPIRED_TOKEN` 이 오면 `POST /api/auth/refresh` 로 새 토큰 한 쌍을 받고, 원래 요청을 다시 보낸다.
    - **refresh 할 때마다 refreshToken 도 새로 바뀐다.** 예전 refreshToken 은 바로 폐기되니 반드시 새 값으로 교체 저장.
+   - **같은 refreshToken 으로 동시에 부르면 1개만 성공하고 나머지는 401 `INVALID_REFRESH_TOKEN` 이다.** 화면이 API 여러 개를 함께 부를 때 토큰이 만료되면 refresh 는 한 번만 부르고, 나머지 요청은 그 결과를 기다렸다가 다시 보낸다. 아래 예시는 호출이 하나일 때의 모양이다.
 4. **'로그인 상태 유지'**: 체크하면 refreshToken 을 `localStorage` 에, 안 하면 `sessionStorage`(탭 닫으면 사라짐)에 저장. 서버 동작은 같다.
 5. 로그아웃: `POST /api/auth/logout` (🔒, 본문에 refreshToken) 후 저장한 토큰을 지운다.
 
@@ -427,7 +428,7 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
   "courseName": "자료구조",  // 자동으로 못 채우면 필수
   "credits": 3,              // 필수 0~30
   "classification": null,    // 자동 판별 안 될 때 필수 (교양·일반선택 등). 명세 3.1 의 대문자 이름
-  "distributionArea": null,  // GEN_DISTRIBUTION 이면 1~5 필수
+  "distributionArea": null,  // GEN_DISTRIBUTION 이면 1~5 필수 (2023학번까지는 옛 영역 포함 1~7)
   "grade": "A+",             // A+ A0 A- B+ B0 B- C+ C0 C- D+ D0 D- F P NP (15개), 미정이면 null
   "year": 2026, "term": "FIRST" }
 // 응답 data (목록 원소·수정 응답도 같은 모양): 위 필드 + id, classification 은 실제로 저장된 값
@@ -437,8 +438,9 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
 - `progress` 응답 모양은 명세 4.6 예시 그대로. 도넛은 `groups`, 영역별 막대는 `areas`, 교양 필수 체크리스트는 `requiredGeneralCourses`, 부가요건 안내는 `checks`(자동 판정 아님).
 - `requiredGeneralCourses` 는 필수교양 6과목 + 자유이수 `전공탐색및기업가정신세미나` 로 7개다. "필수교양" 제목만 달면 자유이수 과목이 섞여 보인다. 이 세미나를 안 듣거나 F·NP 면 `graduatable` 이 false 다. 학점은 자유이수 막대에 들어가고 필수교양 막대는 바뀌지 않는다. 외국인·편입생 면제는 아직 판정하지 않는다.
 - `approximate: true` 면 "해당 학번 교양 기준이 없어 2026 기준으로 계산했어요" 안내. 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE` → 마이페이지 정보 수정으로 안내.
-- 성적 미정(null)인 과목도 학점에 들어간다(이번 학기 수강 중인 과목). F·NP 는 빠지고, 같은 과목은 가장 최근 것 1번만 센다.
-- **평점 박스(`gpa`)**: 응답 모양은 명세 4.6 예시. 숫자는 4.3 만점, 소수 셋째 자리까지(예: `3.417` → "3.417 / 4.3"). `gpa`·`majorGpa` 는 성적 있는 과목이 없으면 **null** → "-" 로 표시. 학기별 그래프는 `terms`(학기 순). P/NP·성적 미정 과목은 평점에서 빠지므로 `gradedCredits` 로 "18학점 기준" 같은 안내 가능. 재수강에서 최근 성적이 F 면 평점에 0점으로 들어가고, 이수현황 학점과 다를 수 있다.
+- 2020~2023학번은 경과조치 기준이다: 배분이수 12학점, 영역 제한 없음(`requiredAreaCount: 0`이니 "N개 영역" 문구를 숨겨 주세요), 교양 합계 32. `approximate` 는 false 다. 2024·2025학번은 `approximate: true` 지만 값은 2026 과 같다.
+- 성적 미정(null)인 과목도 학점에 들어간다(이번 학기 수강 중인 과목). F·NP 는 빠지고, 같은 과목은 가장 최근 것 1번만 센다. 학수번호 없이 직접 입력한 과목도 이름이 같은 학수번호 기록과 같은 과목이다.
+- **평점 박스(`gpa`)**: 응답 모양은 명세 4.6 예시. 숫자는 4.3 만점, 소수 셋째 자리까지(예: `3.417` → "3.417 / 4.3"). `gpa`·`majorGpa` 는 성적 있는 과목이 없으면 **null** → "-" 로 표시. 학기별 그래프는 `terms`(학기 순). P/NP·성적 미정 과목은 평점에서 빠지므로 `gradedCredits` 로 "18학점 기준" 같은 안내 가능. 재수강에서 최근 성적이 F 면 평점에 0점으로 들어가고, 이수현황 학점과 다를 수 있다. 수강 중 재수강(성적 미정)은 성적이 나올 때까지 예전 성적으로 계산한다.
 
 **졸업 로드맵 화면 (T17)**
 

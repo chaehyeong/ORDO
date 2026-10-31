@@ -53,6 +53,7 @@ public class CompletedCourseService {
     /** 하나라도 판별에 실패하면 예외로 전체 롤백. replaceTerms 학기의 기존 이수내역은 지우고 넣는다 */
     @Transactional
     public List<CompletedCourseResponse> createAll(Long userId, CompletedCourseBulkRequest request) {
+        userRepository.findByIdForUpdate(userId);  // 저장 버튼을 두 번 눌러도 학기 교체를 차례로 처리한다
         User user = getUser(userId);
         boolean keepClassification = Boolean.TRUE.equals(request.keepClassification());
         List<CompletedCourse> courses = request.courses().stream()
@@ -125,8 +126,16 @@ public class CompletedCourseService {
         if (distribution && f.distributionArea() == null) {
             throw new BusinessException(ErrorCode.DISTRIBUTION_AREA_REQUIRED);
         }
+        if (distribution && f.distributionArea() > maxDistributionArea(user)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
         return new Fields(f.courseCode(), courseName, f.credits(), classification,
                 distribution ? f.distributionArea() : null, f.grade(), f.year(), f.term());
+    }
+
+    // 배분이수 영역은 2023학번까지 7개, 2024학번부터 5개 (교육과정 p21·45)
+    private static int maxDistributionArea(User user) {
+        return user.getAdmissionYear() != null && user.getAdmissionYear() <= 2023 ? 7 : 5;
     }
 
     private Optional<Course> findMasterCourse(User user, String courseCode) {

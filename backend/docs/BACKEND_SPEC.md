@@ -3,7 +3,7 @@
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
 > 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`, `오르도_T19복수전공_T20마이크로디그리_최종.xlsx`, `2026 교육과정(전체).pdf`(전공 이수 총칙 p115~118).
-> 최종 갱신: 2026-11-01 (전공탐색세미나 필수 판정 3.2·4.6·5·V19), 2026-10-31 (회원가입 입력 검사·약관 동의 4.1, 부전공 과목 기타 이동 4.6·5, 로드맵 학기 번호·지금 여기 4.6·5·9장 31, 마이너스 등급 4.6·5·9장 20, T19 복수전공 3.2·3.3·4.3·4.6·5·V14, T20 마이크로디그리 3.2·4.3·4.6·5·6·V17·V18), 2026-10-30 (T15 시간표 온라인 강의 4.5·V12, T16 홈 D-Day 알림 4.7, T17 남은 수강 과목 4.6, T18 학기별 배치 4.6·V13, 시드 과목명·전문실기 소속 교정 6·7·9장 24·V15·V16), 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
+> 최종 갱신: 2026-11-01 (최종 검토 수정: 동시 요청 2.5·4.1, 재수강 5장, 2020~2023 교양 기준 3.2·3.3·4.6·6·7·9장 7·V20), 2026-11-01 (전공탐색세미나 필수 판정 3.2·4.6·5·V19), 2026-10-31 (회원가입 입력 검사·약관 동의 4.1, 부전공 과목 기타 이동 4.6·5, 로드맵 학기 번호·지금 여기 4.6·5·9장 31, 마이너스 등급 4.6·5·9장 20, T19 복수전공 3.2·3.3·4.3·4.6·5·V14, T20 마이크로디그리 3.2·4.3·4.6·5·6·V17·V18), 2026-10-30 (T15 시간표 온라인 강의 4.5·V12, T16 홈 D-Day 알림 4.7, T17 남은 수강 과목 4.6, T18 학기별 배치 4.6·V13, 시드 과목명·전문실기 소속 교정 6·7·9장 24·V15·V16), 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
 
 ---
 
@@ -103,6 +103,10 @@ spring:
     time-zone: Asia/Seoul
     serialization.write-dates-as-timestamps: false
 
+logging:
+  level:
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: "OFF"   # SQL 오류 메시지에 입력값(이메일 등)이 들어 있다
+
 app:
   jwt:
     secret: ${JWT_SECRET:local-dev-secret-key-must-be-at-least-32-bytes!!}
@@ -139,11 +143,11 @@ app:
 
 | 코드 | HTTP | 설명 |
 |---|---|---|
-| INVALID_INPUT | 400 | 요청 값 검증 실패 (message에 필드별 사유) |
+| INVALID_INPUT | 400 | 요청 값 검증 실패 (message에 필드별 사유). DB 가 값을 받지 못한 경우도 이 코드이고, 그 내용은 로그에 남기지 않는다 |
 | UNAUTHORIZED | 401 | 토큰 없음/잘못됨 |
 | EXPIRED_TOKEN | 401 | 액세스 토큰 만료 → 프론트가 refresh 호출 |
 | FORBIDDEN | 403 | 권한 없음 |
-| NOT_FOUND | 404 | 일반 리소스 없음 |
+| NOT_FOUND | 404 | 일반 리소스 없음. 두 번 누름처럼 동시 요청이 대상을 먼저 지운 경우도 이 코드 |
 | INTERNAL_ERROR | 500 | 서버 오류 |
 | EMAIL_DUPLICATED | 409 | 이미 가입된 이메일 |
 | LOGIN_FAILED | 401 | 이메일 또는 비밀번호 불일치 |
@@ -200,8 +204,8 @@ enum Classification {             // 이수구분 (학교 코드)
 | colleges | 기준정보(읽기) | name |
 | majors | 기준정보(읽기) | display_name(화면 표시), course_unit(교과목 매칭 키, NULL 가능), convergence(융합전공=다전공 전용) |
 | graduation_requirements | 기준정보(읽기) | (major_id, admission_year) 유일. 단일/다전공/부전공 학점, 2026만 SW·영어강의·논문·TOPIK·인증 텍스트. **NULL = 요건 없음(0)** |
-| general_education_requirements | 기준정보(읽기) | 2026만 존재: 필수 17 / 배분 9(3영역 이상) / 자유 3 / 합계 29 |
-| general_education_required_courses | 기준정보(읽기) | 교양 필수과목 6개(인간의가치탐색, 세계와시민, 빅뱅에서문명까지, 성찰과표현, 주제연구, 대학영어) + 자유이수 필수 전공탐색및기업가정신세미나(V19). 학점 기준은 `general_education_requirements` 라 행이 늘어도 필수교양 17학점은 그대로 |
+| general_education_requirements | 기준정보(읽기) | 2026: 필수 17 / 배분 9(3영역 이상) / 자유 3 / 합계 29. 2020~2023(V20, 교육과정 p45): 필수 17 / 배분 12(영역 제한 없음, `distribution_min_areas` 0) / 자유 3 / 합계 32. 2024·2025 는 행이 없고 2026 으로 대체(p24 와 값이 같음) |
+| general_education_required_courses | 기준정보(읽기) | 교양 필수과목 6개(인간의가치탐색, 세계와시민, 빅뱅에서문명까지, 성찰과표현, 주제연구, 대학영어) + 자유이수 필수 전공탐색및기업가정신세미나(V19). 2020~2023 은 V20 에서 같은 7과목을 넣었다. 학점 기준은 `general_education_requirements` 라 행이 늘어도 필수교양 17학점은 그대로 |
 | courses | 기준정보(읽기) | 2026 전공 교과목. **학수번호가 학과마다 중복**(예: 미분적분학 AMTH1009가 32개 학과) → 반드시 `(unit_name, course_code)` 로 조회 |
 | users | 사용자 | email 유일, BCrypt password, name, nickname, student_number, phone, admission_year, major_id, current_semester, notification_enabled, todo_alarm_time(V11, 기본 09:00), ecampus_feed_token(V10, 4.8), double_major_id(복수전공·융합전공, NULL 이면 단일전공, T19) |
 | refresh_tokens | 인증 | token 유일, 만료일. 로그아웃·재발급 시 삭제 |
@@ -223,7 +227,7 @@ enum Classification {             // 이수구분 (학교 코드)
 - **학년**: `grade = (current_semester + 1) / 2` (current_semester null이면 null).
 - **전공 목록(회원가입)**: 선택한 입학년도에 `graduation_requirements` 행이 있는 전공만, `convergence = false` 만 (융합전공은 주전공 불가).
 - **전공 목록(복수전공)**: `includeConvergence=true` 면 융합전공도 함께 준다. 융합전공은 주전공으로 고를 수 없고 복수전공으로만 등록한다(T19).
-- **교양 기준 근사**: `general_education_requirements` 는 2026만 있으므로, 다른 학번은 2026 값을 쓰고 응답에 `"approximate": true` 표시.
+- **교양 기준**: 2020~2023학번은 경과조치 기준(V20, p45), 2026학번은 2026 기준이다. 행이 없는 학번(2024·2025)은 2026 값을 쓰고 응답에 `"approximate": true` 표시.
 
 ---
 
@@ -274,7 +278,7 @@ enum Classification {             // 이수구분 (학교 코드)
 { "email": "haeun@khu.ac.kr", "password": "ordo1234!" }
 // POST /api/auth/refresh, /api/auth/logout  요청
 { "refreshToken": "eyJ..." }
-// refresh: 쓴 refresh 토큰은 삭제되므로 다음에는 새로 받은 refreshToken 을 써야 한다 (재사용 → 401 INVALID_REFRESH_TOKEN)
+// refresh: 쓴 refresh 토큰은 삭제되므로 다음에는 새로 받은 refreshToken 을 써야 한다 (재사용 → 401 INVALID_REFRESH_TOKEN). 같은 토큰으로 동시에 보내면 1개만 성공하고 나머지는 같은 401
 // logout 응답: 200, data = null
 ```
 
@@ -465,7 +469,7 @@ enum Classification {             // 이수구분 (학교 코드)
   "courseName": "자료구조",
   "credits": 3,
   "classification": null,          // 자동 판별 안 될 때 필수 (교양·일반선택 등)
-  "distributionArea": null,        // GEN_DISTRIBUTION 일 때 1~5 필수
+  "distributionArea": null,        // GEN_DISTRIBUTION 일 때 1~5 필수 (2023학번까지는 옛 영역 포함 1~7, p45)
   "grade": "A+",                   // A+ A0 A- B+ B0 B- C+ C0 C- D+ D0 D- F P NP, 미정이면 null
   "year": 2026, "term": "FIRST" }
 ```
@@ -474,7 +478,7 @@ enum Classification {             // 이수구분 (학교 코드)
 
 1. `courseCode` 가 있고, 사용자 전공의 `majors.course_unit` 이 있고, `courses` 에 `(unit_name = course_unit, course_code = courseCode)` 가 있으면 → 그 행의 `classification` 을 사용 (요청값 무시). `courseName` 이 비었으면 마스터 과목명으로 채움.
 2. 아니면 요청의 `classification` 필수 (없으면 `CLASSIFICATION_REQUIRED`).
-3. `classification = GEN_DISTRIBUTION` 이면 `distributionArea` 1~5 필수.
+3. `classification = GEN_DISTRIBUTION` 이면 `distributionArea` 1~5 필수. 2023학번까지는 1~7, 범위 밖은 `INVALID_INPUT`.
 
 **T6 세부 규칙** (구현하며 정한 것)
 
@@ -775,7 +779,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 **T7 세부 규칙** (구현하며 정한 것)
 
 - 성적 미정(`grade` null)은 인정한다(F·NP 만 제외). 4번은 적힌 순서대로 F·NP 를 먼저 빼고 재수강을 고른다 → 예전에 통과하고 재수강에서 F 면 예전 학점이 남는다(학과 시행세칙 확인 후 조정, 코드에 `ponytail:` 주석).
-- 재수강 판별 키: 학수번호, 없으면 공백을 뺀 과목명. 같은 학기면 나중에 등록한 것.
+- 재수강 판별 키: 학수번호, 없으면 공백을 뺀 과목명. 학수번호 없는 기록은 내 기록 중 이름이 같은 학수번호 기록과 같은 과목으로 본다(직접 입력한 "자료구조"와 성적표의 CSE204 를 두 번 세지 않음). 같은 학기면 나중에 등록한 것.
 - `areas` 의 `OTHER` 는 `required: null`, `areaCount`·`requiredAreaCount` 는 배분이수에만 있다. 요구 학점이 0 이면 `percent` 는 0.0.
 - `checks` 이름: SW기초교육 / 영어강의 / 졸업논문 / TOPIK(외국인) / 졸업능력인증 (값이 있는 것만) / 다전공·부전공·마이크로디그리 (2026학번부터).
 - 계산은 DB 조회 없는 정적 함수 `AcademicProgressService.calculate(...)` 로 분리 → 졸업 시뮬레이션은 계획 과목을 더해 그대로 부르면 된다.
@@ -808,7 +812,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 
 1. 평점 평균 = Σ(평점 × 학점) ÷ Σ학점. **P·NP·성적 미정(null)은 분모·분자 모두 제외**, F 는 0점으로 포함. 대상 학점이 0 이면 null.
 2. 취득 학점(`earnedCredits`) = F·NP·성적 미정이 아닌 과목의 학점(P 포함). 이수현황(성적 미정도 셈)과 다르다.
-3. **재수강(전체 값)**: 재수강 판별 키(학수번호, 없으면 공백 뺀 과목명)가 같으면 가장 최근(학년도·학기, 같은 학기면 나중 등록) 1건만. **최근 것이 F 면 F(0점)가 반영**된다 → 이수현황(4번, F 를 먼저 뺌)과 다를 수 있다(9장 21).
+3. **재수강(전체 값)**: 재수강 판별 키(학수번호, 없으면 공백 뺀 과목명)가 같으면 가장 최근(학년도·학기, 같은 학기면 나중 등록) 1건만. **최근 것이 F 면 F(0점)가 반영**된다 → 이수현황(4번, F 를 먼저 뺌)과 다를 수 있다(9장 21). 성적 미정 기록은 고르지 않는다: 수강 중 재수강은 성적이 나올 때까지 예전 성적으로 계산한다.
 4. 학기별 값(`terms`)은 그 학기에 기록된 과목 전부로 계산(재수강으로 대체된 예전 과목도 그 학기 성적표에는 남으므로). 학기별 값을 합쳐도 전체와 다를 수 있다.
 5. 전공 평점(`majorGpa`): 이수구분 `MAJOR_BASIC`·`MAJOR_REQUIRED`·`MAJOR_ELECTIVE` 만으로 1·3번 계산(성적표 산정기준 "전공 = 전공필수·전공선택·전공기초"와 같음).
 6. 반올림: `BigDecimal` 로 계산해 **소수 셋째 자리 HALF_UP**(성적표 3.417 = 61.5 ÷ 18 과 같게).
@@ -829,7 +833,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | 단과대 10 | 기본구조 국제 시트 | '예술디자인대학' → '예술·디자인대학' 통일 |
 | 전공 76 | 기본구조 2020~2026 국제 시트 | 학번마다 이름이 달라 학번별 전공을 모두 등록 (예: 2020~21 '컴퓨터공학과', 2022~ '컴퓨터공학부 컴퓨터공학과') |
 | 졸업요건 393 | 같은 파일 | 학번×전공. 2026행만 SW·영어강의·논문·TOPIK·인증 텍스트 |
-| 교양 기준 1 + 필수과목 6 (+ V19 전공탐색세미나 1행) | 졸업관리데이터 ②, 교육과정 p21·24 | 2026만 |
+| 교양 기준 1 + 필수과목 6 (+ V19 전공탐색세미나 1행) | 졸업관리데이터 ②, 교육과정 p21·24 | 2026. 2020~2023 기준 4행 + 필수과목 28행은 V20(p45) |
 | 교과목 3,036 (V16 후 3,060) | 졸업관리데이터 ⑤ | 2026 전공 교과목만. 교양 과목 목록 없음 → 교양은 사용자가 이수구분 직접 선택 |
 | 마이크로디그리 56 + 편성 과목 249 (V18) | `오르도_T19복수전공_T20마이크로디그리_최종.xlsx` MD목록·MD과목 | `tools/seed/generate_micro_degree_seed.py` 로 생성. 57행 중 타대학 융합 묶음 제외, 학점 추정 27행은 NULL, 구 학수번호·오기 12행은 `alias_code` |
 
@@ -849,6 +853,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 사용 중: `V14__add_user_double_major.sql`(A, T19: `users.double_major_id`, 2026-10-31 승인). `out-of-order: true` 라 V15·V16 뒤에 들어와도 적용된다.
 - 사용 중: `V17__add_micro_degrees.sql`(A, T20: `micro_degrees`·`micro_degree_courses`·`user_micro_degrees` 새 테이블, 2026-10-31 승인), `V18__seed_micro_degrees.sql`(A, T20 시드, 생성기 `tools/seed/generate_micro_degree_seed.py`).
 - 사용 중: `V19__add_exploration_seminar.sql`(A, 교양 필수과목 표에 전공탐색및기업가정신세미나 1행, 스키마 변경 없음, 5장 9번, 2026-11-01 승인). `out-of-order: true` 라 V50 뒤에 들어와도 적용된다.
+- 사용 중: `V20__add_general_education_2020_2023.sql`(A, 2020~2023학번 교양 기준 4행과 필수과목 28행, 스키마 변경 없음, 교육과정 p45, 2026-11-01 승인). `out-of-order: true` 라 V50 뒤에 들어와도 적용된다.
 - 사용 중: `V15__fix_course_names.sql`(A, 시드 `courses` 과목명 174행 교정, 스키마 변경 없음, 9장 24, 2026-10-30 승인).
 - 사용 중: `V16__fix_sports_practice_course_units.sql`(A, 전문실기 6행을 체육대학 5개 학과로 이동, `courses` 3,036 → 3,060행, 스키마 변경 없음, 9장 24, 2026-10-30 승인).
 - 로컬 DB가 꼬이면: `DROP DATABASE ordo;` 후 서버 재시작 → Flyway가 V1부터 다시 적용.
@@ -929,7 +934,7 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 4 | 가입 이메일을 학교메일(@khu.ac.kr)로 제한할지 | 제한 안 함 |
 | 5 | 마이크로디그리 화면 | **결정(2026-10-31): 목록을 시드로 넣고 자동 판정**(T20, 5장 끝, V17·V18). 사용자 직접 입력(B안)은 만들지 않음 |
 | 6 | 전공 초과학점 전공선택 인정, 타전공 인정 한도, 재수강 세부 규칙 | 학과 시행세칙 확인 전까지 5장 단순 규칙 |
-| 7 | 2025학번 이하 교양 기준 | 2026 값으로 근사 + approximate 표시 |
+| 7 | 2025학번 이하 교양 기준 | **결정(2026-11-01): 2020~2023학번은 경과조치 기준(V20, p45).** 2024·2025학번은 p24 값이 2026 과 같아 2026 으로 대체 + approximate 표시 |
 | 8 | 다전공·부전공 | **결정(2026-10-31): 다전공 1개(복수전공·융합전공) 지원**(T19, 5장 12번). 추가 개발 요청에 따라 부전공 1개 등록·요건·수강 후보 조회는 T21로 지원. 최종 부전공 이수 판정은 지정 과목 확인 후 구현 |
 | 9 | 알림 실제 발송 | **T11 로 앞당김(2026-10-08)**, 2026-10-09 카카오 → **웹푸시**로 변경 → 4.10 |
 | 10 | 디자인에 남아있는 '과제', '설정' 메뉴 | 회의록 2차대로 삭제 |

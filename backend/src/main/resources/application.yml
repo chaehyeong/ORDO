@@ -27,6 +27,11 @@ spring:
     time-zone: Asia/Seoul
     serialization.write-dates-as-timestamps: false
 
+logging:
+  level:
+    # SQL 오류 메시지에 입력값(Duplicate entry '이메일')이 들어 있다. 원인은 GlobalExceptionHandler 가 남긴다
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: "OFF"
+
 app:
   jwt:
     secret: ${JWT_SECRET:local-dev-secret-key-must-be-at-least-32-bytes!!}

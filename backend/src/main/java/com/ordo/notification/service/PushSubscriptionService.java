@@ -45,6 +45,7 @@ public class PushSubscriptionService {
         }
         String p256dh = normalizeKey(request.keys().p256dh(), 65);
         String auth = normalizeKey(request.keys().auth(), 16);
+        userRepository.findByIdForUpdate(userId);  // 탭 여러 개가 같은 구독을 동시에 보내도 두 번째는 갱신이 되게 차례로 처리한다
         User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
         pushSubscriptionRepository.findByEndpoint(request.endpoint()).ifPresentOrElse(

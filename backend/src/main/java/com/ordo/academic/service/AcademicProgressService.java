@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -224,12 +223,10 @@ public class AcademicProgressService {
     // 명세 5장 4번: F·NP 제외 → 같은 학수번호(없으면 과목명)는 가장 최근 1건만 인정
     // ponytail: 문서 순서 그대로 F 를 먼저 빼서, 예전에 통과하고 재수강에서 F 면 예전 학점이 남는다. 학과 시행세칙 확인 후 순서 조정
     static Collection<CompletedCourse> recognize(List<CompletedCourse> courses) {
-        Map<String, CompletedCourse> latest = new LinkedHashMap<>();
-        courses.stream()
+        return CompletedCourse.latestOfEachCourse(courses.stream()
                 .filter(c -> c.getGrade() == null || !NOT_RECOGNIZED_GRADES.contains(c.getGrade()))
                 .sorted(CompletedCourse.CHRONOLOGICAL)
-                .forEach(c -> latest.put(c.retakeKey(), c));
-        return latest.values();
+                .toList());
     }
 
     private static List<Check> checks(int admissionYear, GraduationRequirement requirement) {

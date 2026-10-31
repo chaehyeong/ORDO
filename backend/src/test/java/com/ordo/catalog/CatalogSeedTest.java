@@ -19,9 +19,28 @@ import org.springframework.test.context.jdbc.SqlConfig;
 @Import(CatalogService.class)
 @Sql(scripts = {"/db/migration/V2__seed_catalog.sql", "/db/migration/V15__fix_course_names.sql",
         "/db/migration/V16__fix_sports_practice_course_units.sql", "/db/migration/V18__seed_micro_degrees.sql",
-        "/db/migration/V19__add_exploration_seminar.sql"},
+        "/db/migration/V19__add_exploration_seminar.sql", "/db/migration/V20__add_general_education_2020_2023.sql"},
         config = @SqlConfig(encoding = "UTF-8"))
 class CatalogSeedTest {
+
+    // V20: 2020~2023학번은 경과조치 기준(교육과정 p45), 2024·2025학번은 2026 값으로 대체(p24 와 같다)
+    @Test
+    void generalEducationFollowsTransitionRuleUpTo2023() {
+        for (int year = 2020; year <= 2023; year++) {
+            var rule = service.getGeneralEducation(year);
+            assertThat(rule.approximate()).isFalse();
+            assertThat(rule.requiredCredits()).isEqualTo(17);
+            assertThat(rule.distributionCredits()).isEqualTo(12);
+            assertThat(rule.distributionMinAreas()).isZero();
+            assertThat(rule.freeCredits()).isEqualTo(3);
+            assertThat(rule.totalCredits()).isEqualTo(32);
+            assertThat(rule.requiredCourses()).hasSize(7);
+        }
+        var later = service.getGeneralEducation(2024);
+        assertThat(later.approximate()).isTrue();
+        assertThat(later.distributionCredits()).isEqualTo(9);
+        assertThat(later.distributionMinAreas()).isEqualTo(3);
+    }
 
     @Test
     void minorOptionsUseActualPositiveTotalsAndPreserveMissingAreaValues() {

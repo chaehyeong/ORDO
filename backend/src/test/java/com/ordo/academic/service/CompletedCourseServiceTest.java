@@ -86,6 +86,19 @@ class CompletedCourseServiceTest {
     }
 
     @Test
+    void oldDistributionAreasAreOnlyForAdmissionsUpTo2023() {
+        givenUser();  // 2026학번
+        assertErrorCode(() -> completedCourseService.create(1L,
+                request(null, "옛 영역", Classification.GEN_DISTRIBUTION, 6)), ErrorCode.INVALID_INPUT);
+
+        given(userRepository.findById(2L)).willReturn(Optional.of(
+                User.builder().email("old@khu.ac.kr").name("옛학번").admissionYear(2023).build()));
+        givenSaveReturnsArgument();
+        assertThat(completedCourseService.create(2L,
+                request(null, "옛 영역", Classification.GEN_DISTRIBUTION, 7)).distributionArea()).isEqualTo(7);
+    }
+
+    @Test
     void courseNameIsRequiredWhenNotAutoClassified() {
         givenUser();
 

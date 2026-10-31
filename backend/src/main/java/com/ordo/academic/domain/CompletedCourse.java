@@ -14,7 +14,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -65,7 +70,24 @@ public class CompletedCourse extends BaseTimeEntity {
 
     /** 재수강 판단 키: 같은 학수번호(없으면 공백 뺀 과목명)면 같은 과목 (명세 5장 4번) */
     public String retakeKey() {
-        return courseCode != null ? "code:" + courseCode : "name:" + courseName.replaceAll("\\s+", "");
+        return courseCode != null ? "code:" + courseCode : nameKey();
+    }
+
+    private String nameKey() {
+        return "name:" + courseName.replaceAll("\\s+", "");
+    }
+
+    /**
+     * 과목마다 가장 최근 기록 1건 (courses 는 CHRONOLOGICAL 순이어야 한다).
+     * 학수번호 없는 기록은 같은 이름의 학수번호 기록과 같은 과목이다: 직접 입력한 "자료구조"와 성적표의 CSE204 를 두 번 세지 않는다
+     */
+    public static Collection<CompletedCourse> latestOfEachCourse(List<CompletedCourse> courses) {
+        Map<String, String> codeKeyByName = new HashMap<>();
+        courses.stream().filter(c -> c.courseCode != null)
+                .forEach(c -> codeKeyByName.putIfAbsent(c.nameKey(), c.retakeKey()));
+        Map<String, CompletedCourse> latest = new LinkedHashMap<>();
+        courses.forEach(c -> latest.put(codeKeyByName.getOrDefault(c.retakeKey(), c.retakeKey()), c));
+        return latest.values();
     }
 
     /** PATCH: 서비스가 기존 값과 합치고 이수구분까지 다시 판별한 값으로 통째로 바꾼다 */

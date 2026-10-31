@@ -49,10 +49,10 @@ public class AcademicGpaService {
     static GpaSummary calculate(List<CompletedCourse> courses) {
         List<CompletedCourse> sorted = courses.stream().sorted(CompletedCourse.CHRONOLOGICAL).toList();
 
-        // 재수강: 같은 과목은 가장 최근 1건만. 이수현황과 달리 F 를 먼저 빼지 않는다 (명세 9장 21)
-        Map<String, CompletedCourse> latest = new LinkedHashMap<>();
-        sorted.forEach(c -> latest.put(c.retakeKey(), c));
-        Collection<CompletedCourse> counted = latest.values();
+        // 재수강: 같은 과목은 성적이 나온 가장 최근 1건만. 이수현황과 달리 F 를 먼저 빼지 않는다 (명세 9장 21)
+        // 성적 미정(수강 중 재수강)은 성적이 나오기 전까지 예전 성적을 지우지 않는다
+        Collection<CompletedCourse> counted = CompletedCourse.latestOfEachCourse(
+                sorted.stream().filter(c -> c.getGrade() != null).toList());
         List<CompletedCourse> major = counted.stream().filter(c -> MAJOR.contains(c.getClassification())).toList();
 
         Map<AcademicTerm, List<CompletedCourse>> byTerm = sorted.stream().collect(Collectors.groupingBy(

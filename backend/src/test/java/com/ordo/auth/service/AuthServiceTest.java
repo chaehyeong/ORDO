@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -85,6 +86,15 @@ class AuthServiceTest {
 
         assertError(() -> authService.signup(signupRequest()), ErrorCode.EMAIL_DUPLICATED);
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void signupRaceOnSameEmailIsReportedAsDuplicated() {
+        given(userRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(majorRepository.findSelectable(35L, 2026)).willReturn(Optional.of(mock(Major.class)));
+        given(userRepository.save(any(User.class))).willThrow(new DataIntegrityViolationException("Duplicate entry"));
+
+        assertError(() -> authService.signup(signupRequest()), ErrorCode.EMAIL_DUPLICATED);
     }
 
     @Test
@@ -171,12 +181,22 @@ class AuthServiceTest {
     void refreshDeletesOldTokenAndIssuesNewOne() {
         RefreshToken old = new RefreshToken(user(), "old-token", LocalDateTime.now().plusDays(1));
         given(refreshTokenRepository.findByToken("old-token")).willReturn(Optional.of(old));
+        given(refreshTokenRepository.deleteByToken("old-token")).willReturn(1);
 
         TokenResponse response = authService.refresh("old-token");
 
-        verify(refreshTokenRepository).delete(old);
+        verify(refreshTokenRepository).deleteByToken("old-token");
         verify(refreshTokenRepository).save(any(RefreshToken.class));
         assertThat(response.refreshToken()).isNotEqualTo("old-token");
+    }
+
+    @Test
+    void refreshFailsWhenConcurrentRequestDeletedTheTokenFirst() {
+        RefreshToken old = new RefreshToken(user(), "old-token", LocalDateTime.now().plusDays(1));
+        given(refreshTokenRepository.findByToken("old-token")).willReturn(Optional.of(old));
+        given(refreshTokenRepository.deleteByToken("old-token")).willReturn(0);
+
+        assertError(() -> authService.refresh("old-token"), ErrorCode.INVALID_REFRESH_TOKEN);
     }
 
     @Test
