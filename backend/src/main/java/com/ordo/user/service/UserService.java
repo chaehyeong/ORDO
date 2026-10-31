@@ -2,6 +2,7 @@ package com.ordo.user.service;
 
 import com.ordo.academic.dto.ProgressSummary;
 import com.ordo.academic.service.AcademicProgressService;
+import com.ordo.academic.service.MinorService;
 import com.ordo.catalog.domain.Major;
 import com.ordo.catalog.repository.MajorRepository;
 import com.ordo.global.common.AcademicTerm;
@@ -35,6 +36,7 @@ public class UserService {
     private final TimetableEntryRepository timetableEntryRepository;
     private final ScheduleRepository scheduleRepository;
     private final AcademicProgressService academicProgressService;
+    private final MinorService minorService;
 
     public UserResponse getMe(Long userId) {
         return UserResponse.from(getUser(userId));
@@ -57,7 +59,9 @@ public class UserService {
 
     @Transactional
     public UserResponse updateMe(Long userId, UserUpdateRequest request) {
-        User user = getUser(userId);
+        User user = request.majorId() != null || request.admissionYear() != null
+                ? userRepository.findByIdForUpdate(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND))
+                : getUser(userId);
         user.updateProfile(request.name(), request.nickname(), request.studentNumber(), request.phone(),
                 request.admissionYear(), resolveMajor(user, request), request.currentSemester(), request.profileImageUrl());
         return UserResponse.from(user);
@@ -86,6 +90,7 @@ public class UserService {
                 || majorRepository.countGraduationRequirements(doubleMajor.getId(), admissionYear) == 0)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
+        minorService.validateProfileChange(user.getId(), majorId, admissionYear);
         return major;
     }
 

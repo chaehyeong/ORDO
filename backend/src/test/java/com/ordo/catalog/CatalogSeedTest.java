@@ -22,6 +22,23 @@ import org.springframework.test.context.jdbc.SqlConfig;
         config = @SqlConfig(encoding = "UTF-8"))
 class CatalogSeedTest {
 
+    @Test
+    void minorOptionsUseActualPositiveTotalsAndPreserveMissingAreaValues() {
+        var options = service.getMinors(2026, null);
+        assertThat(options).hasSize(53);
+        assertThat(options).allSatisfy(option -> assertThat(option.totalCredits()).isPositive());
+        assertThat(options).filteredOn(option -> option.id().equals(14L)).singleElement().satisfies(option -> {
+            assertThat(option.requiredCredits()).isEqualTo(9);
+            assertThat(option.electiveCredits()).isEqualTo(12);
+        });
+        assertThat(options).filteredOn(option -> option.id().equals(35L)).singleElement()
+                .satisfies(option -> assertThat(option.requiredCredits()).isNull());
+        assertThat(options).noneMatch(option -> option.id().equals(55L));
+        assertThat(service.getMinors(2025, null)).hasSize(51);
+        assertThat(service.getMinors(2026, 3L)).allSatisfy(option -> assertThat(option.collegeId()).isEqualTo(3L));
+        assertThat(service.getMinors(2010, null)).isEmpty();
+    }
+
     // V2 3036행 - 잘못 들어간 전문실기 6행 + 체육대학 5개 학과 × 6행
     private static final int COURSES_AFTER_V16 = 3060;
 

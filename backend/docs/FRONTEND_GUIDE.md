@@ -643,6 +643,47 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 
 - HTTPS 에서만 동작한다(`http://localhost` 는 예외로 허용). 휴대폰 확인은 배포 주소에서.
 
+### 부전공 추적 (T21)
+
+1. `GET /api/catalog/minors?admissionYear=2026`으로 사용자의 학번에 요구 학점이 확인된 전공을 조회한다. 단과대 필터는 `collegeId`다. 목록은 학교의 신청 가능 여부 판정을 대신하지 않는다. 주전공/복수전공과 같은 id는 화면에서 제외한다.
+2. `PUT /api/academic/minor`에 `{ "majorId": 14 }`를 보내 추적할 부전공 1개를 등록/변경한다. Bearer 토큰 필요.
+3. `GET /api/academic/minor`로 재접속 시 저장한 부전공과 후보를 복원한다. 없으면 `data:null`.
+4. `DELETE /api/academic/minor`로 해제한다. 등록하지 않은 상태도 204.
+
+소프트웨어융합학과 등록 응답 예시(`data`):
+
+```json
+{
+  "major": { "id": 14, "displayName": "소프트웨어융합학과" },
+  "admissionYear": 2026,
+  "catalogYear": 2026,
+  "requirements": { "requiredCredits": 9, "electiveCredits": 12, "totalCredits": 21 },
+  "majorCoursesAvailable": true,
+  "overlapCheckAvailable": true,
+  "candidateCredits": 0,
+  "completedCourses": [],
+  "remainingCourses": [],
+  "reviewRequired": true
+}
+```
+
+`remainingCourses`의 예시 배열은 생략했으며 실제로는 미이수 후보들이 들어 있다. 각각 `courseName,courseCode,classification,credits,targetGrade,openSemester,status`를 갖는다. `completedCourses`는 `id,courseName,courseCode,classification,credits,grade,status`다.
+
+| status | 표시/사용 방법 |
+|---|---|
+| CANDIDATE | 부전공 인정 여부 확인이 필요한 수강 후보 |
+| PRIMARY_MAJOR_OVERLAP | 주전공 교과목과 겹침. 후보 학점에서 제외 |
+| DOUBLE_MAJOR_OVERLAP | 복수전공 교과목과 겹침. 후보 학점에서 제외 |
+| OVERLAP_UNVERIFIED | 주전공/복수전공 자료가 없어 중복 확인 필요. 후보 학점에서 제외 |
+
+- **반드시 "학과별 부전공 지정 과목 확인 필요"를 표시한다.** `candidateCredits`는 공식 인정 학점이나 최종 이수 판정이 아니다. `reviewRequired`는 항상 true. 요구 학점을 채워도 자동으로 "이수 완료"라고 표시하지 않는다.
+- `requirements`의 NULL은 미기재다. 0으로 바꾸어 표시하지 않는다. 총학점이 없는 전공은 목록에서 빠지며 등록 요청 시 REQUIREMENT_NOT_FOUND(404)다.
+- 부전공은 주전공 요구 학점을 줄이지 않는다. 학사관리의 원래 progress/평점 값은 그대로 사용한다. 부전공 후보의 credits를 총 이수학점에 또 더하지 않는다.
+- 주전공/복수전공을 부전공과 같게 바꾸거나 부전공 요건이 없는 학번으로 바꾸면 INVALID_INPUT(400). 부전공을 해제하거나 다른 전공으로 변경한 뒤 진행한다.
+- 과목 목록은 `catalogYear`(현재 2026) 자료다. 옛 학번에는 적용 연도 차이를 알린다.
+
+Swagger 확인 순서: 회원가입/로그인 → Authorize → 공개 부전공 목록 → PUT 등록 → GET 확인 → 성적 한 과목 등록 → GET 후보 변화 확인 → DELETE 해제.
+
 ## 5. 프론트에 부탁할 수정 (SignUp.js / SignIn.js)
 
 1. **학과 목록이 하드코딩(value 1·2·3)** 이라 실제 전공 id 와 다르다. 그대로 보내면 엉뚱한 전공으로 가입되거나 `MAJOR_NOT_FOUND`.

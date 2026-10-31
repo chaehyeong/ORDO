@@ -21,6 +21,7 @@ public class DoubleMajorService {
     private final UserRepository userRepository;
     private final MajorRepository majorRepository;
     private final AcademicProgressService academicProgressService;
+    private final MinorService minorService;
 
     /** 복수전공이 없으면 null */
     public DoubleMajorResponse get(Long userId) {
@@ -36,6 +37,7 @@ public class DoubleMajorService {
         if (user.getMajor().getId().equals(request.majorId())) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
+        minorService.validateDoubleMajor(userId, request.majorId());
         // findSelectable 은 융합전공을 빼므로 쓰지 않는다
         Major major = majorRepository.findById(request.majorId())
                 .filter(m -> majorRepository.countGraduationRequirements(m.getId(), user.getAdmissionYear()) > 0)
@@ -50,6 +52,6 @@ public class DoubleMajorService {
     }
 
     private User getUser(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        return userRepository.findByIdForUpdate(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
     }
 }
