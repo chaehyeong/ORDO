@@ -1,6 +1,9 @@
+import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Progress from "../components/Progress";
 import EmptyState from "../components/EmptyState";
+import AddMajorModal from "../components/AddMajorModal";
+import AddMicroDegreeModal from "../components/AddMicroDegreeModal";
 import { mockDegree } from "../mock/degreeMock";
 import { FiBook, FiBookOpen } from "react-icons/fi";
 import './Degree.css';
@@ -96,6 +99,22 @@ function GpaBar({ average, max }) {
 function Degree() {
     const { credits, gpa, multiMajor, microDegree } = mockDegree;
 
+    // 추가하기 모달 열림 상태
+    const [showMajorModal, setShowMajorModal] = useState(false);
+    const [showMicroModal, setShowMicroModal] = useState(false);
+
+    // 다전공/부전공 추가: { department: "경영학과", type: "다전공" | "부전공" }
+    const handleAddMajor = (value) => {
+        console.log("다전공/부전공 추가:", value); // TODO: 저장 처리
+        setShowMajorModal(false);
+    };
+
+    // 마이크로디그리 추가: { courseName: "..." }
+    const handleAddMicro = (value) => {
+        console.log("마이크로디그리 추가:", value); // TODO: 저장 처리
+        setShowMicroModal(false);
+    };
+
     return (
         <div className="layout">
             <Sidebar />
@@ -119,8 +138,8 @@ function Degree() {
                     </section>
                     <section className="box program-box">
                         <div className="program-header">
-                            <h5>다전공</h5>
-                            <button type="button" className="btn-outline-ordo">+ 다전공 추가하기</button>
+                            <h5>다전공/부전공</h5>
+                            <button type="button" className="btn-outline-ordo" onClick={() => setShowMajorModal(true)}>+ 다전공/부전공 추가하기</button>
                         </div>
                         <div className="program-panel">
                             {multiMajor ? (
@@ -128,9 +147,9 @@ function Degree() {
                             ) : (
                                 <EmptyState
                                     icon={<FiBookOpen size={28} />}
-                                    title="추가한 다전공이 없습니다."
+                                    title="추가한 다전공/부전공이 없습니다."
                                     description={<>관심 있는 전공을 추가하여<br />이수 현황을 관리해보세요.</>}
-                                    actionLabel="다전공 알아보기"
+                                    actionLabel="다전공/부전공 알아보기"
                                     onAction={() => window.open('https://www.khu.ac.kr/kor/user/contents/view.do?menuNo=200105', '_blank', 'noopener,noreferrer')}
                                 />
                             )}
@@ -139,7 +158,7 @@ function Degree() {
                     <section className="box program-box">
                         <div className="program-header">
                             <h5>마이크로디그리</h5>
-                            <button type="button" className="btn-outline-ordo">+ 마이크로디그리 추가하기</button>
+                            <button type="button" className="btn-outline-ordo" onClick={() => setShowMicroModal(true)}>+ 마이크로디그리 추가하기</button>
                         </div>
                         <div className="program-panel">
                             {microDegree ? (
@@ -156,6 +175,13 @@ function Degree() {
                     </section>
                 </div>
             </div>
+
+            {showMajorModal && (
+                <AddMajorModal onClose={() => setShowMajorModal(false)} onSubmit={handleAddMajor} />
+            )}
+            {showMicroModal && (
+                <AddMicroDegreeModal onClose={() => setShowMicroModal(false)} onSubmit={handleAddMicro} />
+            )}
         </div>
     );
 }

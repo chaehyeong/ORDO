@@ -1,0 +1,116 @@
+/* 다전공/부전공 추가, 마이크로디그리 추가 모달이 같이 쓰는 스타일 */
+.dm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.dm-modal {
+    width: 480px;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+    padding: 24px 36px 28px;
+    border-radius: 28px;
+    background-color: #f2f7f6;
+    box-shadow: 0 5px 13px 0 rgba(0, 0, 0, 0.25);
+}
+
+.dm-title {
+    margin: 0 0 20px;
+    font-size: 30px;
+    font-weight: 800;
+    color: #000;
+}
+
+.dm-label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 19px;
+    font-weight: 800;
+    color: #000;
+}
+
+.dm-input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 52px;
+    padding: 0 22px;
+    border: 1px solid #8f9696;
+    border-radius: 14px;
+    background: white;
+    font-family: inherit;
+    font-size: 16px;
+    outline: none;
+}
+
+.dm-input::placeholder {
+    color: #b0b4b4;
+    font-weight: 600;
+}
+
+.dm-input:focus {
+    border-color: #39B19D;
+}
+
+/* 드롭다운: 기본 화살표를 없애고 오른쪽에 회색 네모 화살표를 올림 */
+.dm-select-wrap {
+    position: relative;
+}
+
+.dm-select-wrap select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 80px;
+    cursor: pointer;
+}
+
+.dm-select-arrow {
+    position: absolute;
+    top: 50%;
+    right: 22px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 32px;
+    border-radius: 8px;
+    background: #efefef;
+    color: #222;
+    pointer-events: none; /* 클릭은 아래 select가 받음 */
+}
+
+.dm-actions {
+    display: flex;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.dm-btn {
+    flex: 1;
+    height: 48px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: white;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.dm-cancel {
+    background-color: #91969a;
+}
+
+.dm-confirm {
+    background-color: #3AB29C;
+}
+
+.dm-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
