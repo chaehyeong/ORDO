@@ -5,6 +5,15 @@ import "./AddCompletedCourseModal.css";
 
 const GRADES = ['A+', 'A0', 'A-', 'B+', 'B0', 'B-', 'C+', 'C0', 'C-', 'D+', 'D0', 'D-', 'F', 'P', 'NP'];
 
+// 배분이수 영역 이름 (서버는 번호 1~5만 저장한다. BACKEND_SPEC.md 3.1)
+export const DISTRIBUTION_AREAS = {
+    1: '생명·우주·인간',
+    2: '분석·추론·논리',
+    3: '상징·문화·소통',
+    4: '사회·공동체·평화',
+    5: '지능·정보·미래',
+};
+
 // 오늘 날짜 기준 현재 학기 (3~8월 1학기, 9~12월 2학기, 1~2월 전년도 2학기)
 function currentTerm() {
     const now = new Date();
@@ -30,18 +39,19 @@ export function Select({ value, onChange, placeholder, children }) {
     );
 }
 
-// 오른쪽에서 열리는 이수한 과목 추가 창
-// onSubmit(course): POST /api/academic/completed-courses 요청 body 모양으로 넘긴다
-function AddCompletedCourseModal({ onClose, onSubmit }) {
+// 오른쪽에서 열리는 이수한 과목 추가·수정 창
+// initialCourse 가 있으면 수정 창: 그 과목 값이 채워진 채로 열린다
+// onSubmit(course): POST·PATCH /api/academic/completed-courses 요청 body 모양으로 넘긴다
+function AddCompletedCourseModal({ initialCourse, onClose, onSubmit }) {
     const now = currentTerm();
-    const [year, setYear] = useState(String(now.year));
-    const [term, setTerm] = useState(now.term);
-    const [courseName, setCourseName] = useState('');
-    const [courseCode, setCourseCode] = useState('');
-    const [classification, setClassification] = useState('');
-    const [distributionArea, setDistributionArea] = useState('');
-    const [credits, setCredits] = useState('');
-    const [grade, setGrade] = useState('');
+    const isEdit = !!initialCourse;
+    const [year, setYear] = useState(String(initialCourse?.year ?? now.year));
+    const [term, setTerm] = useState(initialCourse?.term ?? now.term);
+    const [courseName, setCourseName] = useState(initialCourse?.courseName ?? '');
+    const [classification, setClassification] = useState(initialCourse?.classification ?? '');
+    const [distributionArea, setDistributionArea] = useState(String(initialCourse?.distributionArea ?? ''));
+    const [credits, setCredits] = useState(String(initialCourse?.credits ?? ''));
+    const [grade, setGrade] = useState(initialCourse?.grade ?? '');
 
     // Esc로 닫기
     useEffect(() => {
@@ -51,6 +61,8 @@ function AddCompletedCourseModal({ onClose, onSubmit }) {
     }, [onClose]);
 
     const yearOptions = Array.from({ length: 8 }, (_, i) => now.year + 1 - i);
+    // 수정하는 과목의 학년도가 목록 범위 밖이면 맨 아래에 붙인다
+    if (isEdit && !yearOptions.includes(initialCourse.year)) yearOptions.push(initialCourse.year);
     const isDistribution = classification === 'GEN_DISTRIBUTION';
     const creditsNum = Number(credits);
     const validCredits = credits !== '' && Number.isInteger(creditsNum) && creditsNum >= 0 && creditsNum <= 30;
@@ -63,7 +75,6 @@ function AddCompletedCourseModal({ onClose, onSubmit }) {
             year: Number(year),
             term,
             courseName: courseName.trim(),
-            courseCode: courseCode.trim() || null,
             classification,
             distributionArea: isDistribution ? Number(distributionArea) : null,
             credits: creditsNum,
@@ -76,8 +87,8 @@ function AddCompletedCourseModal({ onClose, onSubmit }) {
             <form className="acc-panel" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
                 <div className="acc-head">
                     <div>
-                        <h2>이수한 과목 추가</h2>
-                        <p>이수한 과목 정보를 입력해주세요.</p>
+                        <h2>{isEdit ? '이수한 과목 수정' : '이수한 과목 추가'}</h2>
+                        <p>{isEdit ? '수정할 내용을 입력해주세요.' : '이수한 과목 정보를 입력해주세요.'}</p>
                     </div>
                     <button type="button" className="acc-close" onClick={onClose} aria-label="닫기"><FiX /></button>
                 </div>
@@ -96,9 +107,6 @@ function AddCompletedCourseModal({ onClose, onSubmit }) {
                     <label className="acc-label">과목명</label>
                     <input className="acc-input" value={courseName} onChange={(e) => setCourseName(e.target.value)} placeholder="예) 평면디자인" maxLength={100} autoFocus />
 
-                    <label className="acc-label">과목코드 (선택)</label>
-                    <input className="acc-input" value={courseCode} onChange={(e) => setCourseCode(e.target.value)} placeholder="예) D901023" maxLength={20} />
-
                     <label className="acc-label">이수구분</label>
                     <Select value={classification} onChange={setClassification} placeholder="선택해주세요.">
                         {Object.entries(CLASSIFICATION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -109,7 +117,7 @@ function AddCompletedCourseModal({ onClose, onSubmit }) {
                         <>
                             <label className="acc-label">배분이수 영역</label>
                             <Select value={distributionArea} onChange={setDistributionArea} placeholder="선택해주세요.">
-                                {[1, 2, 3, 4, 5].map((a) => <option key={a} value={a}>{a}영역</option>)}
+                                {Object.entries(DISTRIBUTION_AREAS).map(([a, name]) => <option key={a} value={a}>{a}영역 · {name}</option>)}
                             </Select>
                         </>
                     )}
@@ -125,7 +133,7 @@ function AddCompletedCourseModal({ onClose, onSubmit }) {
                 </div>
 
                 <div className="acc-actions">
-                    <button type="submit" className="acc-submit" disabled={!canSubmit}>추가하기</button>
+                    <button type="submit" className="acc-submit" disabled={!canSubmit}>{isEdit ? '수정하기' : '추가하기'}</button>
                     <button type="button" className="acc-cancel" onClick={onClose}>취소</button>
                 </div>
             </form>

@@ -1,9 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { mockUser } from "../mock/userMock";
-import { mockCalendarEvents, categoryColors } from "../mock/calendarMock";
-import { mockTimetable } from "../mock/timetableMock";
-import { mockDegree } from "../mock/degreeMock";
+import { api } from "../api/client";
+import { categoryColors } from "../mock/calendarMock";
 import frodo from "../assets/frodo2.png";
 import { FiChevronRight, FiBell, FiBook } from "react-icons/fi";
 import Sidebar from "../components/Sidebar";
@@ -14,57 +12,64 @@ const MAX_DOTS = 3;
 const toDateKey = (date) =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const toMinutes = (time) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
-const DDAY_CATEGORIES = ['과제', '개인일정'];
 const DDAY_LIMIT = 2;
+// 서버는 카테고리를 영어로 준다 → 화면에는 한글로
+const CATEGORY_LABELS = { LECTURE: '수업', ASSIGNMENT: '과제', PERSONAL: '개인일정' };
+const TIMELINE_SOURCES = ['TIMETABLE', 'SCHEDULE', 'ECAMPUS'];
 
 function Home() {
-    const [user] = useState(mockUser);
-    const [degree] = useState(mockDegree);
-    const [events] = useState(mockCalendarEvents);
-    const [timetable] = useState(mockTimetable);
+    const [home, setHome] = useState(null);
+    const [error, setError] = useState('');
+
+    // 홈 화면 데이터는 /api/home 한 번으로 다 받는다
+    useEffect(() => {
+        api('/api/home').then((res) => {
+            if (res.success) {
+                setHome(res.data);
+            } else {
+                setError(res.error.message);
+            }
+        });
+    }, []);
+
+    if (error) return <div className="layout"><Sidebar /><div className="page">{error}</div></div>;
+    if (!home) return <div className="layout"><Sidebar /><div className="page">불러오는 중...</div></div>;
 
     // 주간 일정
 
     const today = new Date();
     const todayKey = toDateKey(today);
-    const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
-    const weekDays = WEEKDAYS.map((label, i) => {
-        const date = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
-        const key = toDateKey(date);
-        return {
-            key,
-            label,
-            date: date.getDate(),
-            isToday: key === todayKey,
-            isUpcoming: key > todayKey,
-            events: events.filter((e) => e.date === key),
-        };
-    });
+    const weekDays = home.week.map((d) => ({
+        key: d.date,
+        label: WEEKDAYS[d.dayOfWeek - 1],
+        date: Number(d.date.slice(8, 10)),
+        isToday: d.today,
+        isUpcoming: d.date > todayKey,
+        categories: d.categories.map((cat) => CATEGORY_LABELS[cat]),
+    }));
 
-    // 오늘 일정
+    // 오늘 일정 (과제는 빼고, 서버가 이미 시간순으로 정렬해서 준다)
 
-    const todayLabel = WEEKDAYS[(today.getDay() + 6) % 7];
-    const todayItems = [
-        ...timetable
-            .filter((t) => t.day === todayLabel)
-            .map((t) => ({ key: `class-${t.id}`, time: t.startTime, endTime: t.endTime, title: t.courseName, location: t.location, category: '수업' })),
-        ...events
-            .filter((e) => e.date === todayKey && e.category !== '과제')
-            .map((e) => ({ key: `event-${e.id}`, time: e.time, endTime: e.time, title: e.title, location: e.location, category: e.category })),
-    ].sort((a, b) => {
-        if (!a.time) return -1;
-        if (!b.time) return 1;
-        return toMinutes(a.time) - toMinutes(b.time);
-    });
+    const todayItems = home.timeline
+        .filter((t) => TIMELINE_SOURCES.includes(t.source) && t.category !== 'ASSIGNMENT')
+        .map((t) => ({
+            key: `${t.source}-${t.id ?? t.title}`,
+            time: t.startTime,
+            endTime: t.endTime ?? t.startTime,
+            title: t.title,
+            location: t.location,
+            category: CATEGORY_LABELS[t.category],
+        }));
     const nowMinutes = today.getHours() * 60 + today.getMinutes();
     const activeKey = todayItems.find((item) => item.endTime && toMinutes(item.endTime) >= nowMinutes)?.key;
 
-    // 졸업 진행률
+    // 졸업 진행률 (학과·입학년도가 없으면 graduation 이 null)
 
-    const { totalRequired, categories } = degree.credits;
-    const totalEarned = categories.reduce((sum, c) => sum + c.earned, 0);
-    const remaining = Math.max(totalRequired - totalEarned, 0);
-    const percent = totalRequired > 0 ? Math.min((totalEarned / totalRequired) * 100, 100) : 0;
+    const graduation = home.graduation;
+    const totalEarned = graduation ? graduation.earned : 0;
+    const totalRequired = graduation ? graduation.required : 0;
+    const remaining = graduation ? graduation.remaining : 0;
+    const percent = graduation ? graduation.percent : 0;
 
     const size = 110;
     const stroke = 12;
@@ -85,24 +90,22 @@ function Home() {
         return { x: c + r * Math.cos(angle), y: c + r * Math.sin(angle) };
     };
 
-    // D-Day 알림
-    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const ddayItems = events
-        .filter((e) => DDAY_CATEGORIES.includes(e.category))
-        .map((e) => {
-            const [y, m, d] = e.date.split('-').map(Number);
-            return { ...e, days: Math.round((new Date(y, m - 1, d) - todayMidnight) / 86400000) };
-        })
-        .filter((e) => e.days > 0 || (e.days === 0 && (!e.time || toMinutes(e.time) >= nowMinutes)))
-        .sort((a, b) => a.days - b.days || toMinutes(a.time ?? '00:00') - toMinutes(b.time ?? '00:00'))
-        .slice(0, DDAY_LIMIT);
+    // D-Day 알림 (서버가 지난 일정은 빼고 가까운 순으로 정렬해서 준다)
+    const ddayItems = home.deadlines.slice(0, DDAY_LIMIT).map((e) => ({
+        key: `${e.source}-${e.id ?? e.title}-${e.date}`,
+        title: e.title,
+        days: e.dday,
+        time: e.time,
+        subject: e.courseName,
+        category: CATEGORY_LABELS[e.category],
+    }));
     const ddayLabel = (e) => (e.days === 0 ? (e.time ? `오늘 ${e.time}` : 'D-Day') : `D-${e.days}`);
 
     return (
         <div className="layout">
             <Sidebar />
             <div className="page">
-                <h2 className="page-title">안녕하세요 {user.userName}님!</h2>
+                <h2 className="page-title">안녕하세요 {home.greetingName}님!</h2>
                 <div className="homepage-grid">
                     <Link to="/calendar" className="box week-box">
                         <h5 className="week-title">주간 일정</h5>
@@ -112,15 +115,15 @@ function Home() {
                             ))}
                             {weekDays.map((d) => (
                                 <div key={d.key} className="week-day">
-                                    <span className={`week-date ${d.isToday ? 'is-today' : ''} ${d.isUpcoming && d.events.length ? 'is-upcoming' : ''}`}>
+                                    <span className={`week-date ${d.isToday ? 'is-today' : ''} ${d.isUpcoming && d.categories.length ? 'is-upcoming' : ''}`}>
                                         {d.date}
                                     </span>
                                     <div className="week-dots">
-                                        {d.events.slice(0, MAX_DOTS).map((e) => (
+                                        {d.categories.slice(0, MAX_DOTS).map((category) => (
                                             <span
-                                                key={e.id}
+                                                key={category}
                                                 className="week-dot"
-                                                style={d.isToday ? { backgroundColor: categoryColors[e.category] } : undefined}
+                                                style={d.isToday ? { backgroundColor: categoryColors[category] } : undefined}
                                             />
                                         ))}
                                     </div>
@@ -162,7 +165,9 @@ function Home() {
                                     <span>{totalRequired}</span>
                                 </p>
                                 <p className="grad-remaining">
-                                    {remaining > 0 ? `졸업 학점까지 ${remaining}학점 남았어요!` : '졸업 학점을 모두 채웠어요!'}
+                                    {!graduation
+                                        ? '마이페이지에서 학과와 입학년도를 입력해 주세요.'
+                                        : remaining > 0 ? `졸업 학점까지 ${remaining}학점 남았어요!` : '졸업 학점을 모두 채웠어요!'}
                                 </p>
                             </div>
                         </div>
@@ -208,7 +213,7 @@ function Home() {
                         ) : (
                             <ul className="dday-list">
                                 {ddayItems.map((e) => (
-                                    <li key={e.id} className="dday-card">
+                                    <li key={e.key} className="dday-card">
                                         <span className="dday-icon"><FiBook size={22} /></span>
                                         <div>
                                             <p className="dday-name">

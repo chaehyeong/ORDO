@@ -41,7 +41,8 @@ export function FilterSelect({ value, onChange, allLabel, options }) {
 
 // 이수한 과목 박스
 // courses = GET /api/academic/completed-courses 응답 data, onAdd = "이수한 과목 추가하기" 버튼을 눌렀을 때
-function CompletedCourses({ courses, onAdd }) {
+// onEdit(course) = 수정 버튼, onDelete(course) = 삭제 버튼 (줄에 마우스를 올리면 보임)
+function CompletedCourses({ courses, onAdd, onEdit, onDelete }) {
     const [year, setYear] = useState('');
     const [term, setTerm] = useState('');
     const [classification, setClassification] = useState('');
@@ -52,7 +53,7 @@ function CompletedCourses({ courses, onAdd }) {
 
     // 필터 목록은 내 이수내역에 있는 값만
     const yearOptions = useMemo(
-        () => [...new Set(courses.map((c) => c.year))].sort().map((y) => ({ value: String(y), label: `${y}년` })),
+        () => [...new Set(courses.map((c) => c.year))].sort((a, b) => b - a).map((y) => ({ value: String(y), label: `${y}년` })),
         [courses]
     );
     const termOptions = useMemo(
@@ -68,11 +69,12 @@ function CompletedCourses({ courses, onAdd }) {
         [courses]
     );
 
+    // 서버는 오래된 학기 → 최근 학기 순으로 주므로 뒤집어서 최근 학기가 위로 오게 한다
     const filtered = courses.filter((c) =>
         (!year || String(c.year) === year) &&
         (!term || c.term === term) &&
         (!classification || c.classification === classification)
-    );
+    ).reverse();
 
     return (
         <div className="completed-courses">
@@ -100,6 +102,7 @@ function CompletedCourses({ courses, onAdd }) {
                     <span>이수구분</span>
                     <span>학점</span>
                     <span>성적</span>
+                    <span />
                 </div>
                 <div className="completed-body">
                     {filtered.length === 0 ? (
@@ -115,6 +118,10 @@ function CompletedCourses({ courses, onAdd }) {
                                 <span>{CLASSIFICATION_LABELS[c.classification] ?? c.classification}</span>
                                 <span>{c.credits}</span>
                                 <span>{c.grade ?? '-'}</span>
+                                <span className="completed-actions">
+                                    <button type="button" className="completed-edit-btn" onClick={() => onEdit(c)}>수정</button>
+                                    <button type="button" className="completed-delete-btn" onClick={() => onDelete(c)}>삭제</button>
+                                </span>
                             </div>
                         ))
                     )}

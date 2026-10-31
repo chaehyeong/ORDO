@@ -87,7 +87,7 @@
 /* 표: 머리줄은 고정, 본문만 스크롤 */
 .completed-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 2.4fr 1.3fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 2.4fr 1.3fr 1fr 1fr 100px; /* 마지막 칸 = 수정·삭제 버튼 */
     align-items: center;
     padding: 0 32px;
     font-size: 14px;
@@ -143,4 +143,43 @@
 .completed-body::-webkit-scrollbar-thumb {
     background-color: rgba(57, 177, 157, 0.3);
     border-radius: 5px;
+}
+
+/* 줄에 마우스를 올리면 배경색 + 오른쪽에 수정·삭제 버튼 */
+.completed-body .completed-row {
+    border-radius: 8px;
+}
+
+.completed-body .completed-row:hover {
+    background-color: #F3F8F7;
+}
+
+.completed-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    visibility: hidden;
+}
+
+.completed-body .completed-row:hover .completed-actions {
+    visibility: visible;
+}
+
+.completed-actions button {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.completed-edit-btn {
+    background-color: #39B19D;
+}
+
+.completed-delete-btn {
+    background-color: #909395;
 }

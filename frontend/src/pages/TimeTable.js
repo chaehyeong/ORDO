@@ -1,10 +1,14 @@
-import { useMemo, useState } from "react";
-import { mockTimetable } from "../mock/timetableMock";
+import { useEffect, useMemo, useState } from "react";
+import { api } from "../api/client";
 import Sidebar from "../components/Sidebar";
 import AddCourseModal from "../components/AddCourseModal";
 import "./TimeTable.css";
 
 const DAYS = ["월", "화", "수", "목", "금"];
+// 서버는 요일을 숫자(1=월 … 7=일)로 주고받는다
+const ALL_DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+// "2026-2" 의 뒷자리 → 서버 학기 값
+const TERMS = { 1: "FIRST", 2: "SECOND" };
 const HOUR_H = 66; // 1시간당 높이(px) — 클수록 세로로 길어짐
 const GRID_BOTTOM = 20; // 마지막 시간선 아래로 흰 격자를 더 늘리는 높이(px)
 const DEFAULT_START = 9; // 기본 표시 범위 09:00 ~ 18:00 (이 범위 밖 수업이 있으면 자동 확장)
@@ -21,21 +25,42 @@ const COLORS = ["#86C0CB", "#C3EDE5", "#F2F3D9", "#F4F8F9", "#F6DCDC", "#E3DCF5"
 const BLOCK_ALPHA = "FF";
 
 const toMinutes = (time) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+// 서버 응답 한 칸 → 화면에서 쓰던 모양 (day: '월')
+const toCourse = (entry) => ({
+    ...entry,
+    day: entry.dayOfWeek ? ALL_DAYS[entry.dayOfWeek - 1] : null,
+});
 const semesterLabel = (s) => {
     const [y, n] = s.split("-");
     return `${y}년 ${n}학기`;
 };
 
 function TimeTable() {
-    const [courses, setCourses] = useState(mockTimetable);
+    const [courses, setCourses] = useState([]);
     const [semester, setSemester] = useState(CURRENT_SEMESTER);
     const [showModal, setShowModal] = useState(false);
+    const [error, setError] = useState("");
 
-    // semester 필드가 없는 기존 데이터는 현재 학기로 취급
-    const semesterCourses = useMemo(
-        () => courses.filter((c) => (c.semester ?? CURRENT_SEMESTER) === semester),
-        [courses, semester]
-    );
+    const [year, term] = semester.split("-");
+
+    // 학기가 바뀔 때마다 그 학기 시간표를 불러온다
+    useEffect(() => {
+        let ignore = false; // 학기를 빨리 바꿨을 때 늦게 온 예전 응답은 버린다
+        setCourses([]);
+        setError("");
+        api(`/api/timetables?year=${year}&term=${TERMS[term]}`).then((res) => {
+            if (ignore) return;
+            if (res.success) {
+                setCourses(res.data.entries.map(toCourse));
+            } else {
+                setError(res.error.message);
+            }
+        });
+        return () => { ignore = true; };
+    }, [year, term]);
+
+    // 서버가 고른 학기의 수업만 주므로 학기로 거를 필요가 없다
+    const semesterCourses = courses;
     const classes = semesterCourses.filter((c) => !c.online);
     const onlineCourses = semesterCourses.filter((c) => c.online);
 
@@ -60,12 +85,27 @@ function TimeTable() {
         backgroundColor: `${colorOf[c.courseName]}${BLOCK_ALPHA}`,
     });
 
-    const handleAdd = (course) => {
-        setCourses((prev) => [...prev, { id: Date.now(), semester, ...course }]);
-        setShowModal(false);
+    const handleAdd = async (course) => {
+        const res = await api("/api/timetables/entries", {
+            method: "POST",
+            body: JSON.stringify({
+                year: Number(year),
+                term: TERMS[term],
+                courseName: course.courseName,
+                dayOfWeek: course.online ? null : ALL_DAYS.indexOf(course.day) + 1,
+                startTime: course.startTime ?? null,
+                endTime: course.endTime ?? null,
+                location: course.location ?? null,
+                online: !!course.online,
+            }),
+        });
+        if (res.success) {
+            setCourses((prev) => [...prev, toCourse(res.data)]);
+            setShowModal(false);
+        } else {
+            alert(res.error.message); // 예: 시간이 겹치는 수업이 있으면 TIMETABLE_OVERLAP
+        }
     };
-
-    const [year, term] = semester.split("-");
 
     return (
         <div className="layout">
@@ -81,6 +121,8 @@ function TimeTable() {
                     </select>
                     <button className="tt-add-btn" onClick={() => setShowModal(true)}>수업 추가</button>
                 </div>
+
+                {error && <p className="text-danger">{error}</p>}
 
                 <div className="box tt-box">
                     <div className="tt-board">

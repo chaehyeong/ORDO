@@ -7,6 +7,9 @@ import { FiBook } from "react-icons/fi";
 import { FiBell } from "react-icons/fi";
 import { FiCalendar } from "react-icons/fi";
 
+import { useEffect } from 'react';
+import { api } from '../api/client';
+
 const services = [
     {
         key: 'scheduler',
@@ -47,6 +50,10 @@ const services = [
 ];
 
 function MainPage() {
+    useEffect(() => {
+        api('/api/health').then((res) => console.log(res));
+    }, []);
+    
     // 카드 세트를 두 번 깔아두고 트랙을 -50%까지 밀어야 이음매가 안 보임
     const loop = [...services, ...services];
 

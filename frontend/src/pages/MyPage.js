@@ -1,21 +1,62 @@
-import { useState } from "react";
-import { NavLink } from 'react-router-dom';
-import { mockUser } from "../mock/userMock";
+import { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
+import { api, getRefreshToken, clearTokens } from "../api/client";
 import Sidebar from "../components/Sidebar";
 import frodo from "../assets/frodo3.png"
 import { FiUser, FiBell, FiLogOut } from "react-icons/fi";
 import './MyPage.css';
 
 function MyPage() {
-    const [user] = useState(mockUser);
+    const navigate = useNavigate();
+    const [user, setUser] = useState(null);
     const [alarm, setAlarm] = useState(true);
+    const [error, setError] = useState('');
 
+    // 처음 들어왔을 때 내 정보 불러오기
+    useEffect(() => {
+        api('/api/users/me').then((res) => {
+            if (res.success) {
+                setUser(res.data);
+                setAlarm(res.data.notificationEnabled);
+            } else {
+                setError(res.error.message);
+            }
+        });
+    }, []);
+
+    // 알림 스위치: 화면 먼저 바꾸고, 서버 저장이 실패하면 되돌린다
+    const handleAlarm = async () => {
+        const next = !alarm;
+        setAlarm(next);
+        const res = await api('/api/users/me/settings', {
+            method: 'PATCH',
+            body: JSON.stringify({ notificationEnabled: next }),
+        });
+        if (!res.success) {
+            setAlarm(!next);
+            alert(res.error.message);
+        }
+    };
+
+    const handleLogout = async () => {
+        await api('/api/auth/logout', {
+            method: 'POST',
+            body: JSON.stringify({ refreshToken: getRefreshToken() }),
+        });
+        clearTokens();
+        navigate('/');
+    };
+
+    if (error) return <div className="layout"><Sidebar /><div className="page">{error}</div></div>;
+    if (!user) return <div className="layout"><Sidebar /><div className="page">불러오는 중...</div></div>;
+
+    const majorName = user.major ? user.major.displayName : '-';
     const infoList = [
-        ['이름', user.userName],
-        ['학번', user.userId],
-        ['학과', user.userMajor],
-        ['전화번호', user.userPhone],
-        ['이메일', user.userEmail],
+        ['이름', user.name],
+        ['학번', user.studentNumber],
+        ['학과', majorName],
+        ['전화번호', user.phone || '-'],
+        ['이메일', user.email],
     ];
 
     return (
@@ -31,8 +72,8 @@ function MyPage() {
                         <div className="profile">
                             <FiUser className="profile-img" />
                             <div>
-                                <div className="profile-name">{user.userName}</div>
-                                <div className="profile-major">경희대학교 {user.userMajor}</div>
+                                <div className="profile-name">{user.name}</div>
+                                <div className="profile-major">경희대학교 {majorName}</div>
                             </div>
                         </div>
 
@@ -58,7 +99,7 @@ function MyPage() {
                                     type="button"
                                     className={`switch ${alarm ? 'on' : ''}`}
                                     aria-pressed={alarm}
-                                    onClick={() => setAlarm(!alarm)}
+                                    onClick={handleAlarm}
                                 >
                                     <span className="knob" />
                                 </button>
@@ -70,9 +111,9 @@ function MyPage() {
                                 <h3 className="mp-box-title">로그아웃</h3>
                                 <p className="box-desc">현재 계정에서 로그아웃합니다.</p>
                             </div>
-                            <NavLink to='/'><button type="button" className="logout-btn">
+                            <button type="button" className="logout-btn" onClick={handleLogout}>
                                 <FiLogOut /> 로그아웃
-                            </button></NavLink>
+                            </button>
                         </section>
                     </div>
                 </div>

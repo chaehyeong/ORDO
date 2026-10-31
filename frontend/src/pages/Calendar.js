@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { mockCalendarEvents, categoryColors } from "../mock/calendarMock";
+import { useEffect, useMemo, useState } from "react";
+import { api } from "../api/client";
+import { categoryColors } from "../mock/calendarMock";
 import Sidebar from "../components/Sidebar";
 import CalendarUrlPopup from "../components/CalendarUrlPopup";
 import AddTodoModal from "../components/AddTodoModal";
@@ -11,17 +12,39 @@ const MAX_CHIPS = 3; // 한 칸에 보여줄 일정 개수 (넘으면 +N개)
 const toDateKey = (date) =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
+// 서버 카테고리(영어) ↔ 화면 카테고리(한글)
+const CATEGORY_LABELS = { LECTURE: "수업", ASSIGNMENT: "과제", PERSONAL: "개인일정" };
+const CATEGORY_CODES = { 수업: "LECTURE", 과제: "ASSIGNMENT", 개인일정: "PERSONAL" };
+
+// 서버 응답 → 화면에서 쓰던 일정 모양 { id, title, category, date, time }
+const fromSchedule = (s) => ({
+    id: `schedule-${s.id}`,
+    title: s.title,
+    category: CATEGORY_LABELS[s.category],
+    date: s.date,
+    time: s.startTime,
+});
+// e캠퍼스 과제 마감은 '과제'로 보여주고, 누르면 e캠퍼스 화면으로 이동
+const fromEcampus = (e) => ({
+    id: `ecampus-${e.id}`,
+    title: e.title,
+    category: "과제",
+    date: e.date,
+    time: e.time,
+    url: e.url,
+});
+
 function Calendar() {
     const today = new Date();
     const todayKey = toDateKey(today);
 
     const [year, setYear] = useState(today.getFullYear());
     const [month, setMonth] = useState(today.getMonth() + 1); // 1~12
-    const [events, setEvents] = useState(mockCalendarEvents);
+    const [events, setEvents] = useState([]);
+    const [reloadKey, setReloadKey] = useState(0); // 1 올리면 일정을 다시 불러온다
 
     const [syncOn, setSyncOn] = useState(false);
     const [notifyOn, setNotifyOn] = useState(true);
-    const [, setCalendarUrl] = useState("");
     const [showUrlPopup, setShowUrlPopup] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
 
@@ -31,6 +54,34 @@ function Calendar() {
         const start = new Date(year, month - 1, 1 - first.getDay());
         return Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
     }, [year, month]);
+    const from = toDateKey(cells[0]);
+    const to = toDateKey(cells[cells.length - 1]);
+
+    // 토글 처음 상태: e캠퍼스 연결 여부, 알림 설정
+    useEffect(() => {
+        api("/api/users/me").then((res) => {
+            if (res.success) {
+                setSyncOn(res.data.ecampusConnected);
+                setNotifyOn(res.data.notificationEnabled);
+            }
+        });
+    }, []);
+
+    // 달력에 보이는 42칸 기간의 일정 + e캠퍼스 과제를 함께 불러온다
+    useEffect(() => {
+        let ignore = false; // 달을 빨리 넘겼을 때 늦게 온 예전 응답은 버린다
+        Promise.all([
+            api(`/api/schedules?from=${from}&to=${to}`),
+            api(`/api/ecampus/events?from=${from}&to=${to}`),
+        ]).then(([schedules, ecampus]) => {
+            if (ignore) return;
+            const list = schedules.success ? schedules.data.map(fromSchedule) : [];
+            // e캠퍼스가 실패해도 내 일정은 보여준다
+            const ecampusList = ecampus.success ? ecampus.data.events.map(fromEcampus) : [];
+            setEvents([...list, ...ecampusList]);
+        });
+        return () => { ignore = true; };
+    }, [from, to, reloadKey]);
 
     // 날짜별 일정 묶기 (시간 순, 종일은 맨 위)
     const eventsByDate = useMemo(() => {
@@ -44,21 +95,34 @@ function Calendar() {
         return map;
     }, [events]);
 
-    // 캘린더 연동: 켜면 URL 팝업, 끄면 URL 삭제
-    const handleSyncToggle = () => {
+    // 캘린더 연동(e캠퍼스): 켜면 URL 팝업, 끄면 서버에서 연결 해제
+    const handleSyncToggle = async () => {
         if (syncOn) {
-            setSyncOn(false);
-            setCalendarUrl("");
+            const res = await api("/api/ecampus/feed", { method: "DELETE" });
+            if (res.success) {
+                setSyncOn(false);
+                setReloadKey((k) => k + 1);
+            } else {
+                alert(res.error.message);
+            }
         } else {
             setShowUrlPopup(true);
         }
     };
 
-    const handleUrlConfirm = (url) => {
-        setCalendarUrl(url);
-        setSyncOn(true);
-        setShowUrlPopup(false);
-        // TODO: calendarUrl(.ics 등)에서 일정 불러와서 setEvents에 합치기
+    // 피드 주소는 비밀번호 같은 값이라 화면 state 에 남기지 않고 서버에만 보낸다
+    const handleUrlConfirm = async (url) => {
+        const res = await api("/api/ecampus/feed", {
+            method: "PUT",
+            body: JSON.stringify({ feedUrl: url }),
+        });
+        if (res.success) {
+            setSyncOn(true);
+            setShowUrlPopup(false);
+            setReloadKey((k) => k + 1);
+        } else {
+            alert(res.error.message);
+        }
     };
 
     const handleUrlCancel = () => {
@@ -66,9 +130,37 @@ function Calendar() {
         setSyncOn(false);
     };
 
-    const handleAddTodo = (todo) => {
-        setEvents((prev) => [...prev, { id: Date.now(), subject: null, location: null, ...todo }]);
-        setShowAddModal(false);
+    // 알림 받기: 화면 먼저 바꾸고, 서버 저장이 실패하면 되돌린다
+    const handleNotifyToggle = async () => {
+        const next = !notifyOn;
+        setNotifyOn(next);
+        const res = await api("/api/users/me/settings", {
+            method: "PATCH",
+            body: JSON.stringify({ notificationEnabled: next }),
+        });
+        if (!res.success) {
+            setNotifyOn(!next);
+            alert(res.error.message);
+        }
+    };
+
+    const handleAddTodo = async (todo) => {
+        const res = await api("/api/schedules", {
+            method: "POST",
+            body: JSON.stringify({
+                title: todo.title,
+                category: CATEGORY_CODES[todo.category],
+                date: todo.date,
+                startTime: todo.time,
+                endTime: todo.endTime,
+            }),
+        });
+        if (res.success) {
+            setEvents((prev) => [...prev, fromSchedule(res.data)]);
+            setShowAddModal(false);
+        } else {
+            alert(res.error.message);
+        }
     };
 
     const goToday = () => {
@@ -121,6 +213,7 @@ function Calendar() {
                                         className="cal-chip"
                                         style={{ backgroundColor: `${categoryColors[e.category]}33`, color: categoryColors[e.category] }}
                                         title={`${e.time ?? "종일"} ${e.title}`}
+                                        onClick={e.url ? () => window.open(e.url, "_blank") : undefined}
                                     >
                                         {e.title}
                                     </div>
@@ -148,7 +241,7 @@ function Calendar() {
                         </div>
                         <div className="cal-setting-row">
                             <span>알림 받기</span>
-                            <Toggle checked={notifyOn} onChange={() => setNotifyOn((v) => !v)} />
+                            <Toggle checked={notifyOn} onChange={handleNotifyToggle} />
                         </div>
 
                         {showUrlPopup && (
