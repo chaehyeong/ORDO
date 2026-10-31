@@ -17,7 +17,7 @@ export const mockDegree = {
     /*
     multiMajor: {
         name: '산업디자인학과',
-        type: '복수전공',
+        type: '다전공',
         earned: 9,
         required: 36,
         breakdown: [
