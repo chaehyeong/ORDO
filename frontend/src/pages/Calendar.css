@@ -11,41 +11,40 @@
     font-size: 44px;
 }
 
+/* 연/월 선택칸과 같은 높이·모양 */
 .cal-today-btn {
-    padding: 8px 24px;
-    border: 1px solid #888;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.6);
+    height: 30px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 6px;
+    background: white;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.25);
     color: #555;
     font-family: inherit;
-    font-size: 15px;
+    font-size: 14px;
     cursor: pointer;
 }
 
+/* 시간표 페이지 "수업 추가" 버튼과 같은 크기 (hover 효과 없음) */
 .cal-add-btn {
-    margin-left: auto;
-    padding: 14px 24px;
+    margin-left: auto; /* 오른쪽 끝으로 */
+    height: 36px;
+    padding: 0 32px;
     border: none;
-    border-radius: 14px;
+    border-radius: 8px;
     background-color: #39B19D;
     box-shadow: 0 5px 13px 0 rgba(0, 0, 0, 0.25);
     color: white;
     font-family: inherit;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-}
-
-/* 홈 화면 .week-box / .grad-box 의 hover 효과와 동일 */
-.cal-add-btn:hover {
-    transform: translateY(3px);
-    transition-duration: 0.3s;
-    box-shadow: 0 2px 13px 0 rgba(0, 0, 0, 0.25);
 }
 
 /* ===== 연/월 선택 ===== */
 .cal-selects {
     display: flex;
+    align-items: center; /* 높이가 다른 선택칸·버튼을 가운데 줄에 맞춤 */
     gap: 8px;
     margin-bottom: 16px;
 }
@@ -54,9 +53,10 @@
     width: 150px;
     height: 30px;
     padding: 0 8px;
-    border: 1px solid #aaa;
+    border: none;
     border-radius: 6px;
     background: white;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.25);
     font-family: inherit;
     font-size: 14px;
 }
@@ -73,13 +73,15 @@
 
 .cal-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr)); /* 긴 일정이 있어도 칸 폭이 모두 같게 */
+    grid-auto-rows: 132px; /* 칸 높이 고정 (일정 3개 + "+N개"가 들어가는 높이) */
     padding: 0;
     overflow: hidden;
 }
 
 .cal-cell {
-    min-height: 96px;
+    min-width: 0;
+    overflow: hidden;
     padding: 8px 10px;
     box-sizing: border-box;
     border-right: 1px solid #ccc;
@@ -119,14 +121,45 @@
 }
 
 .cal-chip {
+    position: relative; /* × 버튼 위치 기준 */
     margin-top: 3px;
     padding: 3px 6px;
     border-radius: 4px;
     overflow: hidden;
     font-size: 11px;
     font-weight: 500;
-    text-overflow: ellipsis;
+    text-overflow: clip; /* 긴 제목은 ... 없이 칸 끝에서 잘림 */
     white-space: nowrap;
+}
+
+/* 내 일정은 누르면 수정 창 */
+.cal-chip.is-editable {
+    cursor: pointer;
+}
+
+/* 마우스를 올리면 오른쪽에 × (졸업 로드맵 학기별 배치의 빼기 버튼과 같은 모양) */
+.cal-chip-remove {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.cal-chip:hover .cal-chip-remove {
+    display: flex;
 }
 
 .cal-more {
@@ -140,28 +173,32 @@
 .cal-footer {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-end; /* 범례가 위로 올라가서 설정 박스만 오른쪽에 남김 */
     margin: 20px 0 24px;
 }
 
+/* 범례: 오늘 버튼과 같은 높이·모양·그림자 */
 .cal-legend {
     display: flex;
     align-items: center;
-    gap: 24px;
-    padding: 14px 28px;
-    border-radius: 28px;
+    gap: 16px;
+    height: 30px;
+    padding: 0 16px;
+    border-radius: 6px;
+    background: white;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.25);
 }
 
 .cal-legend-item {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    font-size: 15px;
+    gap: 6px;
+    font-size: 14px;
 }
 
 .cal-legend-item i {
-    width: 20px;
-    height: 20px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
 }
 
@@ -182,9 +219,14 @@
     justify-content: space-between;
     padding: 10px 18px;
     border-radius: 14px;
-    background: #f5faf9;
+    background: white;
     font-size: 17px;
     font-weight: 500;
+}
+
+/* App.css 의 .box 흰 배경보다 우선하도록 두 클래스로 지정 */
+.box.cal-settings {
+    background-color: #E7F6F3;
 }
 
 /* ===== 토글 ===== */

@@ -14,8 +14,31 @@ const GRID_BOTTOM = 20; // 마지막 시간선 아래로 흰 격자를 더 늘�
 const DEFAULT_START = 9; // 기본 표시 범위 09:00 ~ 18:00 (이 범위 밖 수업이 있으면 자동 확장)
 const DEFAULT_END = 18;
 
-const CURRENT_SEMESTER = "2026-2";
-const SEMESTERS = ["2025-1", "2025-2", "2026-1", "2026-2"];
+// 드롭다운에 보여줄 학기 수 (현재 학기 포함, 최근 순)
+const SEMESTER_COUNT = 4;
+
+// 서버와 같은 규칙: 3~8월은 1학기, 9~2월은 2학기 (1~2월은 전년도 2학기)
+const getCurrentSemester = (date = new Date()) => {
+    const y = date.getFullYear();
+    const m = date.getMonth() + 1;
+    if (m >= 3 && m <= 8) return `${y}-1`;
+    return m >= 9 ? `${y}-2` : `${y - 1}-2`;
+};
+
+// 현재 학기에서 거꾸로 count개 → 오래된 순으로 정렬 (예: 2025-1, 2025-2, 2026-1, 2026-2)
+const getRecentSemesters = (current, count) => {
+    let [y, n] = current.split("-").map(Number);
+    const list = [];
+    for (let i = 0; i < count; i++) {
+        list.unshift(`${y}-${n}`);
+        if (n === 2) n = 1;
+        else { n = 2; y -= 1; }
+    }
+    return list;
+};
+
+const CURRENT_SEMESTER = getCurrentSemester();
+const SEMESTERS = getRecentSemesters(CURRENT_SEMESTER, SEMESTER_COUNT);
 
 // 수업별 블록 색 (수업 이름 순서대로 돌아가며 배정)
 const COLORS = ["#86C0CB", "#C3EDE5", "#F2F3D9", "#F4F8F9", "#F6DCDC", "#E3DCF5"];
@@ -39,6 +62,7 @@ function TimeTable() {
     const [courses, setCourses] = useState([]);
     const [semester, setSemester] = useState(CURRENT_SEMESTER);
     const [showModal, setShowModal] = useState(false);
+    const [editingCourse, setEditingCourse] = useState(null); // 수정 중인 수업 (있으면 수정 창)
     const [error, setError] = useState("");
 
     const [year, term] = semester.split("-");
@@ -107,6 +131,46 @@ function TimeTable() {
         }
     };
 
+    // 수업 수정: PATCH 는 보낸 필드만 바뀐다. 온라인으로 바꾸면 서버가 요일·시간을 지운다
+    const handleEdit = async (course) => {
+        const res = await api(`/api/timetables/entries/${editingCourse.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                courseName: course.courseName,
+                dayOfWeek: course.online ? null : ALL_DAYS.indexOf(course.day) + 1,
+                startTime: course.startTime ?? null,
+                endTime: course.endTime ?? null,
+                location: course.online ? null : course.location ?? "", // null 은 "그대로"라서 지울 땐 빈 문자열
+                online: !!course.online,
+            }),
+        });
+        if (res.success) {
+            setCourses((prev) => prev.map((c) => (c.id === editingCourse.id ? toCourse(res.data) : c)));
+            setEditingCourse(null);
+        } else {
+            alert(res.error.message); // 예: 시간이 겹치는 수업이 있으면 TIMETABLE_OVERLAP
+        }
+    };
+
+    // 수업 삭제
+    const handleDelete = async (course) => {
+        if (!window.confirm(`'${course.courseName}' 수업을 삭제할까요?`)) return;
+        const res = await api(`/api/timetables/entries/${course.id}`, { method: "DELETE" });
+        if (res.success) {
+            setCourses((prev) => prev.filter((c) => c.id !== course.id));
+        } else {
+            alert(res.error.message);
+        }
+    };
+
+    // 마우스를 올리면 가운데에 뜨는 수정·삭제 버튼 (졸업 로드맵 이수 과목 표와 같은 모양)
+    const renderActions = (c) => (
+        <div className="tt-actions">
+            <button type="button" className="tt-edit-btn" onClick={() => setEditingCourse(c)}>수정</button>
+            <button type="button" className="tt-delete-btn" onClick={() => handleDelete(c)}>삭제</button>
+        </div>
+    );
+
     return (
         <div className="layout">
             <Sidebar />
@@ -148,6 +212,7 @@ function TimeTable() {
                                             <div key={`${c.id}-${c.day}`} className="tt-block" style={blockStyle(c)}>
                                                 <p className="tt-block-name">{c.courseName}</p>
                                                 {c.location && <p className="tt-block-room">{c.location}</p>}
+                                                {renderActions(c)}
                                             </div>
                                         ))}
                                 </div>
@@ -158,7 +223,10 @@ function TimeTable() {
                     {onlineCourses.length > 0 && (
                         <div className="tt-online">
                             {onlineCourses.map((c) => (
-                                <div key={c.id} className="tt-online-item">{c.courseName}</div>
+                                <div key={c.id} className="tt-online-item">
+                                    {c.courseName}
+                                    {renderActions(c)}
+                                </div>
                             ))}
                         </div>
                     )}
@@ -170,6 +238,14 @@ function TimeTable() {
                     courses={classes}
                     onClose={() => setShowModal(false)}
                     onSubmit={handleAdd}
+                />
+            )}
+            {editingCourse && (
+                <AddCourseModal
+                    courses={classes}
+                    initialCourse={editingCourse}
+                    onClose={() => setEditingCourse(null)}
+                    onSubmit={handleEdit}
                 />
             )}
         </div>

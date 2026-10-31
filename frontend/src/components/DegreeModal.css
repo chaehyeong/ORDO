@@ -22,7 +22,7 @@
 .dm-title {
     margin: 0 0 20px;
     font-size: 30px;
-    font-weight: 800;
+    font-weight: 700;
     color: #000;
 }
 
@@ -30,7 +30,7 @@
     display: block;
     margin-bottom: 10px;
     font-size: 19px;
-    font-weight: 800;
+    font-weight: 600;
     color: #000;
 }
 
@@ -49,7 +49,7 @@
 
 .dm-input::placeholder {
     color: #b0b4b4;
-    font-weight: 600;
+    font-weight: 400;
 }
 
 .dm-input:focus {
@@ -98,7 +98,7 @@
     color: white;
     font-family: inherit;
     font-size: 17px;
-    font-weight: 800;
+    font-weight: 600;
     cursor: pointer;
 }
 

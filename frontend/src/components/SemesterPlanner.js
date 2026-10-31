@@ -109,7 +109,7 @@ function SemesterPlanner({ terms, plans, onChange, onAddClick, onReset }) {
         <div className="planner">
             <div className="planner-header">
                 <div className="planner-title-wrap">
-                    <h4 className="planner-title">학기별 배치하기</h4>
+                    <h4 className="planner-title">졸업 시뮬레이션</h4>
                     <span className="planner-desc">과목을 드래그해서 원하는 학기에 배치해 보세요.</span>
                 </div>
                 <div className="planner-actions">

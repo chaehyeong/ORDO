@@ -40,10 +40,6 @@
     cursor: pointer;
 }
 
-.completed-add-btn:hover {
-    background-color: #2F9D8A;
-}
-
 /* 필터 (연도 / 학기 / 이수구분) */
 .completed-filters {
     display: flex;
@@ -96,7 +92,7 @@
 .completed-head {
     height: 48px;
     background-color: #E7E7E7;
-    box-shadow: inset 0 4px 4px rgba(0, 0, 0, 0.25), 0 4px 4px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
     font-weight: 600;
     position: relative;
     z-index: 1;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
-import { categoryColors } from "../mock/calendarMock";
+import { categoryColors } from "../constants/categoryColors";
 import frodo from "../assets/frodo2.png";
 import { FiChevronRight, FiBell, FiBook } from "react-icons/fi";
 import Sidebar from "../components/Sidebar";

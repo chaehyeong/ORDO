@@ -7,6 +7,7 @@
     font-size: 14px;
     color: #555;
     margin-bottom: 28px;
+    font-weight: bold;
 }
 
 /* 개구리 위치는 학기별 곡선 박스 기준. 아랫부분이 박스 뒤로 살짝 가려진다 */

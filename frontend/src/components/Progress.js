@@ -10,7 +10,7 @@ function ProgressBar({ earned, required, small }) {
     );
 }
 
-// 세부 막대(breakdown)와 이수 기간(period)은 Degree.js에서 children으로 넘기던 것을 data 값으로 그리도록 변경
+// 세부 막대(breakdown)와 미충족 요건(unmet)은 Degree.js에서 children으로 넘기던 것을 data 값으로 그리도록 변경
 function Progress({ icon, data, onViewCourses }) {
     return (
         <div className="program-progress">
@@ -23,7 +23,8 @@ function Progress({ icon, data, onViewCourses }) {
             </div>
             <p className="program-credit">{data.earned} / {data.required}학점</p>
             <ProgressBar earned={data.earned} required={data.required} />
-            <div className="program-detail">
+            {/* 세부 막대가 있으면(다전공) 남는 세로 공간의 가운데에 둔다 */}
+            <div className={`program-detail ${data.breakdown ? 'centered' : ''}`}>
                 {/* [수정] data에 breakdown이 있으면 세부 막대 (다전공) */}
                 {data.breakdown && data.breakdown.map((b) => (
                     <div key={b.key} className="program-breakdown">
@@ -31,11 +32,22 @@ function Progress({ icon, data, onViewCourses }) {
                         <ProgressBar earned={b.earned} required={b.required} small />
                     </div>
                 ))}
-                {/* [수정] data에 period가 있으면 이수 기간 (마이크로디그리) */}
-                {data.period && (
+                {/* data에 unmet이 있으면 미충족 요건 + 들어야 할 과목 (마이크로디그리). 비어 있으면 모두 충족 */}
+                {data.unmet && (
                     <>
-                        <p className="program-period-label">이수 기간</p>
-                        <p className="program-period">{data.period}</p>
+                        <p className="program-period-label">미충족 요건</p>
+                        {data.unmet.length > 0 ? (
+                            data.unmet.map((u) => (
+                                <div key={u.text} className="program-unmet">
+                                    <p className="program-period">{u.text}</p>
+                                    {u.courses.length > 0 && (
+                                        <p className="program-unmet-courses">{u.courses.join(', ')}</p>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <p className="program-period">모든 요건을 충족했어요</p>
+                        )}
                     </>
                 )}
                 {/* data에 note가 있으면 안내 문구 (부전공: 학과별 지정 과목 확인 필요) */}

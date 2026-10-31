@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
-import { categoryColors } from "../mock/calendarMock";
+import { categoryColors } from "../constants/categoryColors";
 import Sidebar from "../components/Sidebar";
 import CalendarUrlPopup from "../components/CalendarUrlPopup";
 import AddTodoModal from "../components/AddTodoModal";
@@ -17,12 +17,15 @@ const CATEGORY_LABELS = { LECTURE: "수업", ASSIGNMENT: "과제", PERSONAL: "�
 const CATEGORY_CODES = { 수업: "LECTURE", 과제: "ASSIGNMENT", 개인일정: "PERSONAL" };
 
 // 서버 응답 → 화면에서 쓰던 일정 모양 { id, title, category, date, time }
+// scheduleId·endTime 은 수정·삭제할 때 쓴다 (e캠퍼스 일정에는 없음)
 const fromSchedule = (s) => ({
     id: `schedule-${s.id}`,
+    scheduleId: s.id,
     title: s.title,
     category: CATEGORY_LABELS[s.category],
     date: s.date,
     time: s.startTime,
+    endTime: s.endTime,
 });
 // e캠퍼스 과제 마감은 '과제'로 보여주고, 누르면 e캠퍼스 화면으로 이동
 const fromEcampus = (e) => ({
@@ -47,6 +50,7 @@ function Calendar() {
     const [notifyOn, setNotifyOn] = useState(true);
     const [showUrlPopup, setShowUrlPopup] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [editingEvent, setEditingEvent] = useState(null); // 수정 중인 일정 (있으면 수정 창)
 
     // 달력 칸 42개(6주). 이전/다음 달 날짜도 채워서 보여줌
     const cells = useMemo(() => {
@@ -163,6 +167,37 @@ function Calendar() {
         }
     };
 
+    // 일정 수정: PATCH 는 보낸 필드만 바뀐다
+    const handleEditTodo = async (todo) => {
+        const res = await api(`/api/schedules/${editingEvent.scheduleId}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                title: todo.title,
+                category: CATEGORY_CODES[todo.category],
+                date: todo.date,
+                startTime: todo.time,
+                endTime: todo.endTime,
+            }),
+        });
+        if (res.success) {
+            setEvents((prev) => prev.map((e) => (e.id === editingEvent.id ? fromSchedule(res.data) : e)));
+            setEditingEvent(null);
+        } else {
+            alert(res.error.message);
+        }
+    };
+
+    // 일정 삭제 (칩에 마우스를 올리면 뜨는 ×)
+    const handleDeleteTodo = async (event) => {
+        if (!window.confirm(`'${event.title}' 일정을 삭제할까요?`)) return;
+        const res = await api(`/api/schedules/${event.scheduleId}`, { method: "DELETE" });
+        if (res.success) {
+            setEvents((prev) => prev.filter((e) => e.id !== event.id));
+        } else {
+            alert(res.error.message);
+        }
+    };
+
     const goToday = () => {
         setYear(today.getFullYear());
         setMonth(today.getMonth() + 1);
@@ -174,8 +209,6 @@ function Calendar() {
             <div className="page">
                 <div className="cal-header">
                     <h2 className="page-title cal-heading">{year}년 {month}월</h2>
-                    <button className="cal-today-btn" onClick={goToday}>오늘</button>
-                    <button className="cal-add-btn" onClick={() => setShowAddModal(true)}>+ 할 일 추가</button>
                 </div>
 
                 <div className="cal-selects">
@@ -189,6 +222,18 @@ function Calendar() {
                             <option key={m} value={m}>{m}월</option>
                         ))}
                     </select>
+                    {/* 시간표 페이지처럼 연/월 선택 옆에 나란히: 연도 / 월 / 오늘 / 할 일 추가 */}
+                    <button className="cal-today-btn" onClick={goToday}>오늘</button>
+                    {/* 카테고리 색 안내 (오늘 버튼 옆) */}
+                    <div className="cal-legend">
+                        {Object.entries(categoryColors).map(([name, color]) => (
+                            <span key={name} className="cal-legend-item">
+                                <i style={{ backgroundColor: color }} />
+                                {name}
+                            </span>
+                        ))}
+                    </div>
+                    <button className="cal-add-btn" onClick={() => setShowAddModal(true)}>+ 할 일 추가</button>
                 </div>
 
                 <div className="cal-weekdays">
@@ -210,12 +255,23 @@ function Calendar() {
                                 {list.slice(0, MAX_CHIPS).map((e) => (
                                     <div
                                         key={e.id}
-                                        className="cal-chip"
+                                        className={`cal-chip ${e.url ? "" : "is-editable"}`}
                                         style={{ backgroundColor: `${categoryColors[e.category]}33`, color: categoryColors[e.category] }}
                                         title={`${e.time ?? "종일"} ${e.title}`}
-                                        onClick={e.url ? () => window.open(e.url, "_blank") : undefined}
+                                        // e캠퍼스 일정은 e캠퍼스 화면으로, 내 일정은 수정 창
+                                        onClick={e.url ? () => window.open(e.url, "_blank") : () => setEditingEvent(e)}
                                     >
                                         {e.title}
+                                        {!e.url && (
+                                            <button
+                                                type="button"
+                                                className="cal-chip-remove"
+                                                onClick={(ev) => { ev.stopPropagation(); handleDeleteTodo(e); }}
+                                                aria-label="삭제"
+                                            >
+                                                ×
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                                 {list.length > MAX_CHIPS && <span className="cal-more">+{list.length - MAX_CHIPS}개</span>}
@@ -225,15 +281,6 @@ function Calendar() {
                 </div>
 
                 <div className="cal-footer">
-                    <div className="box cal-legend">
-                        {Object.entries(categoryColors).map(([name, color]) => (
-                            <span key={name} className="cal-legend-item">
-                                <i style={{ backgroundColor: color }} />
-                                {name}
-                            </span>
-                        ))}
-                    </div>
-
                     <div className="box cal-settings">
                         <div className="cal-setting-row">
                             <span>캘린더 연동</span>
@@ -253,6 +300,9 @@ function Calendar() {
 
             {showAddModal && (
                 <AddTodoModal onClose={() => setShowAddModal(false)} onSubmit={handleAddTodo} />
+            )}
+            {editingEvent && (
+                <AddTodoModal initialTodo={editingEvent} onClose={() => setEditingEvent(null)} onSubmit={handleEditTodo} />
             )}
         </div>
     );

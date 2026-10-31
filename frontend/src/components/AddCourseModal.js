@@ -3,7 +3,7 @@ import "./AddCourseModal.css";
 
 const DAYS = ["월", "화", "수", "목", "금"];
 
-// 15분 단위, 07:00 ~ 22:00. value는 mock과 같은 "HH:MM", label은 "오전 09:00"
+// 15분 단위, 07:00 ~ 22:00. value는 "HH:MM", label은 "오전 09:00"
 const TIME_OPTIONS = Array.from({ length: (22 - 7) * 4 + 1 }, (_, i) => {
     const total = 7 * 60 + i * 15;
     const h = Math.floor(total / 60);
@@ -16,20 +16,22 @@ const TIME_OPTIONS = Array.from({ length: (22 - 7) * 4 + 1 }, (_, i) => {
 });
 
 // courses: 현재 학기의 (온라인이 아닌) 수업들. 시간 겹침 검사에 사용
-function AddCourseModal({ courses, onClose, onSubmit }) {
-    const [name, setName] = useState("");
-    const [location, setLocation] = useState("");
-    const [start, setStart] = useState("09:00");
-    const [end, setEnd] = useState("10:15");
-    const [day, setDay] = useState("");
-    const [online, setOnline] = useState(false);
+// initialCourse: 수정할 수업. 있으면 "수업 수정" 창이 되고 그 값으로 채워진다
+function AddCourseModal({ courses, initialCourse, onClose, onSubmit }) {
+    const init = initialCourse ?? {};
+    const [name, setName] = useState(init.courseName ?? "");
+    const [location, setLocation] = useState(init.location ?? "");
+    const [start, setStart] = useState(init.startTime?.slice(0, 5) ?? "09:00");
+    const [end, setEnd] = useState(init.endTime?.slice(0, 5) ?? "10:15");
+    const [day, setDay] = useState(init.day ?? "");
+    const [online, setOnline] = useState(!!init.online);
 
     const invalidTime = !online && end <= start;
     const overlapped =
         !online &&
         !invalidTime &&
         day &&
-        courses.find((c) => c.day === day && start < c.endTime && end > c.startTime);
+        courses.find((c) => c.id !== init.id && c.day === day && start < c.endTime && end > c.startTime); // 수정 중인 자기 자신은 빼고
 
     const canSubmit = name.trim() && (online || (day && !invalidTime && !overlapped));
 
@@ -52,7 +54,7 @@ function AddCourseModal({ courses, onClose, onSubmit }) {
     return (
         <div className="course-backdrop" onClick={onClose}>
             <form className="course-modal" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-                <h2 className="course-title">수업 추가</h2>
+                <h2 className="course-title">{initialCourse ? "수업 수정" : "수업 추가"}</h2>
 
                 <label className="course-label">수업 이름</label>
                 <input
