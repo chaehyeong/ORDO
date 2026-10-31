@@ -1,16 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiChevronDown } from "react-icons/fi";
+import { api } from "../api/client";
 import "./DegreeModal.css";
 
-const DEPARTMENTS = [];
-
-// onSubmit({ department, type })  type: "다전공" | "부전공"
-function AddMajorModal({ onClose, onSubmit }) {
+// 학과 목록은 서버에서 받는다
+// - 다전공: GET /api/catalog/majors?includeConvergence=true (융합전공 포함)
+// - 부전공: GET /api/catalog/minors (부전공 요건이 있는 학과만) → 목록에 없는 학과면 부전공 버튼을 막는다
+// admissionYear = 내 입학년도, excludeIds = 이미 주전공·다전공·부전공인 학과 id
+// onSubmit({ majorId, type })  type: "다전공" | "부전공"
+function AddMajorModal({ admissionYear, excludeIds = [], onClose, onSubmit }) {
     const [department, setDepartment] = useState("");
+    const [majors, setMajors] = useState([]);
+    const [minorIds, setMinorIds] = useState([]);
+
+    useEffect(() => {
+        if (!admissionYear) return;
+        Promise.all([
+            api(`/api/catalog/majors?admissionYear=${admissionYear}&includeConvergence=true`),
+            api(`/api/catalog/minors?admissionYear=${admissionYear}`),
+        ]).then(([majorRes, minorRes]) => {
+            if (majorRes.success) setMajors(majorRes.data.filter((m) => !excludeIds.includes(m.id)));
+            if (minorRes.success) setMinorIds(minorRes.data.map((m) => m.id));
+        });
+        // excludeIds 는 창이 열려 있는 동안 바뀌지 않는다
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [admissionYear]);
+
+    const canMinor = department && minorIds.includes(Number(department));
 
     const submit = (type) => {
         if (!department) return;
-        onSubmit({ department, type });
+        onSubmit({ majorId: Number(department), type });
     };
 
     return (
@@ -27,8 +47,8 @@ function AddMajorModal({ onClose, onSubmit }) {
                         onChange={(e) => setDepartment(e.target.value)}
                     >
                         <option value="" disabled hidden></option>
-                        {DEPARTMENTS.map((d) => (
-                            <option key={d} value={d}>{d}</option>
+                        {majors.map((m) => (
+                            <option key={m.id} value={m.id}>{m.displayName}</option>
                         ))}
                     </select>
                     <span className="dm-select-arrow"><FiChevronDown size={16} /></span>
@@ -37,7 +57,7 @@ function AddMajorModal({ onClose, onSubmit }) {
                 <div className="dm-actions">
                     <button type="button" className="dm-btn dm-cancel" onClick={onClose}>취소</button>
                     <button type="button" className="dm-btn dm-confirm" disabled={!department} onClick={() => submit("다전공")}>다전공</button>
-                    <button type="button" className="dm-btn dm-confirm" disabled={!department} onClick={() => submit("부전공")}>부전공</button>
+                    <button type="button" className="dm-btn dm-confirm" disabled={!canMinor} onClick={() => submit("부전공")}>부전공</button>
                 </div>
             </div>
         </div>

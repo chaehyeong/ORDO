@@ -38,6 +38,8 @@ function Progress({ icon, data, onViewCourses }) {
                         <p className="program-period">{data.period}</p>
                     </>
                 )}
+                {/* data에 note가 있으면 안내 문구 (부전공: 학과별 지정 과목 확인 필요) */}
+                {data.note && <p className="program-period-label">{data.note}</p>}
             </div>
             <button type="button" className="btn-ordo program-view" onClick={onViewCourses}>
                 이수 과목 보기 <FiLogOut size={20} />
