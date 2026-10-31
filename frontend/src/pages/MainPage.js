@@ -2,26 +2,23 @@ import './MainPage.css';
 import { Link } from 'react-router-dom';
 import ordo_logo from '../assets/ordo_logo.png';
 import frodo from '../assets/frodo1.png';
-import { FiCheckSquare } from "react-icons/fi";
-import { FiBook } from "react-icons/fi";
-import { FiBell } from "react-icons/fi";
-import { FiCalendar } from "react-icons/fi";
+import { FiMap, FiPieChart, FiBook, FiCalendar } from "react-icons/fi";
 
 const services = [
     {
         key: 'scheduler',
         color: 'pink',
         title: '스케쥴러',
-        desc: ['강의, 과제, 시험까지', '한눈에 관리해요.'],
+        desc: ['강의, 과제, 시험, 개인일정까지', '한번에 관리해요.'],
         icon: (
-            <FiCheckSquare />
+            <FiCalendar />
         ),
     },
     {
         key: 'academic',
         color: 'yellow',
-        title: '학사 정보 통합',
-        desc: ['수강신청, 종강일정, 졸업 요건을', '쉽게 확인할 수 있어요.'],
+        title: '학사 관리',
+        desc: ['다전공, 부전공, 마이크로디그리까지', '한눈에 알아볼 수 있어요'],
         icon: (
             <FiBook />
         ),
@@ -29,19 +26,19 @@ const services = [
     {
         key: 'ai',
         color: 'green',
-        title: 'AI 추천',
-        desc: ['AI 가 당신의 일정과 선호를 분석해', '맞춤형 일정을 추천해줘요.'],
+        title: '학점 관리',
+        desc: ['이수 학점과 평점을 관리하고', '졸업까지 남은 길을 보여줘요.'],
         icon: (
-            <FiBell />
+            <FiPieChart />
         ),
     },
     {
         key: 'calendar',
         color: 'blue',
-        title: '나만의 캘린더',
-        desc: ['개인 일정과 학업 계획을', '캘린더로 깔끔하게 정리해요.'],
+        title: '졸업 로드맵',
+        desc: ['남은 과목을 배치하여', '졸업까지의 시뮬레이션을 해봐요.'],
         icon: (
-            <FiCalendar />
+            <FiMap />
         ),
     },
 ];

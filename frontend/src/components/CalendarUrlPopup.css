@@ -22,7 +22,7 @@
     width: 100%;
     box-sizing: border-box;
     height: 48px;
-    padding: 0 20px;
+    padding: 0 44px 0 20px;
     border: 1px solid #9aa0a0;
     border-radius: 12px;
     background: white;
@@ -33,6 +33,55 @@
 
 .url-popup input:focus {
     border-color: #39B19D;
+}
+
+/* 입력칸 오른쪽 안쪽의 i 아이콘 + 마우스 올리면 뜨는 안내 문구 */
+.url-popup-field {
+    position: relative;
+    z-index: 1; /* 아래 버튼(확인)보다 안내 문구가 위에 오도록 */
+}
+
+.url-popup-info {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    display: flex;
+    color: #9aa0a0;
+    font-size: 20px;
+    cursor: help;
+    outline: none;
+}
+
+.url-popup-info:hover,
+.url-popup-info:focus {
+    color: #39B19D;
+}
+
+.url-popup-tooltip {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: -6px;
+    z-index: 110;
+    width: 220px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background-color: #9aa0a0;
+    color: white;
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: keep-all;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s;
+    pointer-events: none;
+}
+
+.url-popup-info:hover .url-popup-tooltip,
+.url-popup-info:focus .url-popup-tooltip {
+    opacity: 1;
+    visibility: visible;
 }
 
 .url-popup-actions {

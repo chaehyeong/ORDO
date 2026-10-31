@@ -1,3 +1,15 @@
+/* ---------- 제목 ---------- */
+.page-title.home-heading {
+    margin-bottom: 6px;
+}
+
+.home-subtitle {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 28px;
+    font-weight: bold;
+}
+
 .homepage-grid {
     display: grid;
     grid-template-columns: 3fr 2fr;
@@ -220,7 +232,7 @@
     border-radius: 50%;
 }
 .today-empty {
-    color: #363636;
+    color: #8A8F8D;
     font-weight: 600;
     margin: 0;
 }
@@ -293,7 +305,7 @@
     position: fixed;
     right: 10vw;
     bottom: 3vh;
-    width: 20vw;
+    width: 18vw;
     max-width: 320px;
     height: auto;
     z-index: 0;

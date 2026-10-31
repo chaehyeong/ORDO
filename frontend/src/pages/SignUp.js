@@ -15,6 +15,7 @@ function SignUp() {
         passwordConfirm: '',
         majorId: '',
         studentNumber: '',
+        termsAgreed: false,
     });
     const [majors, setMajors] = useState([]);
     const [error, setError] = useState('');
@@ -54,6 +55,10 @@ function SignUp() {
             setError('학과를 선택하세요.');
             return;
         }
+        if (!form.termsAgreed) {
+            setError('이용약관에 동의해 주세요.');
+            return;
+        }
         setError('');
         setLoading(true);
 
@@ -64,8 +69,10 @@ function SignUp() {
                 phone: form.phone || null,
                 email: form.email,
                 password: form.password,
+                passwordConfirm: form.passwordConfirm,
                 majorId: Number(form.majorId),
                 studentNumber: form.studentNumber,
+                termsAgreed: form.termsAgreed,
             }),
         });
 
@@ -100,7 +107,7 @@ function SignUp() {
                         </Form.Group>
                         <Form.Group className="mb-3" controlId="formBasicPassword">
                             <Form.Label>비밀번호</Form.Label>
-                            <Form.Control type="password" placeholder="비밀번호를 입력하세요."
+                            <Form.Control type="password" placeholder="8~64자, 영문+숫자 포함."
                                 value={form.password} onChange={handleChange('password')} />
                         </Form.Group>
                         <Form.Group className="mb-3" controlId="formBasicPasswordConfirm">
@@ -127,7 +134,9 @@ function SignUp() {
                             </Form.Select>
                         </Form.Group>
                         <Form.Group className="mb-3" controlId="formBasicCheckbox">
-                            <Form.Check type="checkbox" label="이용약관 동의 어쩌구 하는거" />
+                            <Form.Check type="checkbox" label="[필수] 개인정보 수집·이용에 동의합니다."
+                                checked={form.termsAgreed}
+                                onChange={(e) => setForm({ ...form, termsAgreed: e.target.checked })} />
                         </Form.Group>
                     </Form>
                 </div>

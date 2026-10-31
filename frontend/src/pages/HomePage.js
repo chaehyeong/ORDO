@@ -105,7 +105,8 @@ function Home() {
         <div className="layout">
             <Sidebar />
             <div className="page">
-                <h2 className="page-title">안녕하세요 {home.greetingName}님!</h2>
+                <h2 className="page-title home-heading">안녕하세요 {home.greetingName}님!</h2>
+                <p className="home-subtitle">오늘도 오르도와 함께해요.</p>
                 <div className="homepage-grid">
                     <Link to="/calendar" className="box week-box">
                         <h5 className="week-title">주간 일정</h5>
