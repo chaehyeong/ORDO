@@ -150,6 +150,14 @@ class HomeServiceTest {
     }
 
     @Test
+    void blankNicknameFallsBackToName() {
+        User blank = User.builder().email("haeun@khu.ac.kr").password("encoded").name("이하은").nickname(" ").build();
+        givenHome(blank, List.of(), List.of(), List.of());
+
+        assertThat(homeService.getHome(1L, WEDNESDAY).greetingName()).isEqualTo("이하은");
+    }
+
+    @Test
     void graduationIsNullWithoutProfileAndNameIsUsedWithoutNickname() {
         givenHome(user("이하은"), List.of(), List.of(), List.of());
 

@@ -14,6 +14,15 @@ class JwtProviderTest {
     private final JwtProvider jwtProvider = new JwtProvider(SECRET, 3600, 1209600);
 
     @Test
+    void blankSecretUsesARandomKeyForEachRun() {
+        JwtProvider first = new JwtProvider("", 3600, 3600);
+        String token = first.createAccessToken(7L);
+
+        assertThat(first.getUserId(token)).isEqualTo(7L);
+        assertThatThrownBy(() -> new JwtProvider("", 3600, 3600).getUserId(token)).isInstanceOf(JwtException.class);
+    }
+
+    @Test
     void accessTokenRoundTrip() {
         assertThat(jwtProvider.getUserId(jwtProvider.createAccessToken(7L))).isEqualTo(7L);
     }

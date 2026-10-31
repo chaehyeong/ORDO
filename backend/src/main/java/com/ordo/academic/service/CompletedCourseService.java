@@ -17,6 +17,7 @@ import com.ordo.global.error.ErrorCode;
 import com.ordo.user.domain.User;
 import com.ordo.user.repository.UserRepository;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,6 +54,7 @@ public class CompletedCourseService {
     /** 하나라도 판별에 실패하면 예외로 전체 롤백. replaceTerms 학기의 기존 이수내역은 지우고 넣는다 */
     @Transactional
     public List<CompletedCourseResponse> createAll(Long userId, CompletedCourseBulkRequest request) {
+        userRepository.findByIdForUpdate(userId);  // 저장 버튼을 두 번 눌러도 학기 교체를 차례로 처리한다
         User user = getUser(userId);
         boolean keepClassification = Boolean.TRUE.equals(request.keepClassification());
         List<CompletedCourse> courses = request.courses().stream()
@@ -72,7 +74,8 @@ public class CompletedCourseService {
     @Transactional
     public CompletedCourseResponse update(Long userId, Long courseId, CompletedCourseUpdateRequest request) {
         CompletedCourse course = getOwnCourse(userId, courseId);
-        String courseCode = blankToNull(request.courseCode());
+        String courseCode = normalizeCode(request.courseCode());
+        boolean codeChanged = courseCode != null && !courseCode.equals(course.getCourseCode());
         Fields merged = new Fields(
                 courseCode != null ? courseCode : course.getCourseCode(),
                 request.courseName() != null ? request.courseName() : course.getCourseName(),
@@ -82,7 +85,8 @@ public class CompletedCourseService {
                 request.grade() != null ? request.grade() : course.getGrade(),
                 request.year() != null ? request.year() : course.getAcademicYear(),
                 request.term() != null ? request.term() : course.getTerm());
-        Fields f = resolve(course.getUser(), merged, false);
+        // 학수번호를 바꿀 때만 다시 판별한다. 성적만 고쳤는데 성적표의 이수구분이 마스터 값으로 바뀌면 안 된다 (명세 9장 17)
+        Fields f = resolve(course.getUser(), merged, !codeChanged);
         course.change(f.courseCode(), f.courseName(), f.credits(), f.classification(), f.distributionArea(), f.grade(),
                 f.year(), f.term());
         return CompletedCourseResponse.from(course);
@@ -94,7 +98,7 @@ public class CompletedCourseService {
     }
 
     private CompletedCourse newCourse(User user, CompletedCourseRequest request, boolean keepClassification) {
-        Fields f = resolve(user, new Fields(blankToNull(request.courseCode()), request.courseName(), request.credits(),
+        Fields f = resolve(user, new Fields(normalizeCode(request.courseCode()), request.courseName(), request.credits(),
                 request.classification(), request.distributionArea(), request.grade(), request.year(), request.term()),
                 keepClassification);
         return CompletedCourse.builder().user(user).courseCode(f.courseCode()).courseName(f.courseName())
@@ -125,8 +129,16 @@ public class CompletedCourseService {
         if (distribution && f.distributionArea() == null) {
             throw new BusinessException(ErrorCode.DISTRIBUTION_AREA_REQUIRED);
         }
+        if (distribution && f.distributionArea() > maxDistributionArea(user)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
         return new Fields(f.courseCode(), courseName, f.credits(), classification,
                 distribution ? f.distributionArea() : null, f.grade(), f.year(), f.term());
+    }
+
+    // 배분이수 영역은 2023학번까지 7개, 2024학번부터 5개 (교육과정 p21·45)
+    private static int maxDistributionArea(User user) {
+        return user.getAdmissionYear() != null && user.getAdmissionYear() <= 2023 ? 7 : 5;
     }
 
     private Optional<Course> findMasterCourse(User user, String courseCode) {
@@ -139,6 +151,12 @@ public class CompletedCourseService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.strip();
+    }
+
+    // DB 는 대소문자를 가리지 않고 찾지만 재수강·남은 과목 비교는 글자 그대로 한다. 학수번호는 모두 대문자다
+    private static String normalizeCode(String value) {
+        String code = blankToNull(value);
+        return code == null ? null : code.toUpperCase(Locale.ROOT);
     }
 
     // 남의 이수내역도 "없음"으로 응답해 존재 여부를 노출하지 않는다

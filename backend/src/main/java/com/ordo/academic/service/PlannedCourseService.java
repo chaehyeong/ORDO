@@ -9,6 +9,7 @@ import com.ordo.global.error.ErrorCode;
 import com.ordo.user.domain.User;
 import com.ordo.user.repository.UserRepository;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,11 +30,12 @@ public class PlannedCourseService {
     /** 내 배치를 이 목록으로 바꾼다. 같은 학기에 같은 과목이 두 번 있으면 아무것도 바꾸지 않고 INVALID_INPUT */
     @Transactional
     public PlannedCoursesResponse replaceAll(Long userId, PlannedCoursesRequest request) {
+        userRepository.findByIdForUpdate(userId);  // 끌어 놓기가 빠르게 이어져도 같은 사용자의 교체를 차례로 처리한다
         User user = userRepository.getReferenceById(userId);
         List<PlannedCourse> courses = request.courses().stream()
                 .map(course -> PlannedCourse.builder().user(user).academicYear(course.year()).term(course.term())
                         .courseName(course.courseName().strip())
-                        .courseCode(course.courseCode() == null || course.courseCode().isBlank() ? null : course.courseCode().strip())
+                        .courseCode(course.courseCode() == null || course.courseCode().isBlank() ? null : course.courseCode().strip().toUpperCase(Locale.ROOT))
                         .classification(course.classification()).credits(course.credits()).build())
                 .toList();
         if (courses.stream().map(PlannedCourseService::sameCourseKey).distinct().count() != courses.size()) {

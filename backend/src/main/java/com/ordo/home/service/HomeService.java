@@ -103,7 +103,7 @@ public class HomeService {
         Graduation graduation = academicProgressService.findSummary(userId).map(ProgressSummary::total)
                 .map(t -> new Graduation(t.earned(), t.required(), t.percent(), t.remaining()))
                 .orElse(null);
-        String greetingName = user.getNickname() != null ? user.getNickname() : user.getName();
+        String greetingName = user.getNickname() != null && !user.getNickname().isBlank() ? user.getNickname() : user.getName();
         return new HomeResponse(greetingName, week, timeline, todos, deadlines(date, schedules, ecampusEvents), graduation);
     }
 

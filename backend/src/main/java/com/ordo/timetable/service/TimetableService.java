@@ -52,6 +52,7 @@ public class TimetableService {
 
     @Transactional
     public TimetableEntryResponse create(Long userId, TimetableEntryCreateRequest request) {
+        userRepository.findByIdForUpdate(userId);  // 겹침 검사와 저장 사이에 다른 요청이 끼지 않게 사용자별로 차례로 처리한다
         TimetableEntry entry = TimetableEntry.builder()
                 .user(userRepository.getReferenceById(userId))
                 .academicYear(request.year())
@@ -73,6 +74,7 @@ public class TimetableService {
     /** 여러 칸 저장 (T12). 하나라도 틀리거나 겹치면 아무것도 바꾸지 않는다 */
     @Transactional
     public TimetableResponse saveAll(Long userId, TimetableEntryBulkRequest request) {
+        userRepository.findByIdForUpdate(userId);
         AcademicTerm term = new AcademicTerm(request.year(), request.term());
         List<TimetableEntry> existing = timetableEntryRepository
                 .findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(userId, term.year(), term.term());
@@ -107,6 +109,7 @@ public class TimetableService {
 
     @Transactional
     public TimetableEntryResponse update(Long userId, Long entryId, TimetableEntryUpdateRequest request) {
+        userRepository.findByIdForUpdate(userId);
         TimetableEntry entry = getOwnEntry(userId, entryId);
         entry.update(request.year(), request.term(), request.courseName(), request.courseCode(), request.dayOfWeek(),
                 request.startTime(), request.endTime(), request.location(), request.professor(), request.color(),

@@ -146,6 +146,29 @@ class AcademicGpaServiceTest {
     }
 
     @Test
+    void retakeInProgressKeepsEarlierGradeUntilGraded() {
+        GpaSummary summary = calculate(
+                course("CSE1", 3, Classification.MAJOR_REQUIRED, "C0", 2025, Term.FIRST),
+                course("CSE2", 3, Classification.MAJOR_REQUIRED, "A0", 2025, Term.FIRST),
+                course("CSE1", 3, Classification.MAJOR_REQUIRED, null, 2026, Term.SECOND));
+
+        assertThat(summary.gpa()).isEqualTo(3.0);
+        assertThat(summary.gradedCredits()).isEqualTo(6);
+        assertThat(summary.earnedCredits()).isEqualTo(6);
+        assertThat(summary.currentSemesterLabel()).isEqualTo("1-2");
+    }
+
+    @Test
+    void sameCourseWithAndWithoutCodeCountsOnce() {
+        GpaSummary summary = calculate(
+                course("자료구조", 3, Classification.MAJOR_REQUIRED, "C0", 2025, Term.FIRST),
+                named("자료 구조", 3, "A+", 2026, Term.FIRST));
+
+        assertThat(summary.gpa()).isEqualTo(4.3);
+        assertThat(summary.gradedCredits()).isEqualTo(3);
+    }
+
+    @Test
     void retakeWithoutCodeMatchesNameIgnoringSpaces() {
         GpaSummary summary = calculate(
                 named("대학 영어", 2, "C0", 2025, Term.FIRST),

@@ -133,6 +133,33 @@ class AcademicProgressServiceTest {
     }
 
     @Test
+    void sameCourseRecordedWithAndWithoutCodeCountsOnce() {
+        ProgressSummary summary = calculate(List.of(
+                course("CSE204", "자료구조", 3, Classification.MAJOR_REQUIRED, null, "A0", 2025, Term.FIRST),
+                course(null, "자료 구조", 3, Classification.MAJOR_REQUIRED, null, "A+", 2026, Term.FIRST),
+                course("CSE300", "다른 과목", 3, Classification.MAJOR_REQUIRED, null, "A0", 2026, Term.FIRST)));
+
+        assertThat(summary.total().earned()).isEqualTo(6);
+        assertThat(area(summary, "MAJOR_REQUIRED").earned()).isEqualTo(6);
+    }
+
+    // 2023학번까지의 경과조치(교육과정 p45): 배분 12학점, 영역 제한 없음
+    @Test
+    void transitionRuleNeedsTwelveDistributionCreditsInAnyArea() {
+        given(generalEducation.getDistributionCredits()).willReturn(12);
+        given(generalEducation.getDistributionMinAreas()).willReturn(0);
+        List<CompletedCourse> courses = graduatableCourses();  // 배분 9학점, 3영역
+        assertThat(calculate(courses).graduatable()).isFalse();
+
+        courses.removeIf(c -> c.getClassification() == Classification.GEN_DISTRIBUTION);
+        courses.add(course(null, "옛 배분", 12, Classification.GEN_DISTRIBUTION, 1, "A0", 2023, Term.FIRST));
+
+        ProgressSummary summary = calculate(courses);
+        assertThat(area(summary, "GEN_DISTRIBUTION").areaCount()).isEqualTo(1);
+        assertThat(summary.graduatable()).isTrue();
+    }
+
+    @Test
     void nullRequirementCreditsAreZero() {
         ProgressSummary summary = AcademicProgressService.calculate(2026, major, requirement(null, null, 42, 27, null),
                 generalEducation, false, requiredCourses, List.of(), null, Set.of());

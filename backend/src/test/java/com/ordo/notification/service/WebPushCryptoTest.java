@@ -65,6 +65,14 @@ class WebPushCryptoTest {
     }
 
     @Test
+    void rejectsPointNotOnTheCurve() {
+        byte[] offCurve = decodeBase64Url(AS_PUBLIC);
+        offCurve[64] ^= 1;
+
+        assertThatThrownBy(() -> WebPushCrypto.toPublicKey(offCurve)).isInstanceOf(GeneralSecurityException.class);
+    }
+
+    @Test
     void publicKeyRoundTrips() throws Exception {
         ECPublicKey key = WebPushCrypto.toPublicKey(decodeBase64Url(AS_PUBLIC));
 

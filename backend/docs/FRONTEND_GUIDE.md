@@ -42,6 +42,7 @@
 | T18 학기별 배치 | ✅ 완료 (A) | `feat/plans` (feat/remaining-courses 위에서 작업) |
 | T19 복수전공 | ✅ 완료 (A) | `feat/double-major` (fix/course-names 위에서 작업) |
 | T20 마이크로디그리 | ✅ 완료 (A) | `feat/micro-degree` (feat/double-major 위에서 작업) |
+| T21 부전공 추적 | ✅ 완료 (B) | PR #15 (이 문서 4장 "부전공 추적") |
 
 **기존 T1·T2 검증 기록 (2026-09-24)**: 테스트 21개 통과. 서버를 띄워 가입 → 로그인 → 내 정보 → 수정 → refresh → 로그아웃 흐름과 실패 케이스(중복 이메일, 잘못된 전공, 틀린 비밀번호, 폐기된 토큰 등) 19개를 직접 호출해 확인.
 
@@ -109,7 +110,7 @@
 | IMPORT_UNRECOGNIZED | 400 | 수강신청확인서·전체 성적 보기가 아님 |
 | IMPORT_STUDENT_MISMATCH | 403 | 내 학번의 파일이 아님 |
 | PUSH_NOT_CONFIGURED | 503 | 서버에 알림(웹푸시) 키가 없음 → 알림 기능 숨기거나 "준비 중" |
-| NOT_FOUND | 404 | 없는 경로·리소스 |
+| NOT_FOUND | 404 | 없는 경로·리소스. 삭제를 두 번 눌러 이미 지워진 경우도 올 수 있다 |
 | INTERNAL_ERROR | 500 | 서버 오류 (백엔드에 알려주세요) |
 
 ---
@@ -121,6 +122,7 @@
 2. 🔒 API 호출 때 `Authorization: Bearer {accessToken}` 헤더를 붙인다.
 3. 401 + `EXPIRED_TOKEN` 이 오면 `POST /api/auth/refresh` 로 새 토큰 한 쌍을 받고, 원래 요청을 다시 보낸다.
    - **refresh 할 때마다 refreshToken 도 새로 바뀐다.** 예전 refreshToken 은 바로 폐기되니 반드시 새 값으로 교체 저장.
+   - **같은 refreshToken 으로 동시에 부르면 1개만 성공하고 나머지는 401 `INVALID_REFRESH_TOKEN` 이다.** 화면이 API 여러 개를 함께 부를 때 토큰이 만료되면 refresh 는 한 번만 부르고, 나머지 요청은 그 결과를 기다렸다가 다시 보낸다. 아래 예시는 호출이 하나일 때의 모양이다.
 4. **'로그인 상태 유지'**: 체크하면 refreshToken 을 `localStorage` 에, 안 하면 `sessionStorage`(탭 닫으면 사라짐)에 저장. 서버 동작은 같다.
 5. 로그아웃: `POST /api/auth/logout` (🔒, 본문에 refreshToken) 후 저장한 토큰을 지운다.
 
@@ -167,7 +169,7 @@ async function api(path, options = {}) {
   "name": "이하은",               // 필수, 30자 이하
   "phone": "010-1234-5678",      // 필수, 01X 휴대폰 번호, 하이픈 생략 가능
   "email": "haeun@khu.ac.kr",    // 필수, 100자 이하, 이메일 형식(도메인에 점 필요)
-  "password": "ordo1234!",       // 필수, 8~64자, 영문+숫자 포함
+  "password": "ordo1234!",       // 필수, 8~64자, 영문+숫자 포함, 72바이트 이하(한글 24자)
   "passwordConfirm": "ordo1234!", // 필수, '비밀번호 확인' 칸 값. password 와 같아야 함
   "majorId": 35,                 // 필수 (아래 5-1 참고)
   "studentNumber": "2026105632", // 필수, 숫자 10자리 "문자열". 앞 4자리가 입학년도
@@ -283,6 +285,7 @@ async function api(path, options = {}) {
 | /api/catalog/requirements?majorId=54&admissionYear=2026 | 졸업요건 원본 조회 (진행률·졸업 가능 판정 아님) |
 | /api/catalog/general-education?admissionYear=2025 | 교양 기본구조·필수과목, 기준 대체 여부 확인 |
 | /api/catalog/micro-degrees | 마이크로디그리 전체 + 편성 과목 ("+ 마이크로디그리 추가하기" 목록) |
+| /api/catalog/minors?admissionYear=2026 | 부전공 요구 학점이 확인된 전공 목록 (아래 "부전공 추적") |
 
 응답에서 사용할 구조:
 
@@ -321,8 +324,8 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
 - 과목명과 학수번호는 부분 검색이며 영문 대소문자를 구분하지 않는다. `q` 생략·공백은 전체 조회이고 최대 100자이다. `classification` 은 명세의 대문자 enum이며 빈 값은 전체 조회이다.
 - `courseCode`·`targetGrade`·`openSemester`·`track` 이 null이면 ‘정보 없음’ 등으로 처리한다. `variableCredits=true` 인 과목은 실제 취득 학점을 입력할 때 확인이 필요하다.
 - `approximate=true` 이면 ‘해당 입학년도 교양 기준이 없어 2026년 자료로 안내합니다’ 문구를 표시한다.
-- 졸업요건 원본의 null은 ‘자료 없음/해당 없음’이다. 이 API만으로 이수현황·졸업 가능 여부를 계산하지 않는다(T7에서 제공 예정).
-- 검색 결과를 사용자의 이수내역에 저장하는 기능은 T6 범위로, 이번 T3에는 포함되지 않는다.
+- 졸업요건 원본의 null은 ‘자료 없음/해당 없음’이다. 이 API만으로 이수현황·졸업 가능 여부를 계산하지 않는다(`GET /api/academic/progress` 를 쓴다).
+- 검색 결과를 이수내역에 저장하려면 `POST /api/academic/completed-courses` 를 쓴다.
 
 ### 일정·할 일 `schedule` (전부 🔒)
 
@@ -425,9 +428,9 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
 // POST /api/academic/completed-courses
 { "courseCode": "CSE204",   // 선택. 내 전공 교과목이면 이수구분·과목명을 서버가 채움
   "courseName": "자료구조",  // 자동으로 못 채우면 필수
-  "credits": 3,              // 필수 0~30
+  "credits": 3,              // 필수 0~30, 정수 (2.5 는 400)
   "classification": null,    // 자동 판별 안 될 때 필수 (교양·일반선택 등). 명세 3.1 의 대문자 이름
-  "distributionArea": null,  // GEN_DISTRIBUTION 이면 1~5 필수
+  "distributionArea": null,  // GEN_DISTRIBUTION 이면 1~5 필수 (2023학번까지는 옛 영역 포함 1~7)
   "grade": "A+",             // A+ A0 A- B+ B0 B- C+ C0 C- D+ D0 D- F P NP (15개), 미정이면 null
   "year": 2026, "term": "FIRST" }
 // 응답 data (목록 원소·수정 응답도 같은 모양): 위 필드 + id, classification 은 실제로 저장된 값
@@ -437,8 +440,9 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
 - `progress` 응답 모양은 명세 4.6 예시 그대로. 도넛은 `groups`, 영역별 막대는 `areas`, 교양 필수 체크리스트는 `requiredGeneralCourses`, 부가요건 안내는 `checks`(자동 판정 아님).
 - `requiredGeneralCourses` 는 필수교양 6과목 + 자유이수 `전공탐색및기업가정신세미나` 로 7개다. "필수교양" 제목만 달면 자유이수 과목이 섞여 보인다. 이 세미나를 안 듣거나 F·NP 면 `graduatable` 이 false 다. 학점은 자유이수 막대에 들어가고 필수교양 막대는 바뀌지 않는다. 외국인·편입생 면제는 아직 판정하지 않는다.
 - `approximate: true` 면 "해당 학번 교양 기준이 없어 2026 기준으로 계산했어요" 안내. 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE` → 마이페이지 정보 수정으로 안내.
-- 성적 미정(null)인 과목도 학점에 들어간다(이번 학기 수강 중인 과목). F·NP 는 빠지고, 같은 과목은 가장 최근 것 1번만 센다.
-- **평점 박스(`gpa`)**: 응답 모양은 명세 4.6 예시. 숫자는 4.3 만점, 소수 셋째 자리까지(예: `3.417` → "3.417 / 4.3"). `gpa`·`majorGpa` 는 성적 있는 과목이 없으면 **null** → "-" 로 표시. 학기별 그래프는 `terms`(학기 순). P/NP·성적 미정 과목은 평점에서 빠지므로 `gradedCredits` 로 "18학점 기준" 같은 안내 가능. 재수강에서 최근 성적이 F 면 평점에 0점으로 들어가고, 이수현황 학점과 다를 수 있다.
+- 2020~2023학번은 경과조치 기준이다: 배분이수 12학점, 영역 제한 없음(`requiredAreaCount: 0`이니 "N개 영역" 문구를 숨겨 주세요), 교양 합계 32. `approximate` 는 false 다. 2024·2025학번은 `approximate: true` 지만 값은 2026 과 같다.
+- 성적 미정(null)인 과목도 학점에 들어간다(이번 학기 수강 중인 과목). F·NP 는 빠지고, 같은 과목은 가장 최근 것 1번만 센다. 학수번호 없이 직접 입력한 과목도 이름이 같은 학수번호 기록과 같은 과목이다.
+- **평점 박스(`gpa`)**: 응답 모양은 명세 4.6 예시. 숫자는 4.3 만점, 소수 셋째 자리까지(예: `3.417` → "3.417 / 4.3"). `gpa`·`majorGpa` 는 성적 있는 과목이 없으면 **null** → "-" 로 표시. 학기별 그래프는 `terms`(학기 순). P/NP·성적 미정 과목은 평점에서 빠지므로 `gradedCredits` 로 "18학점 기준" 같은 안내 가능. 재수강에서 최근 성적이 F 면 평점에 0점으로 들어가고, 이수현황 학점과 다를 수 있다. 수강 중 재수강(성적 미정)은 성적이 나올 때까지 예전 성적으로 계산한다.
 
 **졸업 로드맵 화면 (T17)**
 
@@ -484,7 +488,6 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
 - 저장할 때마다 `id` 가 바뀌므로 오래 들고 있지 말고 응답으로 화면을 다시 그린다.
 - 남은 수강 과목 응답은 배치와 무관하다. 이미 배치한 과목을 카드에서 빼려면 `courseCode`(없으면 이름)로 프론트에서 거른다. 배치는 이수현황·평점에 들어가지 않는다.
 - "수업 추가" 버튼은 목록에 없는 과목을 PUT 목록에 더하는 것이다. 받는 값은 과목명·학수번호·이수구분·학점이고 강의실·시간은 저장하지 않는다(디자인 창 확인 중, 명세 9장 25).
-- **브라우저 PUT 은 CORS 수정(`fix/cors-put`)이 병합돼야 동작한다.**
 
 **다전공 카드 (T19)**
 
@@ -687,19 +690,14 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 
 Swagger 확인 순서: 회원가입/로그인 → Authorize → 공개 부전공 목록 → PUT 등록 → GET 확인 → 성적 한 과목 등록 → GET 후보 변화 확인 → DELETE 해제.
 
-## 5. 프론트에 부탁할 수정 (SignUp.js / SignIn.js)
+## 5. 프론트에 부탁할 수정 (2026-11-01 기준)
 
-서버 입력 검사는 **가입 API를 호출해야** 동작한다. 지금 회원가입 버튼은 `NavLink` 로 화면만 넘겨서 잘못 입력해도 막히지 않는다. 입력칸마다 state 로 값을 받고, 버튼을 누르면 위 형식으로 `POST /api/auth/signup` 을 호출한다. 체크박스 값은 `termsAgreed`, '비밀번호 확인' 칸 값은 `passwordConfirm` 으로 보낸다. 빈칸·형식·비밀번호 확인·약관은 서버가 검사하므로 프론트가 따로 비교하지 않아도 된다. 성공(201)하면 화면을 넘기고, 실패(400·404·409)하면 `error.message` 를 보여 준다. 400 문구는 `password: 비밀번호는 8~64자, 영문과 숫자를 모두 포함해야 합니다.` 처럼 앞에 필드명이 붙고, 여러 칸이 틀리면 쉼표로 이어지며 순서는 일정하지 않다.
-
-1. **학과 목록이 하드코딩(value 1·2·3)** 이라 실제 전공 id 와 다르다. 그대로 보내면 엉뚱한 전공으로 가입되거나 `MAJOR_NOT_FOUND`.
-   - `GET /api/catalog/majors?admissionYear=2026` 으로 실제 목록을 받아 선택하도록 교체한다 (T3 구현).
-   - 수동 호출 테스트용 id (2026학번 기준): `35` 시각디자인학과, `54` 컴퓨터공학부 컴퓨터공학과. 화면 코드에는 이 id를 하드코딩하지 않는다.
-   - 기존 안내 정정: 시드에는 `55` '컴퓨터공학부 인공지능학과'가 있고 2022~2026학번의 주전공으로 선택 가능하다. 프론트의 줄임말·임의 id 대신 API의 표시명과 id를 사용한다. '인공지능반도체'·'우주인공지능' 융합전공은 주전공 가입 불가.
-2. **학번을 학과보다 먼저** 입력받기. 전공 목록이 학번 앞 4자리(입학년도)에 따라 달라진다.
-3. **학번 칸** `type="number"` → `type="text" inputMode="numeric" maxLength={10}` 권장. 서버는 숫자 10자리 문자열을 기대한다.
-4. 비밀번호 규칙 안내 문구 추가: 8~64자, 영문과 숫자 포함.
-5. (참고) '비밀번호'와 '비밀번호 확인' 칸이 같은 `controlId="formBasicPassword"` 라 라벨 연결이 겹친다.
-6. SignIn.js: '로그인 상태 유지' 는 3장 4번처럼 구현. '비밀번호 찾기' API 는 없다. '경희대학교 통합 로그인' 은 링크일 뿐 백엔드 연동 대상 아님.
+1. **SignUp.js: 가입이 항상 400 이다.** 요청 본문에 `passwordConfirm`('비밀번호 확인' 칸 값)과 `termsAgreed`(이용약관 체크박스 값)를 넣어 주세요. 체크박스에 state 가 아직 없다. 빈칸·형식·비밀번호 확인·약관은 서버가 검사한다. 실패(400·404·409)하면 `error.message` 를 보여 준다. 400 문구는 `password: 비밀번호는 8~64자, 영문과 숫자를 모두 포함해야 합니다.` 처럼 앞에 필드명이 붙고, 여러 칸이 틀리면 쉼표로 이어지며 순서는 일정하지 않다.
+2. **client.js: 토큰이 만료되면 로드맵·캘린더·학사관리에서 로그아웃된다.** 이 화면들은 API 를 동시에 부르는데, 호출마다 같은 refreshToken 으로 refresh 를 보내서 1개만 성공하고 나머지가 토큰을 지운다. 진행 중인 refresh 를 여러 호출이 함께 기다리게 해 주세요(3장).
+3. **MyPage.js: 토큰이 만료된 채 로그아웃하면 재발급된 refreshToken 이 서버에 남는다.** 재시도 때 본문의 예전 토큰을 다시 보내기 때문이다. 보내기 직전에 `getRefreshToken()` 으로 읽어 주세요.
+4. **SignIn.js·client.js:** `getAccessToken` 이 `localStorage` 를 먼저 보므로, 예전 계정 토큰이 남아 있으면 '로그인 상태 유지' 없이 로그인해도 예전 계정으로 동작한다. 저장 전에 두 저장소를 모두 지워 주세요.
+5. 비밀번호 규칙 안내 문구 추가: 8~64자, 영문과 숫자 포함. '비밀번호 찾기' API 는 없다. '경희대학교 통합 로그인' 은 링크일 뿐 백엔드 연동 대상 아님.
+- 수동 호출 테스트용 전공 id (2026학번 기준): `35` 시각디자인학과, `54` 컴퓨터공학부 컴퓨터공학과. 화면 코드에는 이 id를 하드코딩하지 않는다. '인공지능반도체'·'우주인공지능' 융합전공은 주전공 가입 불가.
 
 ---
 

@@ -10,6 +10,8 @@ import com.ordo.timetable.dto.TimetableEntryUpdateRequest;
 import com.ordo.timetable.dto.TimetableResponse;
 import com.ordo.timetable.service.TimetableService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +34,7 @@ public class TimetableController {
 
     @GetMapping
     public ApiResponse<TimetableResponse> getTimetable(@LoginUser Long userId,
-                                                       @RequestParam(required = false) Integer year,
+                                                       @RequestParam(required = false) @Min(2000) @Max(2100) Integer year,
                                                        @RequestParam(required = false) Term term) {
         return ApiResponse.ok(timetableService.getTimetable(userId, year, term));
     }

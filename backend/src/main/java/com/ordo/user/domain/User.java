@@ -17,7 +17,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.DynamicUpdate;
 
+// 프로필·설정·복수전공·e캠퍼스가 같은 행을 따로 고친다. 바꾼 칸만 UPDATE 해야 동시 요청이 서로의 값을 옛 값으로 덮지 않는다
+@DynamicUpdate
 @Entity
 @Table(name = "users")
 @Getter

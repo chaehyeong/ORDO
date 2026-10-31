@@ -63,6 +63,28 @@ class CompletedCourseServiceTest {
     }
 
     @Test
+    void lowercaseCodeIsStoredInUppercase() {
+        givenUser();
+        givenMasterCourse("CSE204", "자료구조", Classification.MAJOR_REQUIRED);
+        givenSaveReturnsArgument();
+
+        assertThat(completedCourseService.create(1L, request(" cse204 ", null, null, null)).courseCode()).isEqualTo("CSE204");
+    }
+
+    @Test
+    void gradeOnlyUpdateKeepsTranscriptClassification() {
+        CompletedCourse imported = CompletedCourse.builder().user(user).courseCode("CSE204").courseName("자료구조").credits(3)
+                .classification(Classification.GENERAL_ELECTIVE).grade("B0").academicYear(2025).term(Term.FIRST).build();
+        given(completedCourseRepository.findByIdAndUserId(7L, 1L)).willReturn(Optional.of(imported));
+        givenMasterCourse("CSE204", "자료구조", Classification.MAJOR_REQUIRED);
+
+        completedCourseService.update(1L, 7L, new CompletedCourseUpdateRequest(null, null, null, null, null, "A0", null, null));
+
+        assertThat(imported.getClassification()).isEqualTo(Classification.GENERAL_ELECTIVE);
+        assertThat(imported.getGrade()).isEqualTo("A0");
+    }
+
+    @Test
     void unknownCourseNeedsClassification() {
         givenUser();
         given(courseRepository.findFirstByUnitNameAndCourseCodeOrderByIdAsc("컴퓨터공학", "GEE1001"))
@@ -83,6 +105,19 @@ class CompletedCourseServiceTest {
                 request(null, "철학의 이해", Classification.GEN_DISTRIBUTION, 3)).distributionArea()).isEqualTo(3);
         assertThat(completedCourseService.create(1L,
                 request(null, "봉사", Classification.GENERAL_ELECTIVE, 3)).distributionArea()).isNull();  // 배분이 아니면 버림
+    }
+
+    @Test
+    void oldDistributionAreasAreOnlyForAdmissionsUpTo2023() {
+        givenUser();  // 2026학번
+        assertErrorCode(() -> completedCourseService.create(1L,
+                request(null, "옛 영역", Classification.GEN_DISTRIBUTION, 6)), ErrorCode.INVALID_INPUT);
+
+        given(userRepository.findById(2L)).willReturn(Optional.of(
+                User.builder().email("old@khu.ac.kr").name("옛학번").admissionYear(2023).build()));
+        givenSaveReturnsArgument();
+        assertThat(completedCourseService.create(2L,
+                request(null, "옛 영역", Classification.GEN_DISTRIBUTION, 7)).distributionArea()).isEqualTo(7);
     }
 
     @Test
