@@ -34,6 +34,8 @@ class DoubleMajorServiceTest {
     MajorRepository majorRepository;
     @Mock
     AcademicProgressService academicProgressService;
+    @Mock
+    MinorService minorService;
     @InjectMocks
     DoubleMajorService doubleMajorService;
 
@@ -49,7 +51,7 @@ class DoubleMajorServiceTest {
         User user = user(major(FIRST), 2026);
         Major second = major(SECOND);
         DoubleMajorResponse progress = mock(DoubleMajorResponse.class);
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(majorRepository.findById(SECOND)).willReturn(Optional.of(second));
         given(majorRepository.countGraduationRequirements(SECOND, 2026)).willReturn(1L);
         given(academicProgressService.findDoubleMajor(1L)).willReturn(Optional.of(progress));
@@ -64,7 +66,7 @@ class DoubleMajorServiceTest {
         User user = user(major(FIRST), 2026);
         Major convergence = major(SECOND);
         given(convergence.isConvergence()).willReturn(true);
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(majorRepository.findById(SECOND)).willReturn(Optional.of(convergence));
         given(majorRepository.countGraduationRequirements(SECOND, 2026)).willReturn(1L);
         given(academicProgressService.findDoubleMajor(1L)).willReturn(Optional.empty());
@@ -76,7 +78,7 @@ class DoubleMajorServiceTest {
 
     @Test
     void registerWithoutProfileFails() {
-        given(userRepository.findById(1L)).willReturn(Optional.of(user(null, null)));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user(null, null)));
 
         assertFails(ErrorCode.PROFILE_INCOMPLETE);
     }
@@ -84,7 +86,7 @@ class DoubleMajorServiceTest {
     @Test
     void sameMajorAsFirstFails() {
         User user = user(major(SECOND), 2026);
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
 
         assertFails(ErrorCode.INVALID_INPUT);
     }
@@ -92,7 +94,7 @@ class DoubleMajorServiceTest {
     @Test
     void unknownMajorFails() {
         User user = user(major(FIRST), 2026);
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(majorRepository.findById(SECOND)).willReturn(Optional.empty());
 
         assertFails(ErrorCode.MAJOR_NOT_FOUND);
@@ -102,7 +104,7 @@ class DoubleMajorServiceTest {
     void majorWithoutRequirementForAdmissionYearFails() {
         User user = user(major(FIRST), 2020);
         Major second = major(SECOND);
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(majorRepository.findById(SECOND)).willReturn(Optional.of(second));
         given(majorRepository.countGraduationRequirements(SECOND, 2020)).willReturn(0L);
 
@@ -113,7 +115,7 @@ class DoubleMajorServiceTest {
     void removeClearsDoubleMajorAndIsSafeWhenNoneIsSet() {
         User user = user(major(FIRST), 2026);
         user.changeDoubleMajor(major(SECOND));
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
 
         doubleMajorService.remove(1L);
         doubleMajorService.remove(1L);

@@ -14,6 +14,7 @@ import com.ordo.catalog.dto.CoursePageResponse;
 import com.ordo.catalog.dto.GeneralEducationResponse;
 import com.ordo.catalog.dto.MajorResponse;
 import com.ordo.catalog.dto.MicroDegreeResponse;
+import com.ordo.catalog.dto.MinorOptionResponse;
 import com.ordo.catalog.service.CatalogService;
 import com.ordo.global.config.SecurityConfig;
 import com.ordo.global.error.BusinessException;
@@ -37,6 +38,23 @@ class CatalogControllerTest {
     @Autowired MockMvc mvc;
     @MockBean CatalogService service;
     @MockBean JwtProvider jwtProvider;
+
+    @Test
+    void minorOptionsArePublicAndUseAdmissionYearAndCollege() throws Exception {
+        given(service.getMinors(2026, 3L)).willReturn(List.of(
+                new MinorOptionResponse(14L, "소프트웨어융합학과", 3L, "소프트웨어융합대학", 9, 12, 21, true)));
+        mvc.perform(get("/api/catalog/minors").param("admissionYear", "2026").param("collegeId", "3"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].requiredCredits").value(9))
+                .andExpect(jsonPath("$.data[0].totalCredits").value(21));
+        verify(service).getMinors(2026, 3L);
+    }
+
+    @Test
+    void minorOptionYearAndCollegeMustBePositive() throws Exception {
+        mvc.perform(get("/api/catalog/minors").param("admissionYear", "0")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/catalog/minors").param("admissionYear", "2026").param("collegeId", "0"))
+                .andExpect(status().isBadRequest());
+    }
 
     @Test
     void collegesAndMajorsCanBeReadBeforeLogin() throws Exception {

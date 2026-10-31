@@ -213,6 +213,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | micro_degrees | 기준정보(읽기) | 마이크로디그리 56개(V18): name 유일, scope(국제/공통), host_department, required_course_count(판정 기준), required_credits(표시용), min_departments(2 면 참여학과 2개 조건), selective(선발제), requirement_text, guide_url |
 | micro_degree_courses | 기준정보(읽기) | 편성 과목 249행(V18): course_code(NULL 이면 과목명으로 찾음, `courses` 와 FK 없음), alias_code(구 학수번호·오기), department_name, credits(NULL = 자료에서 확인 못함), mandatory, group_key·group_min·group_max |
 | user_micro_degrees | 사용자 | 내가 등록한 MD (user_id, micro_degree_id) 유일. 최대 3개. 등록 순서가 과목 배정 순서 |
+| user_minors | 사용자 | T21 부전공 추적. user_id 유일, major_id, 생성/수정 시각(V50). 최종 인정 학점이 아니라 수강 후보를 조회한다 |
 
 ### 3.3 도메인 규칙
 
@@ -313,6 +314,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | GET | /api/catalog/courses?majorId=&q=&classification=&page=0&size=20 | 교과목 검색 (majorId → course_unit 으로 필터, q는 과목명/학수번호 부분일치) |
 | GET | /api/catalog/general-education?admissionYear= | 교양 기본구조 + 필수과목 목록 (없으면 2026, approximate=true) |
 | GET | /api/catalog/micro-degrees | 마이크로디그리 전체 + 편성 과목, 이름 → id 순 (T20) |
+| GET | /api/catalog/minors?admissionYear=2026&collegeId= | 부전공 총학점이 확인된 전공·요구 학점 목록 (T21, 융합전공도 총학점이 있으면 포함) |
 
 **T3 조회 계약**
 
@@ -345,7 +347,7 @@ enum Classification {             // 이수구분 (학교 코드)
 - 부전공: `minorRequiredCredits, minorElectiveCredits, minorTotalCredits`
 - 부가요건: `swRequirement, englishLectureRequirement, thesisRequirement, topikRequirement, competencyCertification`
 
-원본의 null은 그대로 반환한다. **T7 계산에서의 NULL→0 처리와 다르며**, 이 API는 졸업 가능 판정·이수학점 계산을 하지 않는다. 다전공·부전공은 기존 원본 값 조회만 제공하고 별도 계산은 하지 않는다.
+원본의 null은 그대로 반환한다. **T7 계산에서의 NULL→0 처리와 다르며**, 이 API는 졸업 가능 판정·이수학점 계산을 하지 않는다. 복수전공 진행 상황과 부전공 수강 후보는 4.6의 별도 API를 쓴다.
 
 교양 기준 필드:
 
@@ -448,6 +450,9 @@ enum Classification {             // 이수구분 (학교 코드)
 | GET | /api/academic/micro-degrees | 🔒 내 마이크로디그리와 진행 상황, 등록순 (학사관리, T20) |
 | POST | /api/academic/micro-degrees | 🔒 등록 `{ "microDegreeId": 22 }` → 201, 내 목록 전체 (T20) |
 | DELETE | /api/academic/micro-degrees/{microDegreeId} | 🔒 해제 → 204 (T20) |
+| GET | /api/academic/minor | 🔒 부전공 요구 학점·이수/미이수 후보, 미등록이면 data:null (T21) |
+| PUT | /api/academic/minor | 🔒 `{majorId:14}` 부전공 등록/변경, GET과 같은 응답 (T21) |
+| DELETE | /api/academic/minor | 🔒 부전공 추적 해제, 등록이 없어도 204 (T21) |
 
 ```json
 // POST /api/academic/completed-courses
@@ -603,6 +608,19 @@ enum Classification {             // 이수구분 (학교 코드)
 - 등록은 사용자 행을 쓰기 잠금으로 읽은 뒤 개수·중복 검사와 저장을 같은 트랜잭션에서 처리한다. 동시 등록 요청도 최대 3개·중복 금지를 지킨다.
 - 오르도는 신청 창구가 아니다. 신청은 학교 포털에서 하고, 선발제(`selective`) 2개는 신청해도 선발돼야 이수할 수 있다. 신청 자격(2학기 이상)은 검사하지 않는다. 입학년도·전공이 없어도 쓸 수 있다.
 
+#### 부전공 후보 조회 (T21)
+
+계약과 계산 세부 기준은 `docs/plans/T21-minor.md`를 따른다. 교육과정 p115·116·118에 따라 부전공을 등록해도 주전공 요건은 줄어들지 않으며, 단일/다전공과 부전공 과목은 중복 인정하지 않는다.
+
+- 공개 목록 응답은 `id,displayName,collegeId,collegeName,requiredCredits,electiveCredits,totalCredits,majorCoursesAvailable`. 입학년도별 `minor_total_credits > 0`인 전공만 이름/id 순으로 반환하며 NULL 영역 학점은 유지한다.
+- 등록 응답은 `major:{id,displayName},admissionYear,catalogYear:2026,requirements:{requiredCredits,electiveCredits,totalCredits},majorCoursesAvailable,overlapCheckAvailable,candidateCredits,completedCourses,remainingCourses,reviewRequired:true`.
+- `completedCourses`는 `id,courseName,courseCode,classification,credits,grade,status`, `remainingCourses`는 `courseName,courseCode,classification,credits,targetGrade,openSemester,status`다.
+- 상태는 CANDIDATE / PRIMARY_MAJOR_OVERLAP / DOUBLE_MAJOR_OVERLAP / OVERLAP_UNVERIFIED. 주전공/다전공 목록과 겹치거나 그 목록이 없어 중복을 확인할 수 없으면 후보 학점에 넣지 않는다.
+- 후보는 해당 전공 마스터의 전공필수·전공선택. 이수구분은 마스터 기준, 학점은 내 기록 기준이다. F·NP 제외/재수강은 기존 이수현황 정책을 쓰며, 학수번호 없는 수동 기록만 공백 제거한 이름으로 매칭한다. 같은 마스터 과목이 코드/이름 기록에 함께 있으면 최신 인정 기록 1건만 센다.
+- 학과별 부전공 지정 과목이 별도 데이터로 없어 **최종 이수 판정은 하지 않는다**. `candidateCredits`를 공식 인정 학점으로 표시하면 안 된다. `reviewRequired`는 항상 true이고, 최종 `completed`/`earned` 필드는 없다. 옛 학번도 과목 목록은 2026 기준이다.
+- 주전공/복수전공과 같은 전공은 INVALID_INPUT. 없는 전공은 MAJOR_NOT_FOUND, 해당 학번 부전공 총학점 미확보는 REQUIREMENT_NOT_FOUND. 현재 부전공과 충돌하는 주전공/학번/복수전공 변경도 INVALID_INPUT으로 거절한다.
+- 관련 쓰기는 사용자 행 잠금으로 직렬화한다. 기존 progress/gpa/home/summary 및 2026학번 부가요건 MANUAL 체크는 유지한다.
+
 ### 4.7 홈 `home`
 
 | 메서드 | 경로 | 설명 |
@@ -752,7 +770,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 
 **반드시 단위 테스트할 케이스**: 빈 이수내역 / F 제외 / 재수강 중복 제거 / NULL 요구학점 / 배분 영역 수 부족 / 2025학번 교양 근사(approximate) / 졸업 가능 케이스. 복수전공: 제1전공 요건 교체 / 공통 과목 양쪽 합산·총학점 1번 / 제2전공만 소속 과목 기타 이동 / 마스터 이수구분 / 제2전공 미충족이면 졸업 불가.
 
-> 부전공 계산, 전공 초과학점의 전공선택 인정, 타전공 인정 한도는 **MVP 제외**(9장 미결정).
+> 부전공은 T21의 등록·요건·수강 후보 조회를 지원한다. 학과별 부전공 지정 과목 자료가 없어 최종 이수 판정은 하지 않는다. 전공 초과학점의 전공선택 인정, 타전공 인정 한도는 미반영이다.
 
 ### 마이크로디그리 판정 (`MicroDegreeCalculation`, T20)
 
@@ -811,6 +829,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 
 - V1(스키마), V2(시드)는 공동 소유. **이미 적용된 파일은 절대 수정 금지** — 바꿀 게 있으면 새 파일.
 - 새 마이그레이션 번호: **A 담당 V10~V49, B 담당 V50~V89**. 파일명 `V{번호}__{영문_설명}.sql`.
+- 사용 중: `V50__add_user_minors.sql`(B, T21: 부전공 추적 `user_minors`, 2026-10-31 추가 개발 요청). 기존 Flyway/기준정보 파일은 수정하지 않는다.
 - 사용 중: `V10__add_ecampus_feed_token.sql`(A, users 에 e캠퍼스 피드 토큰 칸 추가).
 - 사용 중: `V11__add_web_push.sql`(A, T11: `push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·`idx_schedules_date`, `users.todo_alarm_time`, 2026-10-21 승인).
 - 사용 중: `V12__add_timetable_online.sql`(A, T15: `timetable_entries` 요일·시간 NULL 허용, `online` 추가, 2026-10-30 승인).
@@ -898,7 +917,7 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 5 | 마이크로디그리 화면 | **결정(2026-10-31): 목록을 시드로 넣고 자동 판정**(T20, 5장 끝, V17·V18). 사용자 직접 입력(B안)은 만들지 않음 |
 | 6 | 전공 초과학점 전공선택 인정, 타전공 인정 한도, 재수강 세부 규칙 | 학과 시행세칙 확인 전까지 5장 단순 규칙 |
 | 7 | 2025학번 이하 교양 기준 | 2026 값으로 근사 + approximate 표시 |
-| 8 | 다전공·부전공 | **결정(2026-10-31): 다전공 1개(복수전공·융합전공) 지원**(T19, 5장 12번). 부전공은 제외 |
+| 8 | 다전공·부전공 | **결정(2026-10-31): 다전공 1개(복수전공·융합전공) 지원**(T19, 5장 12번). 추가 개발 요청에 따라 부전공 1개 등록·요건·수강 후보 조회는 T21로 지원. 최종 부전공 이수 판정은 지정 과목 확인 후 구현 |
 | 9 | 알림 실제 발송 | **T11 로 앞당김(2026-10-08)**, 2026-10-09 카카오 → **웹푸시**로 변경 → 4.10 |
 | 10 | 디자인에 남아있는 '과제', '설정' 메뉴 | 회의록 2차대로 삭제 |
 | 11 | e캠퍼스 연동 | **결정(2026-10-06): MVP 포함.** Canvas 개인 캘린더 피드(.ics) 주소를 사용자가 등록, 캘린더를 열 때 가져오고 10분 캐시, cron 없음 → 4.8. **학교 비밀번호를 서버에 저장하는 방식은 금지** |

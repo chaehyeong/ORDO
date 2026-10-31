@@ -9,6 +9,8 @@ import com.ordo.academic.dto.DoubleMajorResponse;
 import com.ordo.academic.dto.GpaSummary;
 import com.ordo.academic.dto.MicroDegreeAddRequest;
 import com.ordo.academic.dto.MicroDegreeProgressResponse;
+import com.ordo.academic.dto.MinorRequest;
+import com.ordo.academic.dto.MinorResponse;
 import com.ordo.academic.dto.PlannedCoursesRequest;
 import com.ordo.academic.dto.PlannedCoursesResponse;
 import com.ordo.academic.dto.ProgressSummary;
@@ -18,6 +20,7 @@ import com.ordo.academic.service.AcademicProgressService;
 import com.ordo.academic.service.CompletedCourseService;
 import com.ordo.academic.service.DoubleMajorService;
 import com.ordo.academic.service.MicroDegreeService;
+import com.ordo.academic.service.MinorService;
 import com.ordo.academic.service.PlannedCourseService;
 import com.ordo.academic.service.RemainingCourseService;
 import com.ordo.global.common.ApiResponse;
@@ -49,6 +52,7 @@ public class AcademicController {
     private final PlannedCourseService plannedCourseService;
     private final DoubleMajorService doubleMajorService;
     private final MicroDegreeService microDegreeService;
+    private final MinorService minorService;
 
     @GetMapping("/completed-courses")
     public ApiResponse<List<CompletedCourseResponse>> getCourses(@LoginUser Long userId) {
@@ -127,6 +131,22 @@ public class AcademicController {
     @GetMapping("/micro-degrees")
     public ApiResponse<List<MicroDegreeProgressResponse>> getMicroDegrees(@LoginUser Long userId) {
         return ApiResponse.ok(microDegreeService.getMine(userId));
+    }
+
+    @GetMapping("/minor")
+    public ApiResponse<MinorResponse> getMinor(@LoginUser Long userId) {
+        return ApiResponse.ok(minorService.get(userId));
+    }
+
+    @PutMapping("/minor")
+    public ApiResponse<MinorResponse> registerMinor(@LoginUser Long userId, @Valid @RequestBody MinorRequest request) {
+        return ApiResponse.ok(minorService.register(userId, request));
+    }
+
+    @DeleteMapping("/minor")
+    public ResponseEntity<Void> removeMinor(@LoginUser Long userId) {
+        minorService.remove(userId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/micro-degrees")

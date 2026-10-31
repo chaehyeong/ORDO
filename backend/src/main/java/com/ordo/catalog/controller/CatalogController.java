@@ -7,6 +7,7 @@ import com.ordo.catalog.dto.GeneralEducationResponse;
 import com.ordo.catalog.dto.GraduationRequirementResponse;
 import com.ordo.catalog.dto.MajorResponse;
 import com.ordo.catalog.dto.MicroDegreeResponse;
+import com.ordo.catalog.dto.MinorOptionResponse;
 import com.ordo.catalog.service.CatalogService;
 import com.ordo.global.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,6 +53,14 @@ public class CatalogController {
             @RequestParam @Positive Long majorId,
             @RequestParam @Positive int admissionYear) {
         return ApiResponse.ok(catalogService.getRequirements(majorId, admissionYear));
+    }
+
+    @Operation(summary = "입학년도별 부전공 요구 학점이 확인된 전공 목록")
+    @GetMapping("/minors")
+    public ApiResponse<List<MinorOptionResponse>> getMinors(
+            @RequestParam @Positive int admissionYear,
+            @RequestParam(required = false) @Positive Long collegeId) {
+        return ApiResponse.ok(catalogService.getMinors(admissionYear, collegeId));
     }
 
     @Operation(summary = "마이크로디그리 목록과 편성 과목")

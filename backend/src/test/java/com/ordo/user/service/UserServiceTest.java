@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import com.ordo.academic.dto.ProgressSummary;
 import com.ordo.academic.dto.ProgressSummary.Total;
 import com.ordo.academic.service.AcademicProgressService;
+import com.ordo.academic.service.MinorService;
 import com.ordo.catalog.domain.College;
 import com.ordo.catalog.domain.Major;
 import com.ordo.catalog.repository.MajorRepository;
@@ -53,6 +54,8 @@ class UserServiceTest {
     ScheduleRepository scheduleRepository;
     @Mock
     AcademicProgressService academicProgressService;
+    @Mock
+    MinorService minorService;
     @InjectMocks
     UserService userService;
 
@@ -122,7 +125,7 @@ class UserServiceTest {
 
     @Test
     void updateMeWithMajorNotOfferedForAdmissionYearFails() {
-        given(userRepository.findById(1L)).willReturn(Optional.of(user(null, 1)));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user(null, 1)));
         given(majorRepository.findSelectable(99L, 2026)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.updateMe(1L,
@@ -137,7 +140,7 @@ class UserServiceTest {
         given(doubleMajor.getId()).willReturn(99L);
         User user = user(null, 1);
         user.changeDoubleMajor(doubleMajor);
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(majorRepository.findSelectable(99L, 2026)).willReturn(Optional.of(doubleMajor));
 
         assertThatThrownBy(() -> userService.updateMe(1L,
@@ -154,7 +157,7 @@ class UserServiceTest {
         given(doubleMajor.getId()).willReturn(99L);
         User user = user(first, 1);
         user.changeDoubleMajor(doubleMajor);
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(majorRepository.findSelectable(35L, 2020)).willReturn(Optional.of(first));
         given(majorRepository.countGraduationRequirements(99L, 2020)).willReturn(0L);
 

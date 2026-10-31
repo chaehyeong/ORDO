@@ -11,6 +11,7 @@ import com.ordo.catalog.dto.GeneralEducationResponse;
 import com.ordo.catalog.dto.GraduationRequirementResponse;
 import com.ordo.catalog.dto.MajorResponse;
 import com.ordo.catalog.dto.MicroDegreeResponse;
+import com.ordo.catalog.dto.MinorOptionResponse;
 import com.ordo.catalog.repository.CollegeRepository;
 import com.ordo.catalog.repository.CourseRepository;
 import com.ordo.catalog.repository.GeneralEducationRequirementRepository;
@@ -24,6 +25,8 @@ import com.ordo.global.error.ErrorCode;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -55,6 +58,15 @@ public class CatalogService {
     public List<MajorResponse> getMajors(int admissionYear, Long collegeId, boolean includeConvergence) {
         return majorRepository.findAllSelectable(admissionYear, collegeId, includeConvergence).stream()
                 .map(MajorResponse::from).toList();
+    }
+
+    public List<MinorOptionResponse> getMinors(int admissionYear, Long collegeId) {
+        Set<String> units = new HashSet<>(courseRepository.findAvailableUnitNames(
+                List.of(Classification.MAJOR_REQUIRED, Classification.MAJOR_ELECTIVE)));
+        return graduationRequirementRepository.findMinorOptions(admissionYear, collegeId).stream()
+                .map(requirement -> MinorOptionResponse.from(requirement,
+                        units.contains(requirement.getMajor().getCourseUnit())))
+                .toList();
     }
 
     public GraduationRequirementResponse getRequirements(Long majorId, int admissionYear) {

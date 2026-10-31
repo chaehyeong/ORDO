@@ -13,6 +13,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
 
+    @Query("select distinct c.unitName from Course c where c.classification in :classifications")
+    List<String> findAvailableUnitNames(@Param("classifications") List<Classification> classifications);
+
     /** 이수구분 자동 판별(명세 4.6): (편성 단위, 학수번호)는 유일하지 않아 첫 행을 쓴다 */
     Optional<Course> findFirstByUnitNameAndCourseCodeOrderByIdAsc(String unitName, String courseCode);
 
