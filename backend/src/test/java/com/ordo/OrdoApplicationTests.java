@@ -31,7 +31,7 @@ class OrdoApplicationTests {
                 .isInstanceOf(JsonProcessingException.class);
     }
 
-    // 부팅 시 Flyway 가 V1(스키마)·V2(시드)·시드 교정 V16·마이크로디그리 V18·전공탐색세미나 V19·2020~2023 교양 기준 V20 을 적용했는지 확인
+    // 부팅 시 Flyway 가 V1(스키마)·V2(시드)·시드 교정 V16·마이크로디그리 V18·전공탐색세미나 V19·2020~2023 교양 기준 V20·부전공 지정 과목 V23 을 적용했는지 확인
     @Test
     void flywaySeedApplied() {
         assertThat(count("colleges")).isEqualTo(10);
@@ -41,6 +41,7 @@ class OrdoApplicationTests {
         assertThat(count("micro_degree_courses")).isEqualTo(249);
         assertThat(count("general_education_requirements")).isEqualTo(5);
         assertThat(count("general_education_required_courses")).isEqualTo(35);
+        assertThat(count("minor_designated_courses")).isEqualTo(358);
     }
 
     private Integer count(String table) {
