@@ -76,7 +76,7 @@ final class DoubleMajorCalculation {
     }
 
     // 키는 CompletedCourse.retakeKey 와 같은 모양: 학수번호가 있으면 학수번호로만, 없는 수동 입력만 공백 뺀 과목명으로 찾는다
-    private static Map<String, Course> index(List<Course> courses) {
+    static Map<String, Course> index(List<Course> courses) {
         Map<String, Course> index = new HashMap<>();
         for (Course course : courses) {
             index.putIfAbsent("code:" + course.getCourseCode(), course);

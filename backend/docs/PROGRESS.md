@@ -195,3 +195,11 @@
 | 1. 원인 | ✅ | 피그마 재확인. `currentSemester` 를 입력받는 화면이 없어 "지금 여기"를 만들 수 없고, 입학년도 계산은 휴학생이 틀린다. T15 계획의 "이미 되는 것" 분류가 틀렸다 | 피그마, 프론트 `SignUp.js`·`MyPage.js` | |
 | 2. 구현 | ✅ | `feat/semester-label`(fix/minus-grades 위). `GET /api/academic/gpa` 에 `currentSemesterLabel`, `terms[].semesterLabel` 추가. DB 변경 없음 | 단위 테스트 5개 추가, 기존 4개 수정. 전체 **294개 통과**. 8081 임시 서버 + 실제 MySQL 16개 통과(기록 없음, 계절학기, 휴학, 수강 중, 성적 입력, 삭제, 401), 서버 로그 ERROR 0 | |
 | 3. 문서 | ✅ | 명세 1·4.6·5장·9장 31, FRONTEND_GUIDE 졸업 로드맵·학기별 배치, T15 계획 정정 | 이 커밋(`feat/semester-label`) | |
+
+## 부전공 과목 기타 이동
+
+| 단계 | 상태 | 한 일 | 검증 | 남은 일 |
+|---|---|---|---|---|
+| 1. 원인 | ✅ | PR #15는 이수현황을 바꾸지 않아, 부전공에만 있는 과목이 성적표에 전공으로 찍히면 주전공 학점에 합산됐다. 졸업 판정이 실제보다 낙관적으로 나온다. T19가 복수전공에서 막은 것과 같은 문제 | 교육과정 p116·118, B와 방향 합의 | |
+| 2. 수정 | ✅ | `fix/minor-progress`(master 425ce7a 위). `AcademicProgressService` 에 `minorOnlyKeys`·`movesToOther` 추가, `DoubleMajorCalculation.index` 재사용. 주전공 요건·`total`·평점은 그대로. DB 변경 없음 | 단위 테스트 10개 추가. 실서버 33개 통과(1차 6건 실패는 내 예상값 오류: 주전공 과목표에 있는 학수번호는 표의 이수구분으로 저장된다) | 한계는 명세 5장 13번 |
+| 3. 문서 | ✅ | 명세 4.6·5장, T21 계획, FRONTEND_GUIDE | 이 커밋(`fix/minor-progress`) | |

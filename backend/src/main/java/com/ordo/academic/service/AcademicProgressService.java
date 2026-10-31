@@ -10,6 +10,7 @@ import com.ordo.academic.dto.ProgressSummary.MajorInfo;
 import com.ordo.academic.dto.ProgressSummary.RequiredCourse;
 import com.ordo.academic.dto.ProgressSummary.Total;
 import com.ordo.academic.repository.CompletedCourseRepository;
+import com.ordo.academic.repository.UserMinorRepository;
 import com.ordo.catalog.domain.Classification;
 import com.ordo.catalog.domain.Course;
 import com.ordo.catalog.domain.GeneralEducationRequiredCourse;
@@ -27,6 +28,7 @@ import com.ordo.user.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +59,7 @@ public class AcademicProgressService {
     private final GeneralEducationRequirementRepository generalEducationRequirementRepository;
     private final GeneralEducationRequiredCourseRepository generalEducationRequiredCourseRepository;
     private final CourseRepository courseRepository;
+    private final UserMinorRepository userMinorRepository;
 
     /** 입학년도·전공이 없으면 PROFILE_INCOMPLETE */
     public ProgressSummary getSummary(Long userId) {
@@ -81,7 +84,7 @@ public class AcademicProgressService {
         List<GeneralEducationRequiredCourse> requiredCourses = generalEducationRequiredCourseRepository
                 .findAllByAdmissionYearOrderByIdAsc(generalEducation.getAdmissionYear());
         return Optional.of(calculate(admissionYear, major, requirement, generalEducation, exact.isEmpty(),
-                requiredCourses, completedCourseRepository.findByUserId(userId), doubleMajorOf(user)));
+                requiredCourses, completedCourseRepository.findByUserId(userId), doubleMajorOf(user), minorOnlyKeys(userId, major)));
     }
 
     /** 복수전공 진행 상황: 복수전공이 없으면 empty */
@@ -102,6 +105,22 @@ public class AcademicProgressService {
         return new DoubleMajorCalculation(second, secondRequirement, majorCourses(user.getMajor()), majorCourses(second));
     }
 
+    private Set<String> minorOnlyKeys(Long userId, Major major) {
+        return userMinorRepository.findByUserId(userId)
+                .map(minor -> minorOnlyKeys(majorCourses(major), majorCourses(minor.getMajor())))
+                .orElse(Set.of());
+    }
+
+    /** 부전공에만 있는 과목의 키. 주전공 과목표가 없으면 겹치는지 알 수 없어 옮기지 않는다 */
+    static Set<String> minorOnlyKeys(List<Course> firstCourses, List<Course> minorCourses) {
+        if (firstCourses.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> keys = new HashSet<>(DoubleMajorCalculation.index(minorCourses).keySet());
+        keys.removeAll(DoubleMajorCalculation.index(firstCourses).keySet());
+        return keys;
+    }
+
     private List<Course> majorCourses(Major major) {
         return major.getCourseUnit() == null ? List.of()
                 : courseRepository.findByUnitNameAndClassificationIn(major.getCourseUnit(), MAJOR_CLASSIFICATIONS);
@@ -114,15 +133,17 @@ public class AcademicProgressService {
     /**
      * 순수 계산 (DB 조회 없음). 나중에 졸업 시뮬레이션은 courses 에 계획 과목을 더해 그대로 부르면 된다.
      * doubleMajor 가 null 이면 단일전공, 있으면 제1전공 요건도 다전공 기준으로 바뀐다 (교육과정 p116)
+     * minorOnly 는 부전공에만 있는 과목의 키 (없으면 빈 집합). 부전공은 주전공 요건을 바꾸지 않는다 (p116·118)
      */
     static ProgressSummary calculate(int admissionYear, Major major, GraduationRequirement requirement,
                                      GeneralEducationRequirement generalEducation, boolean approximate,
                                      List<GeneralEducationRequiredCourse> requiredCourses,
-                                     List<CompletedCourse> courses, DoubleMajorCalculation doubleMajor) {
+                                     List<CompletedCourse> courses, DoubleMajorCalculation doubleMajor,
+                                     Set<String> minorOnly) {
         Collection<CompletedCourse> recognized = recognize(courses);
         Map<Classification, Integer> earned = new EnumMap<>(Classification.class);
         recognized.forEach(c -> earned.merge(
-                doubleMajor != null && doubleMajor.onlyInSecondMajor(c) ? Classification.GENERAL_ELECTIVE : c.getClassification(),
+                movesToOther(c, doubleMajor, minorOnly) ? Classification.GENERAL_ELECTIVE : c.getClassification(),
                 c.getCredits(), Integer::sum));
         int areaCount = (int) recognized.stream()
                 .filter(c -> c.getClassification() == Classification.GEN_DISTRIBUTION && c.getDistributionArea() != null)
@@ -175,6 +196,12 @@ public class AcademicProgressService {
 
         return new ProgressSummary(admissionYear, new MajorInfo(major.getId(), major.getDisplayName()), total, areas,
                 groups, requiredGeneralCourses, checks(admissionYear, requirement), graduatable, approximate);
+    }
+
+    // ponytail: 주전공이 인정하는 타전공 과목이 부전공 목록에도 있으면 기타로 빠져 전공 학점이 적게 나온다. 명세 5장 13
+    private static boolean movesToOther(CompletedCourse course, DoubleMajorCalculation doubleMajor, Set<String> minorOnly) {
+        return doubleMajor != null && doubleMajor.onlyInSecondMajor(course)
+                || MAJOR_CLASSIFICATIONS.contains(course.getClassification()) && minorOnly.contains(course.retakeKey());
     }
 
     // 명세 5장 4번: F·NP 제외 → 같은 학수번호(없으면 과목명)는 가장 최근 1건만 인정
