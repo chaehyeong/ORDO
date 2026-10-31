@@ -268,7 +268,7 @@ class MicroDegreeServiceTest {
     void addSavesRegistration() {
         MicroDegree degree = degree(7L, 3, 9);
         User user = user();
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(userMicroDegreeRepository.findByUserIdOrderByIdAsc(1L)).willReturn(List.of());
         given(microDegreeRepository.findById(7L)).willReturn(Optional.of(degree));
         given(microDegreeCourseRepository.findByMicroDegreeIdInOrderByIdAsc(anyList())).willReturn(List.of());
@@ -283,7 +283,7 @@ class MicroDegreeServiceTest {
     void addingFourthFails() {
         User user = user();
         List<UserMicroDegree> mine = List.of(registered(1L), registered(2L), registered(3L));
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(userMicroDegreeRepository.findByUserIdOrderByIdAsc(1L)).willReturn(mine);
 
         assertAddFails(4L, ErrorCode.INVALID_INPUT);
@@ -293,7 +293,7 @@ class MicroDegreeServiceTest {
     void addingTheSameDegreeTwiceFails() {
         User user = user();
         List<UserMicroDegree> mine = List.of(registered(7L));
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(userMicroDegreeRepository.findByUserIdOrderByIdAsc(1L)).willReturn(mine);
 
         assertAddFails(7L, ErrorCode.INVALID_INPUT);
@@ -302,7 +302,7 @@ class MicroDegreeServiceTest {
     @Test
     void addingUnknownDegreeFails() {
         User user = user();
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
         given(userMicroDegreeRepository.findByUserIdOrderByIdAsc(1L)).willReturn(List.of());
         given(microDegreeRepository.findById(99L)).willReturn(Optional.empty());
 

@@ -47,7 +47,7 @@ public class MicroDegreeService {
     /** 응답은 내 목록 전체: 등록하면 앞뒤 MD 의 과목 배정이 달라질 수 있다 */
     @Transactional
     public List<MicroDegreeProgressResponse> add(Long userId, MicroDegreeAddRequest request) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        User user = userRepository.findByIdForUpdate(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         List<UserMicroDegree> mine = userMicroDegreeRepository.findByUserIdOrderByIdAsc(userId);
         boolean duplicate = mine.stream().anyMatch(m -> m.getMicroDegree().getId().equals(request.microDegreeId()));
         if (duplicate || mine.size() >= MAX_MICRO_DEGREES) {
