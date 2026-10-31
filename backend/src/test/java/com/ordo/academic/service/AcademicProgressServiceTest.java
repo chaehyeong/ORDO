@@ -81,6 +81,8 @@ class AcademicProgressServiceTest {
     final GeneralEducationRequirement generalEducation = generalEducation();
     final List<GeneralEducationRequiredCourse> requiredCourses =
             List.of(requiredCourse("인간의가치탐색", 3), requiredCourse("대학영어", 2));
+    final List<GeneralEducationRequiredCourse> requiredWithSeminar = List.of(requiredCourse("인간의가치탐색", 3),
+            requiredCourse("대학영어", 2), requiredCourse(AcademicProgressService.EXPLORATION_SEMINAR, 1));
 
     {
         given(major.getId()).willReturn(54L);
@@ -155,6 +157,84 @@ class AcademicProgressServiceTest {
         assertThat(distribution.areaCount()).isEqualTo(2);
         assertThat(distribution.requiredAreaCount()).isEqualTo(3);
         assertThat(summary.graduatable()).isFalse();
+    }
+
+    @Test
+    void seminarNotTakenBlocksGraduationEvenWhenFreeCreditsAreMet() {
+        ProgressSummary summary = calculateSeminar(major);
+
+        assertThat(area(summary, "GEN_FREE").earned()).isEqualTo(area(summary, "GEN_FREE").required());
+        assertThat(summary.total().remaining()).isZero();
+        assertThat(seminarDone(summary)).isFalse();
+        assertThat(summary.graduatable()).isFalse();
+    }
+
+    @Test
+    void failedSeminarBlocksGraduation() {
+        for (String grade : new String[]{"F", "NP"}) {
+            ProgressSummary summary = calculateSeminar(major, course("GEE1952", AcademicProgressService.EXPLORATION_SEMINAR, 1,
+                    Classification.GEN_FREE, null, grade, 2026, Term.FIRST));
+
+            assertThat(seminarDone(summary)).as(grade).isFalse();
+            assertThat(summary.graduatable()).as(grade).isFalse();
+        }
+    }
+
+    @Test
+    void passedSeminarCountsAsFreeElectiveNotRequiredGeneral() {
+        ProgressSummary summary = calculateSeminar(major, course("GEE1952", AcademicProgressService.EXPLORATION_SEMINAR, 1,
+                Classification.GEN_FREE, null, "P", 2026, Term.FIRST));
+
+        assertThat(seminarDone(summary)).isTrue();
+        assertThat(summary.graduatable()).isTrue();
+        assertThat(area(summary, "GEN_FREE").earned()).isEqualTo(4);
+        assertThat(area(summary, "GEN_REQUIRED").earned()).isEqualTo(17);
+        assertThat(area(summary, "GEN_REQUIRED").required()).isEqualTo(17);
+    }
+
+    @Test
+    void seminarRetakenAfterFailureIsDone() {
+        ProgressSummary summary = calculateSeminar(major,
+                course("GEE1952", AcademicProgressService.EXPLORATION_SEMINAR, 1, Classification.GEN_FREE, null, "NP", 2025, Term.FIRST),
+                course("GEE1952", AcademicProgressService.EXPLORATION_SEMINAR, 1, Classification.GEN_FREE, null, "P", 2026, Term.FIRST));
+
+        assertThat(seminarDone(summary)).isTrue();
+        assertThat(area(summary, "GEN_FREE").earned()).isEqualTo(4);
+    }
+
+    @Test
+    void seminarMatchesOtherNamesAndSubstituteInAnyClassification() {
+        for (CompletedCourse taken : List.of(
+                course(null, "전공탐색및 기업가정신 세미나", 1, Classification.GEN_FREE, null, "P", 2026, Term.FIRST),
+                course(null, "전공탐색세미나", 1, Classification.GENERAL_ELECTIVE, null, "P", 2026, Term.FIRST),
+                course(null, "전공탐색세미나및기업가정신세미나", 1, Classification.GEN_FREE, null, "P", 2026, Term.FIRST),
+                course("SLS1014", "전공탐색2", 2, Classification.MAJOR_ELECTIVE, null, "P", 2026, Term.FIRST))) {
+            assertThat(seminarDone(calculateSeminar(major, taken))).as(taken.getCourseName()).isTrue();
+        }
+        assertThat(seminarDone(calculateSeminar(major,
+                course("SLS1001", "전공탐색1", 3, Classification.MAJOR_REQUIRED, null, "A0", 2026, Term.FIRST)))).isFalse();
+    }
+
+    @Test
+    void startupSeminarCountsOnlyForListedEngineeringUnits() {
+        CompletedCourse startup = course(null, "창업세미나:스타트업에서빅테크까지", 3, Classification.GEN_FREE, null, "A0", 2026, Term.FIRST);
+        Major mechanical = lenientMock(Major.class);
+        given(mechanical.getCourseUnit()).willReturn("기계공학부");
+
+        assertThat(seminarDone(calculateSeminar(mechanical, startup))).isTrue();
+        assertThat(seminarDone(calculateSeminar(major, startup))).isFalse();
+
+        // 과목표가 없는 전공(글로벌한국학과 등)은 course_unit 이 NULL 이다
+        Major noCourseUnit = lenientMock(Major.class);
+        given(noCourseUnit.getCourseUnit()).willReturn(null);
+        assertThat(seminarDone(calculateSeminar(noCourseUnit, startup))).isFalse();
+    }
+
+    @Test
+    void otherRequiredCoursesStillNeedGenRequiredClassification() {
+        ProgressSummary summary = calculate(List.of(course(null, "대학영어", 2, Classification.GEN_FREE, null, "P", 2026, Term.FIRST)));
+
+        assertThat(summary.requiredGeneralCourses()).noneMatch(ProgressSummary.RequiredCourse::done);
     }
 
     @Test
@@ -507,6 +587,19 @@ class AcademicProgressServiceTest {
 
     private ProgressSummary calculate(List<CompletedCourse> courses) {
         return AcademicProgressService.calculate(2026, major, requirement, generalEducation, false, requiredCourses, courses, null, Set.of());
+    }
+
+    // 세미나를 뺀 졸업 요건은 모두 채운 학생에게 taken 을 더한다
+    private ProgressSummary calculateSeminar(Major studentMajor, CompletedCourse... taken) {
+        List<CompletedCourse> courses = graduatableCourses();
+        courses.addAll(List.of(taken));
+        return AcademicProgressService.calculate(2026, studentMajor, requirement, generalEducation, false, requiredWithSeminar, courses, null, Set.of());
+    }
+
+    private static boolean seminarDone(ProgressSummary summary) {
+        return summary.requiredGeneralCourses().stream()
+                .filter(c -> c.name().equals(AcademicProgressService.EXPLORATION_SEMINAR))
+                .findFirst().orElseThrow().done();
     }
 
     private ProgressSummary calculateDouble(List<CompletedCourse> courses) {

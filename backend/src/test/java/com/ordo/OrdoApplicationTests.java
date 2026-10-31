@@ -17,7 +17,7 @@ class OrdoApplicationTests {
     void contextLoads() {
     }
 
-    // 부팅 시 Flyway 가 V1(스키마)·V2(시드)·시드 교정 V16·마이크로디그리 V18 을 적용했는지 확인
+    // 부팅 시 Flyway 가 V1(스키마)·V2(시드)·시드 교정 V16·마이크로디그리 V18·전공탐색세미나 V19 를 적용했는지 확인
     @Test
     void flywaySeedApplied() {
         assertThat(count("colleges")).isEqualTo(10);
@@ -25,6 +25,7 @@ class OrdoApplicationTests {
         assertThat(count("courses")).isEqualTo(3060);
         assertThat(count("micro_degrees")).isEqualTo(56);
         assertThat(count("micro_degree_courses")).isEqualTo(249);
+        assertThat(count("general_education_required_courses")).isEqualTo(7);
     }
 
     private Integer count(String table) {

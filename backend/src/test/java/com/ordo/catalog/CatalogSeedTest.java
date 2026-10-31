@@ -18,7 +18,8 @@ import org.springframework.test.context.jdbc.SqlConfig;
         showSql = false)
 @Import(CatalogService.class)
 @Sql(scripts = {"/db/migration/V2__seed_catalog.sql", "/db/migration/V15__fix_course_names.sql",
-        "/db/migration/V16__fix_sports_practice_course_units.sql", "/db/migration/V18__seed_micro_degrees.sql"},
+        "/db/migration/V16__fix_sports_practice_course_units.sql", "/db/migration/V18__seed_micro_degrees.sql",
+        "/db/migration/V19__add_exploration_seminar.sql"},
         config = @SqlConfig(encoding = "UTF-8"))
 class CatalogSeedTest {
 
@@ -59,7 +60,7 @@ class CatalogSeedTest {
                 .filter(major -> major.displayName().equals("컴퓨터공학과")).findFirst().orElseThrow();
         assertThat(service.searchCourses(oldMajor.id(), null, null, 0, 20).content())
                 .isEqualTo(service.searchCourses(54L, null, null, 0, 20).content());
-        assertThat(service.getGeneralEducation(2025).requiredCourses()).hasSize(6);
+        assertThat(service.getGeneralEducation(2025).requiredCourses()).hasSize(7);
         assertThat(service.getGeneralEducation(2025).approximate()).isTrue();
     }
 

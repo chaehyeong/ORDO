@@ -435,6 +435,7 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
 
 - **과목 추가 화면 흐름**: 과목 검색(`/api/catalog/courses?majorId=`)에서 고르면 `courseCode` 만 보내도 된다. 직접 입력(교양 등)이면 `courseName` + `classification` 을 받는다(배분이수면 영역 1~5 선택도).
 - `progress` 응답 모양은 명세 4.6 예시 그대로. 도넛은 `groups`, 영역별 막대는 `areas`, 교양 필수 체크리스트는 `requiredGeneralCourses`, 부가요건 안내는 `checks`(자동 판정 아님).
+- `requiredGeneralCourses` 는 필수교양 6과목 + 자유이수 `전공탐색및기업가정신세미나` 로 7개다. "필수교양" 제목만 달면 자유이수 과목이 섞여 보인다. 이 세미나를 안 듣거나 F·NP 면 `graduatable` 이 false 다. 학점은 자유이수 막대에 들어가고 필수교양 막대는 바뀌지 않는다. 외국인·편입생 면제는 아직 판정하지 않는다.
 - `approximate: true` 면 "해당 학번 교양 기준이 없어 2026 기준으로 계산했어요" 안내. 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE` → 마이페이지 정보 수정으로 안내.
 - 성적 미정(null)인 과목도 학점에 들어간다(이번 학기 수강 중인 과목). F·NP 는 빠지고, 같은 과목은 가장 최근 것 1번만 센다.
 - **평점 박스(`gpa`)**: 응답 모양은 명세 4.6 예시. 숫자는 4.3 만점, 소수 셋째 자리까지(예: `3.417` → "3.417 / 4.3"). `gpa`·`majorGpa` 는 성적 있는 과목이 없으면 **null** → "-" 로 표시. 학기별 그래프는 `terms`(학기 순). P/NP·성적 미정 과목은 평점에서 빠지므로 `gradedCredits` 로 "18학점 기준" 같은 안내 가능. 재수강에서 최근 성적이 F 면 평점에 0점으로 들어가고, 이수현황 학점과 다를 수 있다.
@@ -453,10 +454,10 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
                  "targetGrade": "1", "openSemester": "1,2", "unitName": "시각디자인학과" } ] }
 ```
 
-- 순서는 필수교양 → 전공기초 → 전공필수 → 전공선택, 그 안에서 권장 학년 → 이름. **이수구분 필터는 프론트에서** 거른다(`classification` 값 기준, 한 번에 전부 옴, 학과당 최대 약 130과목).
-- 태그 글자: `GEN_REQUIRED`=필수교양, `MAJOR_BASIC`=전공기초, `MAJOR_REQUIRED`=전공필수, `MAJOR_ELECTIVE`=전공선택.
+- 순서는 필수교양 → 자유이수(전공탐색세미나) → 전공기초 → 전공필수 → 전공선택, 그 안에서 권장 학년 → 이름. **이수구분 필터는 프론트에서** 거른다(`classification` 값 기준, 한 번에 전부 옴, 학과당 최대 약 130과목).
+- 태그 글자: `GEN_REQUIRED`=필수교양, `GEN_FREE`=자유이수, `MAJOR_BASIC`=전공기초, `MAJOR_REQUIRED`=전공필수, `MAJOR_ELECTIVE`=전공선택.
 - 전공선택은 전부 나온다. 다 들어야 한다는 뜻이 아니므로 필요한 학점은 `remainingCredits`·`progress` 로 보여 주세요. 0학점 과목(졸업논문 등)도 온다.
-- 복수전공이 있으면 두 전공 과목이 함께 온다. 같은 과목은 1행이고, `unitName` 으로 어느 전공 과목인지 구분한다(필수교양은 null).
+- 복수전공이 있으면 두 전공 과목이 함께 온다. 같은 과목은 1행이고, `unitName` 으로 어느 전공 과목인지 구분한다(교양은 null).
 - F·NP 받은 과목은 남은 과목에 있고, 성적 미정(수강 중)은 들은 것으로 친다. 이수 과목을 추가·수정·삭제하면 다시 불러오면 된다.
 - 2025학번 이하도 2026 교육과정 기준이다(자료가 2026뿐). `progress` 의 `approximate: true` 면 안내 문구를 같이 보여 주세요.
 - 입학년도·전공이 없으면 400 `PROFILE_INCOMPLETE`.
@@ -715,6 +716,7 @@ Swagger 확인 순서: 회원가입/로그인 → Authorize → 공개 부전공
 - T11: Flyway `V11__add_web_push.sql`(`push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·인덱스, `users.todo_alarm_time`), 공용 `ErrorCode` 에 `PUSH_NOT_CONFIGURED`(카카오 코드는 만들지 않음), `application.yml` 에 `app.webpush.*`·`app.notification.scheduler-enabled`(값 없이 환경변수 이름만). 새 의존성 없음(JDK 암호화 + 기존 jjwt). `@EnableScheduling` 은 `notification/config/SchedulingConfig`. `UserSettingsRequest` 의 `notificationEnabled` 가 필수 → 선택으로 바뀜.
 - T19: Flyway `V14__add_user_double_major.sql`(`users.double_major_id`). `User` 에 `doubleMajor`. B 가 만든 T3 코드도 바꿨다: `MajorRepository.findAllSelectable`·`CatalogService.getMajors` 에 `includeConvergence` 인자 추가(기본 동작은 그대로). 공용 파일(`global/**`, `ErrorCode`, `build.gradle`, `application.yml`) 변경 없음.
 - T20: Flyway `V17__add_micro_degrees.sql`, `V18__seed_micro_degrees.sql`(생성기 `tools/seed/generate_micro_degree_seed.py`). `CatalogService`·`CatalogController` 에 목록 API 추가. 공용 파일(`global/**`, `ErrorCode`, `build.gradle`, `application.yml`) 변경 없음.
+- 전공탐색세미나: Flyway `V19__add_exploration_seminar.sql`(교양 필수과목 표 1행, 스키마 변경 없음). 공용 파일 변경 없음.
 - 명세와 다르게/새로 정한 것은 `BACKEND_SPEC.md` 4장·4.1·4.2·8장에 반영해 두었다.
 
 ---
