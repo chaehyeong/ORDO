@@ -28,7 +28,8 @@ final class TranscriptInterpreter {
     private static final int CODE = 13, NAME = 12, CLASS_CODE = 11, CLASS_TEXT = 10, CREDITS = 8, GRADE = 5, DISCARD = 3;
     private static final Pattern COURSE_CODE = Pattern.compile("[A-Z]{2,}[0-9][0-9A-Z]*");
     private static final Pattern GROUP_SECTION = Pattern.compile("(.+)(G\\d{2})");
-    private static final Set<String> GRADES = Set.of("A+", "A0", "B+", "B0", "C+", "C0", "D+", "D0", "F", "P", "NP");
+    private static final Set<String> GRADES = Set.of("A+", "A0", "A-", "B+", "B0", "B-", "C+", "C0", "C-", "D+", "D0", "D-",
+            "F", "P", "NP");
     // 과목 표 뒤에 이어지는 요약 표 제목 → 과목 표 끝
     private static final Set<String> OTHER_SECTIONS = Set.of("원성적및4.5변환성적", "전공/교양별평점", "편입/인정/선수학점");
     private static final Set<String> REPEATED_HEADERS = Set.of("성명", "학과", TITLE);

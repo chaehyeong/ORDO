@@ -18,9 +18,9 @@ public record CompletedCourseRequest(
         @NotNull @Min(0) @Max(30) Integer credits,
         Classification classification,
         @Min(1) @Max(5) Integer distributionArea,
-        @Pattern(regexp = GRADE_PATTERN, message = "A+ A0 B+ B0 C+ C0 D+ D0 F P NP 중 하나여야 합니다.") String grade,
+        @Pattern(regexp = GRADE_PATTERN, message = "A+ A0 A- B+ B0 B- C+ C0 C- D+ D0 D- F P NP 중 하나여야 합니다.") String grade,
         @NotNull @Min(2000) @Max(2100) Integer year,
         @NotNull Term term) {
 
-    public static final String GRADE_PATTERN = "^(A\\+|A0|B\\+|B0|C\\+|C0|D\\+|D0|F|P|NP)$";
+    public static final String GRADE_PATTERN = "^(A\\+|A0|A-|B\\+|B0|B-|C\\+|C0|C-|D\\+|D0|D-|F|P|NP)$";
 }

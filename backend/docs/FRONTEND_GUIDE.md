@@ -426,7 +426,7 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
   "credits": 3,              // 필수 0~30
   "classification": null,    // 자동 판별 안 될 때 필수 (교양·일반선택 등). 명세 3.1 의 대문자 이름
   "distributionArea": null,  // GEN_DISTRIBUTION 이면 1~5 필수
-  "grade": "A+",             // A+ A0 B+ B0 C+ C0 D+ D0 F P NP, 미정이면 null
+  "grade": "A+",             // A+ A0 A- B+ B0 B- C+ C0 C- D+ D0 D- F P NP (15개), 미정이면 null
   "year": 2026, "term": "FIRST" }
 // 응답 data (목록 원소·수정 응답도 같은 모양): 위 필드 + id, classification 은 실제로 저장된 값
 ```

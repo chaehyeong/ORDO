@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
 import com.ordo.academic.domain.CompletedCourse;
+import com.ordo.academic.dto.CompletedCourseRequest;
 import com.ordo.academic.dto.GpaSummary;
 import com.ordo.academic.dto.GpaSummary.TermGpa;
 import com.ordo.academic.repository.CompletedCourseRepository;
@@ -27,12 +28,36 @@ class AcademicGpaServiceTest {
     AcademicGpaService academicGpaService;
 
     @Test
-    void gradePointsAreOnFourPointThreeScale() {
-        assertThat(AcademicGpaService.GRADE_POINTS).containsOnlyKeys("A+", "A0", "B+", "B0", "C+", "C0", "D+", "D0", "F");
-        assertThat(AcademicGpaService.GRADE_POINTS.get("A+")).isEqualByComparingTo("4.3");
-        assertThat(AcademicGpaService.GRADE_POINTS.get("A0")).isEqualByComparingTo("4.0");
-        assertThat(AcademicGpaService.GRADE_POINTS.get("D0")).isEqualByComparingTo("1.0");
-        assertThat(AcademicGpaService.GRADE_POINTS.get("F")).isEqualByComparingTo(BigDecimal.ZERO);
+    void gradePointsFollowTheSchoolTable() {
+        String[][] table = {{"A+", "4.3"}, {"A0", "4.0"}, {"A-", "3.7"}, {"B+", "3.3"}, {"B0", "3.0"}, {"B-", "2.7"},
+                {"C+", "2.3"}, {"C0", "2.0"}, {"C-", "1.7"}, {"D+", "1.3"}, {"D0", "1.0"}, {"D-", "0.7"}, {"F", "0"}};
+
+        assertThat(AcademicGpaService.GRADE_POINTS).hasSize(table.length);
+        for (String[] row : table) {
+            assertThat(AcademicGpaService.GRADE_POINTS.get(row[0])).isEqualByComparingTo(row[1]);
+        }
+    }
+
+    @Test
+    void everyGradeCanBeEnteredAndOthersAreRejected() {
+        assertThat(AcademicGpaService.GRADE_POINTS.keySet()).allMatch(grade -> grade.matches(CompletedCourseRequest.GRADE_PATTERN));
+        assertThat("P".matches(CompletedCourseRequest.GRADE_PATTERN)).isTrue();
+        assertThat("NP".matches(CompletedCourseRequest.GRADE_PATTERN)).isTrue();
+        assertThat("F-".matches(CompletedCourseRequest.GRADE_PATTERN)).isFalse();
+        assertThat("E0".matches(CompletedCourseRequest.GRADE_PATTERN)).isFalse();
+    }
+
+    @Test
+    void minusGradesCountInAverageAndEarnedCredits() {
+        GpaSummary summary = calculate(
+                course("X1", 3, Classification.GEN_FREE, "A-", 2026, Term.FIRST),
+                course("X2", 3, Classification.GEN_FREE, "B-", 2026, Term.FIRST),
+                course("X3", 3, Classification.GEN_FREE, "C-", 2026, Term.FIRST),
+                course("X4", 3, Classification.GEN_FREE, "D-", 2026, Term.FIRST));
+
+        assertThat(summary.gpa()).isEqualTo(2.2);
+        assertThat(summary.gradedCredits()).isEqualTo(12);
+        assertThat(summary.earnedCredits()).isEqualTo(12);
     }
 
     @Test

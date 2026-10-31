@@ -24,13 +24,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AcademicGpaService {
 
-    // 경희대 4.3 만점. A+·B+·B0·C+ 는 성적표로 확인, 나머지는 4.3 척도 관례값 (명세 9장 20)
-    static final Map<String, BigDecimal> GRADE_POINTS = Map.of(
-            "A+", new BigDecimal("4.3"), "A0", new BigDecimal("4.0"),
-            "B+", new BigDecimal("3.3"), "B0", new BigDecimal("3.0"),
-            "C+", new BigDecimal("2.3"), "C0", new BigDecimal("2.0"),
-            "D+", new BigDecimal("1.3"), "D0", new BigDecimal("1.0"),
-            "F", BigDecimal.ZERO);
+    // 경희대 4.3 만점, 학교 등급표 기준 (명세 5장, 9장 20)
+    static final Map<String, BigDecimal> GRADE_POINTS = Map.ofEntries(
+            Map.entry("A+", new BigDecimal("4.3")), Map.entry("A0", new BigDecimal("4.0")), Map.entry("A-", new BigDecimal("3.7")),
+            Map.entry("B+", new BigDecimal("3.3")), Map.entry("B0", new BigDecimal("3.0")), Map.entry("B-", new BigDecimal("2.7")),
+            Map.entry("C+", new BigDecimal("2.3")), Map.entry("C0", new BigDecimal("2.0")), Map.entry("C-", new BigDecimal("1.7")),
+            Map.entry("D+", new BigDecimal("1.3")), Map.entry("D0", new BigDecimal("1.0")), Map.entry("D-", new BigDecimal("0.7")),
+            Map.entry("F", BigDecimal.ZERO));
     private static final Set<String> NOT_EARNED_GRADES = Set.of("F", "NP");
     // 성적표 산정기준: 전공 = 전공필수·전공선택·전공기초
     private static final Set<Classification> MAJOR = Set.of(
