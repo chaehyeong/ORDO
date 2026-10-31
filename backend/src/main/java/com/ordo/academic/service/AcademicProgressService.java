@@ -49,6 +49,13 @@ public class AcademicProgressService {
     static final Set<String> NOT_RECOGNIZED_GRADES = Set.of("F", "NP");
     static final List<Classification> MAJOR_CLASSIFICATIONS =
             List.of(Classification.MAJOR_BASIC, Classification.MAJOR_REQUIRED, Classification.MAJOR_ELECTIVE);
+    static final String EXPLORATION_SEMINAR = "전공탐색및기업가정신세미나";  // 자유이수교과지만 필수 (교육과정 p21·24, p45)
+    // 세칙에 쓰인 다른 이름과 대체 과목 전공탐색2 (p22 제4조④)
+    private static final Set<String> SEMINAR_NAMES = Set.of(EXPLORATION_SEMINAR, "전공탐색세미나", "전공탐색세미나및기업가정신세미나", "전공탐색2");
+    // 이 공과대학 학과들은 창업세미나도 인정한다 (p132 등)
+    private static final String STARTUP_SEMINAR = "창업세미나:스타트업에서빅테크까지";
+    private static final Set<String> STARTUP_SEMINAR_UNITS = Set.of("기계공학부", "산업경영공학과", "원자력공학과", "화학공학과",
+            "신소재공학과", "사회기반시스템공학과", "건축공학과", "건축학과");
     private static final int MULTI_PROGRAM_REQUIRED_FROM = 2026;  // 2026학년도 입학자부터 다전공·부전공·MD 중 1개 이상 (교육과정 p115)
     private static final Set<Classification> OTHER = Set.of(
             Classification.GENERAL_ELECTIVE, Classification.TEACHING, Classification.TEACHING_MAJOR);
@@ -185,7 +192,9 @@ public class AcademicProgressService {
                 .map(c -> withoutSpaces(c.getCourseName())).collect(Collectors.toSet());
         List<RequiredCourse> requiredGeneralCourses = requiredCourses.stream()
                 .map(r -> new RequiredCourse(r.getCourseName(), r.getCredits(),
-                        takenRequired.contains(withoutSpaces(r.getCourseName()))))
+                        EXPLORATION_SEMINAR.equals(r.getCourseName())
+                                ? seminarDone(recognized, major)
+                                : takenRequired.contains(withoutSpaces(r.getCourseName()))))
                 .toList();
 
         boolean graduatable = totalEarned >= totalRequired
@@ -196,6 +205,14 @@ public class AcademicProgressService {
 
         return new ProgressSummary(admissionYear, new MajorInfo(major.getId(), major.getDisplayName()), total, areas,
                 groups, requiredGeneralCourses, checks(admissionYear, requirement), graduatable, approximate);
+    }
+
+    // 자유이수로 기록되고 전공탐색2 는 전공선택이라 이수구분으로 거르지 않는다 (명세 5장 9번)
+    // ponytail: 외국인·편입생 면제와 학과 지정 분반은 모른다. 면제 대상도 졸업 불가로 나온다. 명세 9장 29
+    private static boolean seminarDone(Collection<CompletedCourse> recognized, Major major) {
+        return recognized.stream().map(c -> withoutSpaces(c.getCourseName()))
+                .anyMatch(name -> SEMINAR_NAMES.contains(name)
+                        || name.equals(STARTUP_SEMINAR) && major.getCourseUnit() != null && STARTUP_SEMINAR_UNITS.contains(major.getCourseUnit()));
     }
 
     // ponytail: 주전공이 인정하는 타전공 과목이 부전공 목록에도 있으면 기타로 빠져 전공 학점이 적게 나온다. 명세 5장 13

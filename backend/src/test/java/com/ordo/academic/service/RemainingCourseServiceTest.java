@@ -108,6 +108,18 @@ class RemainingCourseServiceTest {
     }
 
     @Test
+    void explorationSeminarIsListedAsFreeElectiveAfterRequiredGeneral() {
+        given(completedCourseRepository.findByUserId(1L)).willReturn(List.of());
+        givenProfile(UNIT,
+                List.of(new RequiredCourse("주제연구", 3, false), new RequiredCourse(AcademicProgressService.EXPLORATION_SEMINAR, 1, false)),
+                List.of(general("주제연구", 3, "2"), general(AcademicProgressService.EXPLORATION_SEMINAR, 1, "1")),
+                List.of(major("V4", "드로잉", Classification.MAJOR_BASIC, "1")));
+
+        assertThat(remainingCourseService.getRemainingCourses(1L).courses()).extracting(RemainingCourse::classification)
+                .containsExactly(Classification.GEN_REQUIRED, Classification.GEN_FREE, Classification.MAJOR_BASIC);
+    }
+
+    @Test
     void approximateProfileReadsFallbackYearOfGeneralCourses() {
         given(completedCourseRepository.findByUserId(1L)).willReturn(List.of());
         User user = user(UNIT);

@@ -32,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RemainingCourseService {
 
     private static final List<Classification> CLASSIFICATION_ORDER = Stream
-            .concat(Stream.of(Classification.GEN_REQUIRED), AcademicProgressService.MAJOR_CLASSIFICATIONS.stream()).toList();
+            .concat(Stream.of(Classification.GEN_REQUIRED, Classification.GEN_FREE), AcademicProgressService.MAJOR_CLASSIFICATIONS.stream()).toList();
     private static final Comparator<RemainingCourse> DISPLAY_ORDER = Comparator
             .comparingInt((RemainingCourse c) -> CLASSIFICATION_ORDER.indexOf(c.classification()))
             .thenComparing(RemainingCourse::targetGrade, Comparator.nullsLast(Comparator.naturalOrder()))
@@ -66,7 +66,8 @@ public class RemainingCourseService {
         int year = summary.approximate() ? AcademicProgressService.GENERAL_EDUCATION_FALLBACK_YEAR : summary.admissionYear();
         return generalEducationRequiredCourseRepository.findAllByAdmissionYearOrderByIdAsc(year).stream()
                 .filter(course -> notDone.contains(course.getCourseName()))
-                .map(course -> new RemainingCourse(course.getCourseName(), null, Classification.GEN_REQUIRED,
+                .map(course -> new RemainingCourse(course.getCourseName(), null,
+                        AcademicProgressService.EXPLORATION_SEMINAR.equals(course.getCourseName()) ? Classification.GEN_FREE : Classification.GEN_REQUIRED,
                         course.getCredits(), course.getRecommendedGrade(), null, null));
     }
 
