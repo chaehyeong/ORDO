@@ -10,7 +10,7 @@ public interface TimetableEntryRepository extends JpaRepository<TimetableEntry, 
 
     Optional<TimetableEntry> findByIdAndUserId(Long id, Long userId);
 
-    /** 학기 시간표: 요일 → 시작시간 순 */
+    /** 학기 시간표: 요일 → 시작시간 순 (온라인 강의는 요일이 null 이라 DB 마다 위치가 다르다. 화면 순서는 서비스에서 정한다) */
     List<TimetableEntry> findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(
             Long userId, int academicYear, Term term);
 

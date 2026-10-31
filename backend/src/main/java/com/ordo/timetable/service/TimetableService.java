@@ -16,6 +16,7 @@ import com.ordo.user.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class TimetableService {
+
+    // 요일 → 시작시간 순, 요일·시간이 없는 온라인 강의는 맨 뒤에 이름 순
+    private static final Comparator<TimetableEntry> DISPLAY_ORDER = Comparator
+            .comparing(TimetableEntry::getDayOfWeek, Comparator.nullsLast(Comparator.naturalOrder()))
+            .thenComparing(TimetableEntry::getStartTime, Comparator.nullsLast(Comparator.naturalOrder()))
+            .thenComparing(TimetableEntry::getCourseName);
 
     private final TimetableEntryRepository timetableEntryRepository;
     private final UserRepository userRepository;
@@ -37,6 +44,7 @@ public class TimetableService {
         List<TimetableEntryResponse> entries = timetableEntryRepository
                 .findByUserIdAndAcademicYearAndTermOrderByDayOfWeekAscStartTimeAsc(userId, target.year(), target.term())
                 .stream()
+                .sorted(DISPLAY_ORDER)
                 .map(TimetableEntryResponse::from)
                 .toList();
         return new TimetableResponse(target.year(), target.term(), target.label(), entries);
@@ -56,6 +64,7 @@ public class TimetableService {
                 .location(request.location())
                 .professor(request.professor())
                 .color(request.color())
+                .online(Boolean.TRUE.equals(request.online()))
                 .build();
         checkOverlap(userId, entry);
         return TimetableEntryResponse.from(timetableEntryRepository.save(entry));
@@ -75,12 +84,12 @@ public class TimetableService {
             TimetableEntry entry = TimetableEntry.builder().user(user).academicYear(term.year()).term(term.term())
                     .courseName(e.courseName()).courseCode(e.courseCode()).dayOfWeek(e.dayOfWeek())
                     .startTime(e.startTime()).endTime(e.endTime()).location(e.location()).professor(e.professor())
-                    .color(e.color()).build();
+                    .color(e.color()).online(Boolean.TRUE.equals(e.online())).build();
             List<TimetableEntry> others = Stream.concat(kept.stream(), added.stream()).toList();
             if (others.stream().anyMatch(other -> sameSlot(other, entry))) {
                 continue;  // 이미 있는 칸(또는 요청 안에서 반복된 칸)은 건너뜀
             }
-            if (others.stream().anyMatch(other -> other.getDayOfWeek() == entry.getDayOfWeek() && other.overlaps(entry))) {
+            if (others.stream().anyMatch(other -> Objects.equals(other.getDayOfWeek(), entry.getDayOfWeek()) && other.overlaps(entry))) {
                 throw new BusinessException(ErrorCode.TIMETABLE_OVERLAP);
             }
             added.add(entry);
@@ -90,7 +99,7 @@ public class TimetableService {
         }
         timetableEntryRepository.saveAll(added);
         List<TimetableEntryResponse> entries = Stream.concat(kept.stream(), added.stream())
-                .sorted(Comparator.comparingInt(TimetableEntry::getDayOfWeek).thenComparing(TimetableEntry::getStartTime))
+                .sorted(DISPLAY_ORDER)
                 .map(TimetableEntryResponse::from)
                 .toList();
         return new TimetableResponse(term.year(), term.term(), term.label(), entries);
@@ -100,7 +109,8 @@ public class TimetableService {
     public TimetableEntryResponse update(Long userId, Long entryId, TimetableEntryUpdateRequest request) {
         TimetableEntry entry = getOwnEntry(userId, entryId);
         entry.update(request.year(), request.term(), request.courseName(), request.courseCode(), request.dayOfWeek(),
-                request.startTime(), request.endTime(), request.location(), request.professor(), request.color());
+                request.startTime(), request.endTime(), request.location(), request.professor(), request.color(),
+                request.online());
         checkOverlap(userId, entry);
         return TimetableEntryResponse.from(entry);
     }
@@ -113,6 +123,9 @@ public class TimetableService {
     // 같은 학기·요일의 다른 칸과 시간이 겹치면 409.
     // 수정 중인 칸은 같은 영속성 컨텍스트에서 같은 인스턴스로 조회되므로 != 로 자기 자신을 뺀다
     private void checkOverlap(Long userId, TimetableEntry entry) {
+        if (entry.isOnline()) {
+            return;
+        }
         boolean overlapped = timetableEntryRepository
                 .findByUserIdAndAcademicYearAndTermAndDayOfWeek(userId, entry.getAcademicYear(), entry.getTerm(),
                         entry.getDayOfWeek())
@@ -124,8 +137,8 @@ public class TimetableService {
     }
 
     private static boolean sameSlot(TimetableEntry a, TimetableEntry b) {
-        return a.getDayOfWeek() == b.getDayOfWeek() && a.getStartTime().equals(b.getStartTime())
-                && a.getEndTime().equals(b.getEndTime()) && a.getCourseName().equals(b.getCourseName());
+        return Objects.equals(a.getDayOfWeek(), b.getDayOfWeek()) && Objects.equals(a.getStartTime(), b.getStartTime())
+                && Objects.equals(a.getEndTime(), b.getEndTime()) && a.getCourseName().equals(b.getCourseName());
     }
 
     // 남의 칸도 "없음"으로 응답해 존재 여부를 노출하지 않는다

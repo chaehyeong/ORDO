@@ -132,6 +132,40 @@ class UserServiceTest {
     }
 
     @Test
+    void updateMeToSameMajorAsDoubleMajorFails() {
+        Major doubleMajor = mock(Major.class);
+        given(doubleMajor.getId()).willReturn(99L);
+        User user = user(null, 1);
+        user.changeDoubleMajor(doubleMajor);
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(majorRepository.findSelectable(99L, 2026)).willReturn(Optional.of(doubleMajor));
+
+        assertThatThrownBy(() -> userService.updateMe(1L,
+                new UserUpdateRequest(null, null, null, null, null, 99L, null, null)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.INVALID_INPUT);
+    }
+
+    @Test
+    void updateMeToAdmissionYearWithoutDoubleMajorRequirementFails() {
+        Major first = mock(Major.class);
+        given(first.getId()).willReturn(35L);
+        Major doubleMajor = mock(Major.class);
+        given(doubleMajor.getId()).willReturn(99L);
+        User user = user(first, 1);
+        user.changeDoubleMajor(doubleMajor);
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(majorRepository.findSelectable(35L, 2020)).willReturn(Optional.of(first));
+        given(majorRepository.countGraduationRequirements(99L, 2020)).willReturn(0L);
+
+        assertThatThrownBy(() -> userService.updateMe(1L,
+                new UserUpdateRequest(null, null, null, null, 2020, null, null, null)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.INVALID_INPUT);
+        assertThat(user.getAdmissionYear()).isEqualTo(2026);
+    }
+
+    @Test
     void updateSettingsTurnsNotificationOff() {
         User user = user(null, 1);
         given(userRepository.findById(1L)).willReturn(Optional.of(user));

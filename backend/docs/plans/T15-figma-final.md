@@ -1,6 +1,6 @@
 # T15~T20 최종 디자인 대비 빠진 API 계획
 
-> 작성 2026-10-30 · 상태: **승인 대기** · 기준: Figma "웹디자인 최종"(node 381:751) 12개 화면, master `cad1390`(PR #1~#12 병합, 테스트 198개)
+> 작성 2026-10-30 · 상태: **T15~T18 승인(추천안 그대로, 2026-10-30)**, T19·T20 은 `T19-T20-double-major-micro-degree.md` 로 대체(2026-10-31 승인), 1.3 보류 동의·1.4 질문은 대기 · 기준: Figma "웹디자인 최종"(node 381:751) 12개 화면, master `cad1390`(PR #1~#12 병합, 테스트 198개)
 >
 > 승인 전에는 코드를 쓰지 않는다. 승인되면 기능마다 브랜치를 따로 만들고, 단계마다 `docs/PROGRESS.md` 를 갱신한다. 승인된 내용은 BACKEND_SPEC·FRONTEND_GUIDE 에 반영한다.
 
@@ -116,13 +116,15 @@
 - API 2개(끌어 놓기 결과를 통째로 저장하는 방식이라 개별 이동 API는 만들지 않음):
   - `GET /api/academic/plans` 🔒 → 학기별로 묶은 목록 + 학기별 학점 합 + 전체 합.
   - `PUT /api/academic/plans` 🔒 → 보낸 목록으로 **전부 교체**. "초기화" = 빈 목록 PUT.
-- 검증: 학점 1~30, 한 번에 최대 100과목, 같은 학기에 같은 과목(학수번호, 없으면 이름) 중복 → 400.
+- 검증: 학점 0~30(구현 때 1~30 에서 바꿈: T17 의 0학점 졸업논문도 배치할 수 있어야 함), 한 번에 최대 100과목, 같은 학기에 같은 과목(학수번호, 없으면 이름) 중복 → 400.
 - 화면의 학기 칸(2027년 1학기 ~ 2028년 2학기)은 프론트가 `admissionYear`·`currentSemester` 로 만든다. 백엔드는 학기를 제한하지 않는다.
 - "수업 추가"는 남은 과목에 없는 과목을 목록에 넣는 것 → 같은 PUT 으로 저장(1.4-1 답에 따라 필드 확정).
 - 졸업 시뮬레이션(배치한 과목까지 들으면 졸업 가능한지)은 이번 범위가 아니다. 이미 있는 `AcademicProgressService.calculate(...)` 로 나중에 붙일 수 있다.
 - 테스트: 교체 저장, 빈 목록 초기화, 남의 계획 분리, 검증 400, 학기별 합.
 
 ### T19 복수전공 (큼, 규칙 확인 필요)
+
+> **대체됨:** 아래는 자료를 받기 전 초안이다. 규칙이 달라졌으니 `T19-T20-double-major-micro-degree.md` 를 본다.
 
 - **Flyway V14** `users`: `double_major_id BIGINT NULL`(FK majors) 추가. 복수전공은 1개만.
 - API:
@@ -153,6 +155,8 @@
 
 ### T20 마이크로디그리 (데이터 없음 → 방식 결정 필요)
 
+> **대체됨:** 자료를 받아 C안으로 결정했다. `T19-T20-double-major-micro-degree.md` 를 본다.
+
 | 안 | 내용 | 장단점 |
 |---|---|---|
 | A. 보류 | 화면은 빈 상태("이수 중인 마이크로디그리가 없습니다")로 고정 | 작업 없음. 화면 일부가 동작 안 함 |
@@ -173,7 +177,7 @@
 | 5 | T19 복수전공 | 큼 | V14 | 규칙 확인(2장 T19) 후 시작 |
 | 6 | T20 마이크로디그리 | 중간(B안) | V15 | 방식 결정 후 |
 
-브랜치는 기능마다 master 에서 따로 만든다(`feat/timetable-online`, `feat/home-deadlines`, `feat/remaining-courses`, `feat/plans`, `feat/double-major`, `feat/micro-degree`). 지난번처럼 깊게 쌓으면 문서 충돌이 나므로, 하나 머지되면 다음 것을 master 에서 시작한다.
+브랜치는 기능마다 master 에서 따로 만든다(T15 는 이 계획서 커밋을 포함하려고 `feat/figma-gap` 위에 만듦. `feat/timetable-online`, `feat/home-deadlines`, `feat/remaining-courses`, `feat/plans`, `feat/double-major`, `feat/micro-degree`). 지난번처럼 깊게 쌓으면 문서 충돌이 나므로, 하나 머지되면 다음 것을 master 에서 시작한다.
 
 ## 4. 공용 파일 변경 (B 에게 알릴 것)
 
