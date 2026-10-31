@@ -32,6 +32,8 @@ function Progress({ icon, data, onViewCourses }) {
                         <ProgressBar earned={b.earned} required={b.required} small />
                     </div>
                 ))}
+                {/* [수정] data에 status가 있으면 상태 문구 (부전공: 요건 충족 / 이수 중 / 자료 부족) */}
+                {data.status && <p className="program-period">{data.status}</p>}
                 {/* data에 unmet이 있으면 미충족 요건 + 들어야 할 과목 (마이크로디그리). 비어 있으면 모두 충족 */}
                 {data.unmet && (
                     <>
@@ -50,7 +52,7 @@ function Progress({ icon, data, onViewCourses }) {
                         )}
                     </>
                 )}
-                {/* data에 note가 있으면 안내 문구 (부전공: 학과별 지정 과목 확인 필요) */}
+                {/* data에 note가 있으면 안내 문구 (부전공: 지정 과목 확인 필요 또는 학교 심사 전 계산값) */}
                 {data.note && <p className="program-period-label">{data.note}</p>}
             </div>
             <button type="button" className="btn-ordo program-view" onClick={onViewCourses}>

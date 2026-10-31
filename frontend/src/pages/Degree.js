@@ -41,14 +41,24 @@ const fromDoubleMajor = (d) => ({
     breakdown: d.groups.map((g) => ({ key: g.key, label: g.label, earned: g.earned, required: g.required })),
 });
 
-// GET /api/academic/minor → Progress 카드 모양. 후보 학점은 공식 인정 학점이 아니라서 안내 문구를 꼭 붙인다
-const fromMinor = (m) => ({
-    name: m.major.displayName,
-    type: '부전공',
-    earned: m.candidateCredits,
-    required: m.requirements.totalCredits,
-    note: '학과별 부전공 지정 과목 확인 필요',
-});
+// GET /api/academic/minor → Progress 카드 모양
+// [수정] 학점: candidateCredits / requirements.totalCredits → completion.totalEarned / completion.totalCredits
+// [수정] 미충족 요건에 아직 안 들은 필수 과목(completion.missingCourses) 추가
+// [수정] 안내 문구: 항상 표시 → reviewRequired 가 true(2025학번 이전) 일 때만 표시
+const fromMinor = (m) => {
+    const c = m.completion;
+    return {
+        name: m.major.displayName,
+        type: '부전공',
+        earned: c.totalEarned,
+        required: c.totalCredits,
+        // 꼭 들어야 하는데 안 들은 과목. 골라 듣는 학과는 빈 배열이라 숨긴다
+        unmet: c.missingCourses.length > 0
+            ? [{ text: '아직 안 들은 필수 과목', courses: c.missingCourses }]
+            : null,
+        note: m.reviewRequired ? '학과별 부전공 지정 과목 확인 필요' : null,
+    };
+};
 
 // 마이크로디그리 미충족 요건 코드 → 화면 문구 (백엔드 가이드 문구)
 const UNMET_LABELS = {
