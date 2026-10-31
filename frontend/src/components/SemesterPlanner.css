@@ -1,0 +1,185 @@
+/* ---------- 학기별 배치하기 ---------- */
+.planner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.planner-title-wrap {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.planner-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.planner-desc {
+    font-size: 14px;
+    color: #555;
+}
+
+.planner-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.planner-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: rgba(57, 177, 157, 0.3);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.planner-btn:disabled {
+    cursor: default;
+}
+
+.planner-notice {
+    margin: 12px 0 0;
+    color: #e5484d;
+    font-size: 13px;
+}
+
+/* 학기 칸 가로 배치, 한 화면에 4칸, 넘치면 가로 스크롤 */
+.planner-terms {
+    --term-gap: 20px;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max(200px, calc((100% - 3 * var(--term-gap)) / 4));
+    gap: var(--term-gap);
+    overflow-x: auto;
+    margin-top: 20px;
+    padding: 4px 4px 18px;
+}
+
+.planner-terms::-webkit-scrollbar {
+    height: 8px;
+}
+
+.planner-terms::-webkit-scrollbar-track {
+    margin: 0 35%;
+    background-color: #D9D9D9;
+    border-radius: 4px;
+}
+
+.planner-terms::-webkit-scrollbar-thumb {
+    background-color: rgba(57, 177, 157, 0.3);
+    border-radius: 4px;
+}
+
+.planner-term {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    border-radius: 14px;
+    background-color: rgba(57, 177, 157, 0.15);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    transition: box-shadow 0.15s;
+}
+
+/* 드래그한 과목이 칸 위에 있을 때 */
+.planner-term.is-over {
+    box-shadow: 0 0 0 2px #39B19D, 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.planner-term-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.planner-term-label {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.planner-term-credits {
+    padding: 2px 10px;
+    border-radius: 8px;
+    background-color: rgba(57, 177, 157, 0.3);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.planner-drop {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 120px;
+    padding: 8px;
+    border-radius: 10px;
+    background-color: #fff;
+}
+
+.planner-empty {
+    margin: auto;
+    color: #888;
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.planner-chip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: grab;
+}
+
+.planner-chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.planner-chip-credits {
+    flex-shrink: 0;
+}
+
+/* 마우스를 올리면 학점 자리에 빼기 버튼 */
+.planner-chip-remove {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.planner-chip:hover .planner-chip-remove {
+    display: flex;
+}
+
+.planner-chip:hover .planner-chip-credits {
+    visibility: hidden;
+}
