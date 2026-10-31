@@ -9,13 +9,16 @@ import static org.mockito.Mockito.verify;
 
 import com.ordo.academic.domain.UserMinor;
 import com.ordo.academic.dto.MinorRequest;
+import com.ordo.academic.dto.MinorResponse;
 import com.ordo.academic.repository.CompletedCourseRepository;
 import com.ordo.academic.repository.UserMinorRepository;
 import com.ordo.catalog.domain.GraduationRequirement;
 import com.ordo.catalog.domain.Major;
+import com.ordo.catalog.domain.MinorDesignatedCourse;
 import com.ordo.catalog.repository.CourseRepository;
 import com.ordo.catalog.repository.GraduationRequirementRepository;
 import com.ordo.catalog.repository.MajorRepository;
+import com.ordo.catalog.repository.MinorDesignatedCourseRepository;
 import com.ordo.global.error.BusinessException;
 import com.ordo.global.error.ErrorCode;
 import com.ordo.user.domain.User;
@@ -42,6 +45,7 @@ class MinorServiceTest {
     @Mock GraduationRequirementRepository requirements;
     @Mock CourseRepository courses;
     @Mock CompletedCourseRepository completed;
+    @Mock MinorDesignatedCourseRepository designated;
     @InjectMocks MinorService service;
 
     @Test
@@ -61,9 +65,24 @@ class MinorServiceTest {
 
         assertThat(response.major().id()).isEqualTo(14L);
         assertThat(response.requirements().totalCredits()).isEqualTo(21);
-        assertThat(response.reviewRequired()).isTrue();
+        assertThat(response.reviewRequired()).isFalse();
+        assertThat(response.completion().status()).isEqualTo(MinorResponse.CompletionStatus.IN_PROGRESS);
         assertThat(response.remainingCourses()).hasSize(1);
         verify(minors).save(any(UserMinor.class));
+    }
+
+    @Test
+    void designatedElectivesLimitCandidatesToTheListedCourses() {
+        User user = user();
+        Major minor = major(14L, "minor");
+        prepareRegistration(user, minor);
+        prepareResponse(user, minor);
+        MinorDesignatedCourse other = BeanUtils.instantiateClass(MinorDesignatedCourse.class);
+        ReflectionTestUtils.setField(other, "courseCode", "OTHER");
+        ReflectionTestUtils.setField(other, "role", MinorDesignatedCourse.Role.ELECTIVE);
+        given(designated.findByMajorId(14L)).willReturn(List.of(other));
+
+        assertThat(service.register(1L, new MinorRequest(14L)).remainingCourses()).isEmpty();
     }
 
     @Test

@@ -669,7 +669,13 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
   "candidateCredits": 0,
   "completedCourses": [],
   "remainingCourses": [],
-  "reviewRequired": true
+  "reviewRequired": false,
+  "completion": {
+    "status": "IN_PROGRESS",
+    "requiredEarned": 0, "requiredCredits": 9,
+    "totalEarned": 0, "totalCredits": 21,
+    "missingCourses": ["객체지향프로그래밍", "오픈소스SW개발방법및도구", "웹/파이선프로그래밍"]
+  }
 }
 ```
 
@@ -677,12 +683,14 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 
 | status | 표시/사용 방법 |
 |---|---|
-| CANDIDATE | 부전공 인정 여부 확인이 필요한 수강 후보 |
+| CANDIDATE | 부전공 학점으로 세는 수강 후보 |
 | PRIMARY_MAJOR_OVERLAP | 주전공 교과목과 겹침. 후보 학점에서 제외 |
 | DOUBLE_MAJOR_OVERLAP | 복수전공 교과목과 겹침. 후보 학점에서 제외 |
 | OVERLAP_UNVERIFIED | 주전공/복수전공 자료가 없어 중복 확인 필요. 후보 학점에서 제외 |
 
-- **반드시 "학과별 부전공 지정 과목 확인 필요"를 표시한다.** `candidateCredits`는 공식 인정 학점이나 최종 이수 판정이 아니다. `reviewRequired`는 항상 true. 요구 학점을 채워도 자동으로 "이수 완료"라고 표시하지 않는다.
+- 진행 상황은 `completion` 을 쓴다. `requiredEarned / requiredCredits`(전공필수), `totalEarned / totalCredits`(전체), `missingCourses`(꼭 들어야 하는데 안 들은 과목, 골라 듣는 학과는 빈 배열).
+- `status`: `MET` 요건 충족 / `IN_PROGRESS` 진행 중 / `NEEDS_REVIEW` 자료 부족. **`MET` 을 "이수 완료"로 표시하지 않는다.** 최종 인정은 졸업예정학기의 학교 이수 심사다. 예: "요건 충족 (학교 심사 필요)".
+- `reviewRequired` 가 true 면(2025학번 이전, `NEEDS_REVIEW`) "학과별 부전공 지정 과목 확인 필요"를 표시한다. 책 기준 계산값이라 항상 작게 "학교 심사 전 계산값"을 안내하는 것도 좋다.
 - `requirements`의 NULL은 미기재다. 0으로 바꾸어 표시하지 않는다. 총학점이 없는 전공은 목록에서 빠지며 등록 요청 시 REQUIREMENT_NOT_FOUND(404)다.
 - 부전공은 주전공 요구 학점을 줄이지 않는다. 부전공에만 있는 과목이 성적표에 전공으로 찍혀 있으면 `progress` 의 전공 영역에서 빠지고 `기타`로 간다(총 이수학점은 그대로). **부전공 등록·변경·해제 후 `progress` 를 다시 불러오세요.** 평점은 그대로다. 부전공 후보의 credits를 총 이수학점에 또 더하지 않는다.
 - 주전공/복수전공을 부전공과 같게 바꾸거나 부전공 요건이 없는 학번으로 바꾸면 INVALID_INPUT(400). 부전공을 해제하거나 다른 전공으로 변경한 뒤 진행한다.

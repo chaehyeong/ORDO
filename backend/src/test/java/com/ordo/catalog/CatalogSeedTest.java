@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ordo.catalog.dto.MajorResponse;
 import com.ordo.catalog.dto.MicroDegreeResponse;
 import com.ordo.catalog.service.CatalogService;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -20,7 +22,7 @@ import org.springframework.test.context.jdbc.SqlConfig;
 @Sql(scripts = {"/db/migration/V2__seed_catalog.sql", "/db/migration/V15__fix_course_names.sql",
         "/db/migration/V16__fix_sports_practice_course_units.sql", "/db/migration/V18__seed_micro_degrees.sql",
         "/db/migration/V19__add_exploration_seminar.sql", "/db/migration/V20__add_general_education_2020_2023.sql",
-        "/db/migration/V21__fix_postmodern_music_minor_total.sql"},
+        "/db/migration/V21__fix_postmodern_music_minor_total.sql", "/db/migration/V23__seed_minor_designated_courses.sql"},
         config = @SqlConfig(encoding = "UTF-8"))
 class CatalogSeedTest {
 
@@ -41,6 +43,29 @@ class CatalogSeedTest {
         assertThat(later.approximate()).isTrue();
         assertThat(later.distributionCredits()).isEqualTo(9);
         assertThat(later.distributionMinAreas()).isEqualTo(3);
+    }
+
+    // V23: 지정 과목은 그 전공의 교과목표에 있어야 하고, 지정 필수 학점은 조사 결과와 같아야 한다 (명세 5장 14번)
+    @Test
+    void minorDesignatedCoursesExistInTheirMajorCatalog() {
+        assertThat(jdbc.queryForList("""
+                select d.major_id, d.course_code from minor_designated_courses d join majors m on m.id = d.major_id
+                where not exists (select 1 from courses c where c.unit_name = m.course_unit and c.course_code = d.course_code)
+                """)).isEmpty();
+        assertThat(jdbc.queryForObject("select count(*) from minor_designated_courses", Integer.class)).isEqualTo(358);
+        assertThat(jdbc.queryForObject("select count(distinct major_id) from minor_designated_courses", Integer.class)).isEqualTo(21);
+
+        Map<Long, Integer> required = new HashMap<>();
+        jdbc.query("""
+                select d.major_id, d.course_code, min(c.credits) from minor_designated_courses d
+                join majors m on m.id = d.major_id join courses c on c.unit_name = m.course_unit and c.course_code = d.course_code
+                where d.role = 'REQUIRED' group by d.major_id, d.course_code
+                """, row -> {
+            required.merge(row.getLong(1), row.getInt(3), Integer::sum);
+        });
+        assertThat(required).isEqualTo(Map.ofEntries(Map.entry(14L, 9), Map.entry(15L, 12), Map.entry(18L, 27), Map.entry(21L, 12),
+                Map.entry(26L, 9), Map.entry(27L, 3), Map.entry(28L, 6), Map.entry(29L, 12), Map.entry(30L, 12), Map.entry(32L, 15),
+                Map.entry(33L, 15), Map.entry(39L, 9), Map.entry(54L, 15), Map.entry(57L, 15)));
     }
 
     @Test

@@ -9,15 +9,19 @@ import com.ordo.catalog.domain.Classification;
 import com.ordo.catalog.domain.Course;
 import com.ordo.catalog.domain.GraduationRequirement;
 import com.ordo.catalog.domain.Major;
+import com.ordo.catalog.domain.MinorDesignatedCourse;
 import com.ordo.catalog.repository.CourseRepository;
 import com.ordo.catalog.repository.GraduationRequirementRepository;
 import com.ordo.catalog.repository.MajorRepository;
+import com.ordo.catalog.repository.MinorDesignatedCourseRepository;
 import com.ordo.global.error.BusinessException;
 import com.ordo.global.error.ErrorCode;
 import com.ordo.user.domain.User;
 import com.ordo.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +31,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class MinorService {
 
-    private static final List<Classification> CANDIDATE_CLASSIFICATIONS =
-            List.of(Classification.MAJOR_REQUIRED, Classification.MAJOR_ELECTIVE);
-
     private final UserRepository userRepository;
     private final UserMinorRepository userMinorRepository;
     private final MajorRepository majorRepository;
     private final GraduationRequirementRepository graduationRequirementRepository;
     private final CourseRepository courseRepository;
     private final CompletedCourseRepository completedCourseRepository;
+    private final MinorDesignatedCourseRepository minorDesignatedCourseRepository;
 
     public MinorResponse get(Long userId) {
         return userMinorRepository.findByUserId(userId).map(this::response).orElse(null);
@@ -88,11 +90,20 @@ public class MinorService {
         User user = minor.getUser();
         List<Course> first = courses(user.getMajor(), AcademicProgressService.MAJOR_CLASSIFICATIONS);
         List<Course> second = courses(user.getDoubleMajor(), AcademicProgressService.MAJOR_CLASSIFICATIONS);
-        List<Course> candidates = courses(minor.getMajor(), CANDIDATE_CLASSIFICATIONS);
+        List<MinorDesignatedCourse> designated = minorDesignatedCourseRepository.findByMajorId(minor.getMajor().getId());
+        Set<String> requiredCodes = codes(designated, MinorDesignatedCourse.Role.REQUIRED);
+        List<Course> candidates = MinorCourseCalculation.candidates(
+                courses(minor.getMajor(), AcademicProgressService.MAJOR_CLASSIFICATIONS),
+                requiredCodes, codes(designated, MinorDesignatedCourse.Role.ELECTIVE));
         boolean overlapAvailable = !first.isEmpty() && (user.getDoubleMajor() == null || !second.isEmpty());
         return MinorCourseCalculation.calculate(user.getAdmissionYear(), minor.getMajor(),
                 requirement(minor.getMajor().getId(), user.getAdmissionYear()), candidates, first, second,
-                overlapAvailable, completedCourseRepository.findByUserId(user.getId()));
+                overlapAvailable, completedCourseRepository.findByUserId(user.getId()), requiredCodes);
+    }
+
+    private static Set<String> codes(List<MinorDesignatedCourse> designated, MinorDesignatedCourse.Role role) {
+        return designated.stream().filter(course -> course.getRole() == role)
+                .map(MinorDesignatedCourse::getCourseCode).collect(Collectors.toSet());
     }
 
     private List<Course> courses(Major major, List<Classification> classifications) {

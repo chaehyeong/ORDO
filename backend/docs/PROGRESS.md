@@ -226,3 +226,11 @@
 | 1. 원인 | ✅ | 전공탐색및기업가정신세미나는 자유이수교과지만 필수인데(교육과정 p21·24·45), 자유이수 3학점만 채우면 `graduatable` 이 true 로 나왔다(명세 9장 29) | 책, 성적표 샘플(`GEE1952`, 자유이수교과, P/N) | |
 | 2. 수정 | ✅ | `feat/required-seminar`(master bf375d8 위). `V19` 로 교양 필수과목 표에 1행. `AcademicProgressService.seminarDone`: 이수구분과 상관없이 인정 과목명으로 비교, 다른 이름·전공탐색2·공과대학 8개 학과의 창업세미나 인정. `RemainingCourseService`: `GEN_FREE` 로 표시, 필수교양 다음 정렬. 학점 영역은 그대로. V19 는 로컬 DB 에 적용됨(수정 금지) | 단위 테스트 8개 추가, 전체 **346개 통과**(1차 1건 실패는 `CatalogSeedTest` 시드 목록에 V19 를 안 넣은 테스트 문제). 커밋 전 점검에서 `course_unit` 이 NULL 인 전공(글로벌한국학과 등)이 창업세미나를 기록하면 NPE 로 500 이 나는 버그를 찾아 고치고 테스트 추가. 8081 임시 서버 + 실제 MySQL 18개 통과(미이수·F·NP 졸업 불가, 재수강 통과, 대체 과목, 다른 학과 창업세미나 불가, 남은 과목 표시, NULL 전공의 progress·home·summary 200), 서버 로그 ERROR 0 | 외국인·편입생 면제, 학과 지정 분반(명세 9장 29). 실패 성적의 실제 표기 확인 |
 | 3. 문서 | ✅ | 명세 3.2·4.6·5장·7장·9장 29, FRONTEND_GUIDE | 이 커밋(`feat/required-seminar`) | 프론트: 체크리스트 7개, 자유이수 태그 |
+
+## 부전공 요건 판정
+
+| 단계 | 상태 | 한 일 | 검증 | 남은 일 |
+|---|---|---|---|---|
+| 1. 조사 | ✅ | 53개 전공 시행세칙·기본구조표·편성표 전수 조사(`plans/T21-minor-rules-survey.md`). 지정 없음 31(산업경영 포함 32), 지정 21. 불명확한 항목은 책을 다시 확인해 정하고 명세 9장 32에 기록 | 편성표 표시를 두 방식으로 대조(19개 전공 일치), 13쪽 눈으로 확인 | 학교 답변이 오면 새 마이그레이션 |
+| 2. 데이터 | ✅ | `V22` 표, `V23` 358행(21개 전공), `tools/seed/generate_minor_course_seed.py`. V22·V23 은 로컬 DB 에 적용됨(수정 금지) | `CatalogSeedTest`: 코드가 그 전공 과목표에 있음, 지정 필수 학점 합 일치 | |
+| 3. 판정 | ✅ | `feat/minor-completion`(master fbd0849 위). `MinorCourseCalculation.candidates`·`completion`, `GET /api/academic/minor` 에 `completion` 추가. 기존 필드 유지, `reviewRequired` 는 2025학번 이전·`NEEDS_REVIEW` 만 true | 단위 테스트 추가, 전체 **383개 통과**. 8081 임시 서버 + 실제 MySQL 25개 통과(컴공 전 과정, F, 지정 필수·골라 듣기·모자란 지정, 겹침, 2025학번, 책과 다른 학점 처리), 서버 로그 ERROR 0 | 프론트: `completion` 표시. 컴공 대체 과목 판정 |
