@@ -50,6 +50,10 @@ public class User extends BaseTimeEntity {
     @JoinColumn(name = "major_id")
     private Major major;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "double_major_id")
+    private Major doubleMajor;  // 복수전공·융합전공 (T19). null 이면 단일전공
+
     private Integer currentSemester;
     private boolean notificationEnabled;
     private LocalTime todoAlarmTime;  // 시간 없는 할 일의 알림 기준 시각 (T11, 기본 09:00)
@@ -91,6 +95,11 @@ public class User extends BaseTimeEntity {
     public void changeSettings(Boolean notificationEnabled, LocalTime todoAlarmTime) {
         if (notificationEnabled != null) this.notificationEnabled = notificationEnabled;
         if (todoAlarmTime != null) this.todoAlarmTime = todoAlarmTime;
+    }
+
+    /** null 이면 해제 */
+    public void changeDoubleMajor(Major doubleMajor) {
+        this.doubleMajor = doubleMajor;
     }
 
     /** null 이면 연결 해제 */

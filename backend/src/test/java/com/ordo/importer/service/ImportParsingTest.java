@@ -24,7 +24,7 @@ class ImportParsingTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"enrollment.xlsx", "enrollment.csv", "enrollment.txt"})
-    void enrollmentGivesSixCoursesSevenEntriesAndOneNoTimeWarning(String file) throws IOException {
+    void enrollmentGivesSixCoursesSevenTimedEntriesAndOneOnlineEntry(String file) throws IOException {
         EnrollmentInterpreter.Result result = EnrollmentInterpreter.interpret(read(file));
         TimetableDraft draft = result.draft();
 
@@ -33,9 +33,11 @@ class ImportParsingTest {
         assertThat(draft.term()).isEqualTo(Term.SECOND);
         assertThat(draft.courseCount()).isEqualTo(6);
         assertThat(draft.totalCredits()).isEqualTo(18);
-        assertThat(draft.entries()).hasSize(7);
+        assertThat(draft.entries()).hasSize(8);
+        assertThat(draft.entries()).filteredOn(Entry::online).containsExactly(
+                new Entry("기초 미분적분학", "GED1540", null, null, null, null, "정교수", null, true));
         assertThat(draft.entries().get(0)).isEqualTo(new Entry("객체지향프로그래밍", "CSE103", 2,
-                LocalTime.of(15, 0), LocalTime.of(16, 50), "전205", "김교수", null));
+                LocalTime.of(15, 0), LocalTime.of(16, 50), "전205", "김교수", null, false));
         assertThat(draft.courses().get(2).courseCode()).isEqualTo("GEC0103");
         assertThat(draft.courses().get(2).section()).isEqualTo("G09");
         assertThat(draft.courses().get(0).classification()).isEqualTo(Classification.MAJOR_REQUIRED);

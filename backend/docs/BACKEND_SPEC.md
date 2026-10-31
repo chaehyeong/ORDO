@@ -2,8 +2,8 @@
 
 > **이 문서가 백엔드 구현의 유일한 기준이다.** AI에게 작업을 시킬 때 이 문서와 `AGENTS.md` 를 먼저 읽히고 시작한다.
 > `docs/ORDO_ARCHITECTURE.md` 는 초기 개요(구버전)라서, 내용이 다르면 **이 문서가 우선**이다.
-> 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`.
-> 최종 갱신: 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
+> 근거 자료: 회의록.txt(1·2차), 디자인 시안 7장, `경희대_국제캠_2026_졸업관리데이터.xlsx`, `경희대_교육과정기본구조/2020~2026학번`, `오르도_T19복수전공_T20마이크로디그리_최종.xlsx`, `2026 교육과정(전체).pdf`(전공 이수 총칙 p115~118).
+> 최종 갱신: 2026-10-31 (T19 복수전공 3.2·3.3·4.3·4.6·5·V14, T20 마이크로디그리 3.2·4.3·4.6·5·6·V17·V18), 2026-10-30 (T15 시간표 온라인 강의 4.5·V12, T16 홈 D-Day 알림 4.7, T17 남은 수강 과목 4.6, T18 학기별 배치 4.6·V13, 시드 과목명·전문실기 소속 교정 6·7·9장 24·V15·V16), 2026-10-21 (T11 웹푸시 알림 4.10·V11, T13 평점·T14 홈 e캠퍼스 과제, 2026-10-08: T12 파일 가져오기 계획 반영, T3 catalog 조회 계약·검증 결과, T4 schedule·T5 timetable·T6·T7 academic·T8 home·T9 summary 세부 규칙, e캠퍼스 연동 추가, AI 추천 보류)
 
 ---
 
@@ -17,7 +17,7 @@
 | 프론트 | 별도 웹 프론트엔드 → 백엔드는 **REST API(JSON)만** 제공 |
 | 팀 | 백엔드 2명 (각자 AI로 코딩) — 분업은 8장 |
 | MVP 범위 | ① 회원/로그인 ② 홈 ③ 캘린더·일정·할 일(+ e캠퍼스 과제 마감 읽기) ④ 시간표 ⑤ 학사관리(이수현황) ⑥ 마이페이지 |
-| 나중에 | 카카오 로그인, AI 추천, 졸업 시뮬레이션, 마이크로디그리, STT |
+| 나중에 | 카카오 로그인, AI 추천, 졸업 시뮬레이션, STT |
 
 **이미 준비된 것 (새로 만들지 말 것)**
 
@@ -37,11 +37,12 @@
 |---|---|---|
 | 랜딩 | 서비스 소개, 로그인/회원가입 버튼 | 없음 |
 | 로그인·회원가입 | 가입: 이름·전화번호·이메일·비밀번호(+확인)·학과·학번 / 로그인: 이메일·비밀번호·'로그인 상태 유지' 체크 (프론트 `SignUp.js`, `SignIn.js`) | `POST /api/auth/*`, `GET /api/catalog/majors?admissionYear=` (학번 앞 4자리로 조회) |
-| **홈** | "안녕하세요 (닉네임)님", 주간일정(요일·날짜·카테고리 점), 오늘일정 타임라인(시간·제목·장소·카테고리), ~~AI 오르도 추천 카드~~(보류, 최종 디자인에도 없음), 졸업 진행률(78%, 102/130, 남은 학점), 오늘 할 일 | `GET /api/home` |
+| **홈** | "안녕하세요 (닉네임)님", 주간일정(요일·날짜·카테고리 점), 오늘일정 타임라인(시간·제목·장소·카테고리), ~~AI 오르도 추천 카드~~(보류, 최종 디자인에도 없음), 졸업 진행률(78%, 102/130, 남은 학점), 오늘 할 일, D-Day 알림(T16) | `GET /api/home` |
 | 캘린더 | 연/월 선택, 오늘 버튼, 월 달력, +일정추가, 날짜 클릭 → 그날 일정 상세·추가·삭제, e캠퍼스 과제 마감 표시 | `GET/POST/PATCH/DELETE /api/schedules`, `GET /api/ecampus/events` |
 | 일정(할 일) 추가 폼 | 제목, 카테고리, 날짜, 시작~종료 시간, 알람 | `POST /api/schedules` |
-| 시간표 | 학기 선택(2026년 2학기), 시간표 편집, 월~금 09:00~19:00 격자 | `/api/timetables` |
-| 학사관리 | 학점 취득 현황(총 18/130, 13.8%, 영역 그룹별 도넛), 졸업까지 필요한 학점, 영역별 이수현황(필수교양·전공기초·전공필수·전공선택·기타·전체), 마이크로디그리(데이터 없음·보류) | `GET /api/academic/progress`, `/api/academic/completed-courses` |
+| 시간표 | 학기 선택(2026년 2학기), 시간표 편집, 월~금 09:00~19:00 격자, 격자 아래 온라인 강의 줄 | `/api/timetables` |
+| 학사관리 | 학점 취득 현황(총 18/130, 13.8%, 영역 그룹별 도넛), 졸업까지 필요한 학점, 영역별 이수현황(필수교양·전공기초·전공필수·전공선택·기타·전체), 복수전공(T19), 마이크로디그리(T20) | `GET /api/academic/progress`, `/api/academic/completed-courses`, `/api/academic/double-major`, `/api/academic/micro-degrees`, `/api/catalog/micro-degrees` |
+| 졸업 로드맵 | 학기별 곡선(학기별 평점·학점), 이수한 과목, 남은 수강 과목(T17), 학기별 배치(T18) | `GET /api/academic/gpa`, `/api/academic/completed-courses`, `/api/academic/remaining-courses`, `/api/academic/plans` |
 | 마이페이지 | 프로필(이름·학과·입학년도/학년·학번·이메일·연락처·사진), 정보 수정, 이번 학기 수강과목 수·과제 수, 학점 현황, 알림 on/off, e캠퍼스 연결, 로그아웃 | `/api/users/me`, `/api/users/me/summary`, `/api/auth/logout` |
 
 ---
@@ -202,12 +203,16 @@ enum Classification {             // 이수구분 (학교 코드)
 | general_education_requirements | 기준정보(읽기) | 2026만 존재: 필수 17 / 배분 9(3영역 이상) / 자유 3 / 합계 29 |
 | general_education_required_courses | 기준정보(읽기) | 교양 필수과목 6개(인간의가치탐색, 세계와시민, 빅뱅에서문명까지, 성찰과표현, 주제연구, 대학영어) |
 | courses | 기준정보(읽기) | 2026 전공 교과목. **학수번호가 학과마다 중복**(예: 미분적분학 AMTH1009가 32개 학과) → 반드시 `(unit_name, course_code)` 로 조회 |
-| users | 사용자 | email 유일, BCrypt password, name, nickname, student_number, phone, admission_year, major_id, current_semester, notification_enabled, todo_alarm_time(V11, 기본 09:00), ecampus_feed_token(V10, 4.8) |
+| users | 사용자 | email 유일, BCrypt password, name, nickname, student_number, phone, admission_year, major_id, current_semester, notification_enabled, todo_alarm_time(V11, 기본 09:00), ecampus_feed_token(V10, 4.8), double_major_id(복수전공·융합전공, NULL 이면 단일전공, T19) |
 | refresh_tokens | 인증 | token 유일, 만료일. 로그아웃·재발급 시 삭제 |
 | schedules | 사용자 | schedule_date, start_time/end_time(NULL 가능), category, done, alarm_minutes_before, alarm_sent_for(V11, 알림 중복 방지·내부용) |
 | push_subscriptions | 사용자 | 기기(브라우저)별 웹푸시 구독: endpoint(유일), p256dh, auth (V11, 4.10) |
-| timetable_entries | 사용자 | academic_year + term, day_of_week(1=월…7=일), start_time~end_time |
+| timetable_entries | 사용자 | academic_year + term, day_of_week(1=월…7=일), start_time~end_time, online(T15, true 면 요일·시간 NULL) |
+| planned_courses | 사용자 | 학기별 배치(T18): academic_year + term, course_name, course_code(선택), classification(선택), credits |
 | completed_courses | 사용자 | 내가 들은 과목: course_code(선택), course_name, credits, classification, distribution_area, grade, academic_year, term |
+| micro_degrees | 기준정보(읽기) | 마이크로디그리 56개(V18): name 유일, scope(국제/공통), host_department, required_course_count(판정 기준), required_credits(표시용), min_departments(2 면 참여학과 2개 조건), selective(선발제), requirement_text, guide_url |
+| micro_degree_courses | 기준정보(읽기) | 편성 과목 249행(V18): course_code(NULL 이면 과목명으로 찾음, `courses` 와 FK 없음), alias_code(구 학수번호·오기), department_name, credits(NULL = 자료에서 확인 못함), mandatory, group_key·group_min·group_max |
+| user_micro_degrees | 사용자 | 내가 등록한 MD (user_id, micro_degree_id) 유일. 최대 3개. 등록 순서가 과목 배정 순서 |
 
 ### 3.3 도메인 규칙
 
@@ -216,6 +221,7 @@ enum Classification {             // 이수구분 (학교 코드)
 - **현재 학기 판별**(`AcademicTerm.of(LocalDate)`): 3~8월 → 그해 FIRST, 9~12월 → 그해 SECOND, 1~2월 → **전년도** SECOND. 계절학기는 사용자가 직접 선택할 때만.
 - **학년**: `grade = (current_semester + 1) / 2` (current_semester null이면 null).
 - **전공 목록(회원가입)**: 선택한 입학년도에 `graduation_requirements` 행이 있는 전공만, `convergence = false` 만 (융합전공은 주전공 불가).
+- **전공 목록(복수전공)**: `includeConvergence=true` 면 융합전공도 함께 준다. 융합전공은 주전공으로 고를 수 없고 복수전공으로만 등록한다(T19).
 - **교양 기준 근사**: `general_education_requirements` 는 2026만 있으므로, 다른 학번은 2026 값을 쓰고 응답에 `"approximate": true` 표시.
 
 ---
@@ -302,16 +308,17 @@ enum Classification {             // 이수구분 (학교 코드)
 | 메서드 | 경로 | 설명 |
 |---|---|---|
 | GET | /api/catalog/colleges | 단과대 목록 |
-| GET | /api/catalog/majors?admissionYear=2026&collegeId= | 해당 학번에 존재하는 전공 목록(융합전공 제외) |
+| GET | /api/catalog/majors?admissionYear=2026&collegeId=&includeConvergence=false | 해당 학번에 존재하는 전공 목록. 융합전공은 `includeConvergence=true` 일 때만(복수전공 고르기, T19) |
 | GET | /api/catalog/requirements?majorId=&admissionYear= | 졸업요건 원본 |
 | GET | /api/catalog/courses?majorId=&q=&classification=&page=0&size=20 | 교과목 검색 (majorId → course_unit 으로 필터, q는 과목명/학수번호 부분일치) |
 | GET | /api/catalog/general-education?admissionYear= | 교양 기본구조 + 필수과목 목록 (없으면 2026, approximate=true) |
+| GET | /api/catalog/micro-degrees | 마이크로디그리 전체 + 편성 과목, 이름 → id 순 (T20) |
 
 **T3 조회 계약**
 
 - 모두 로그인 없이 호출 가능하며 `ApiResponse<T>` 로 감싼다. 아래는 `data` 의 형태이다.
 - `admissionYear`·`majorId` 는 해당 API에서 필수, 양수. `collegeId` 는 선택, 지정하면 양수.
-- 단과대는 이름→id, 전공은 표시명→id 오름차순. 전공은 **해당 입학년도의 졸업요건 행이 있고 융합전공이 아닌 경우만** 반환한다. 일치하는 전공이 없으면 성공 + 빈 배열.
+- 단과대는 이름→id, 전공은 표시명→id 오름차순. 전공은 **해당 입학년도의 졸업요건 행이 있고 융합전공이 아닌 경우만** 반환한다(`includeConvergence=true` 면 융합전공도 포함). 일치하는 전공이 없으면 성공 + 빈 배열.
 - 검색의 `majorId` 는 전공 id이며 과목 id나 단과대 id가 아니다. 해당 전공의 `course_unit` 과 정확히 일치하는 과목만 검색한다. 연결된 교육과정이 없는 전공은 성공 + 빈 페이지.
 - `q` 는 최대 100자. 생략·빈 문자열·공백이면 해당 전공의 전체 과목; 그 외에는 앞뒤 공백 제거 후 과목명/학수번호 부분일치, 영문 대소문자 구분 없음. `%`, `_`, `!` 도 일반 문자로 검색한다.
 - `classification` 은 3.1의 enum 이름(대문자), 생략·빈 문자열이면 전체 이수구분. 검색어와 함께 보내면 두 조건을 모두 만족해야 한다.
@@ -348,6 +355,19 @@ enum Classification {             // 이수구분 (학교 코드)
 - `requiredCourses`: `[{ id, groupName, courseName, credits, recommendedGrade, note }]`, 실제 사용한 기준년도에 속하는 목록만 id 순으로 반환. `groupName, recommendedGrade, note` 는 null일 수 있다.
 
 프론트 호출 예시·독립 테스트 실행법은 `docs/FRONTEND_GUIDE.md` 4장 catalog 및 7장 참고.
+
+**마이크로디그리 목록 (T20)**
+
+```json
+// GET /api/catalog/micro-degrees 응답 data 의 원소
+{ "id": 22, "name": "로컬브랜드매니지먼트", "scope": "국제", "collegeName": "예술·디자인대학", "hostDepartment": "시각디자인학과",
+  "requiredCourseCount": 3, "requiredCredits": 9, "minDepartments": 2, "selective": false,
+  "requirementText": "3과목 이수(총9학점)", "guideUrl": "https://sdl.khu.ac.kr/bbs/board.php?bo_table=faq_global",
+  "courses": [ { "courseCode": "VID3038", "courseName": "아이덴티티디자인", "departmentName": "시각디자인학과", "credits": 3,
+                 "mandatory": false, "groupKey": null, "groupMin": null, "groupMax": null } ] }
+```
+
+- 페이지 나눔 없음(약 70KB). 입학년도 제한이 없어 파라미터도 없다(운영지침 제4조). `credits` null 은 자료에서 학점을 확인 못한 과목, `courseCode` null 은 학수번호 미표기 과목(타대학 등)이다.
 
 ### 4.4 일정·할 일 `schedule`
 
@@ -392,16 +412,21 @@ enum Classification {             // 이수구분 (학교 코드)
 { "year": 2026, "term": "SECOND", "courseName": "타이포그래피 I", "courseCode": null,
   "dayOfWeek": 2, "startTime": "09:00", "endTime": "10:30",
   "location": "예405", "professor": "김교수", "color": "#3BB39A" }
+// POST /api/timetables/entries (온라인 강의, T15)
+{ "year": 2026, "term": "SECOND", "courseName": "빅뱅에서 문명까지", "online": true }
 // GET 응답 data
 { "year": 2026, "term": "SECOND", "label": "2026년 2학기",
   "entries": [ { "id": 3, "courseName": "타이포그래피 I", "courseCode": null, "dayOfWeek": 2, "startTime": "09:00",
-                 "endTime": "10:30", "location": "예405", "professor": "김교수", "color": "#3BB39A" } ] }
+                 "endTime": "10:30", "location": "예405", "professor": "김교수", "color": "#3BB39A", "online": false },
+               { "id": 4, "courseName": "빅뱅에서 문명까지", "courseCode": null, "dayOfWeek": null, "startTime": null,
+                 "endTime": null, "location": null, "professor": null, "color": null, "online": true } ] }
 ```
 - GET: `year`·`term` 중 생략한 값만 현재 학기(3.3) 값으로 채운다. `label` 은 "2026년 1학기 / 2학기 / 여름계절학기 / 겨울계절학기".
-- 칸 객체(`entries` 원소, POST·PATCH 응답 data): `id, courseName, courseCode, dayOfWeek, startTime, endTime, location, professor, color`. 요일 → 시작시간 순.
+- 칸 객체(`entries` 원소, POST·PATCH 응답 data): `id, courseName, courseCode, dayOfWeek, startTime, endTime, location, professor, color, online`. 요일 → 시작시간 순, 온라인 강의는 맨 뒤에 이름 순.
 - 입력: `year` 2000~2100, `dayOfWeek` 1(월)~7(일), `courseName` 100자, `courseCode` 20자, `location` 100자, `professor` 50자, `color` `#RRGGBB`. 종료 ≤ 시작이면 `INVALID_TIME_RANGE`.
+- **온라인 강의(T15)**: 시간 없는 수업. `online=true` 면 요일·시간을 보내도 저장하지 않는다(null). `online` 이 false·생략이면 `dayOfWeek`·`startTime`·`endTime` 이 모두 필수이고 없으면 `INVALID_TIME_RANGE`. 온라인 강의는 겹침 검사를 하지 않고, 홈 주간 점·오늘 타임라인에 나오지 않는다. `POST .../bulk` 의 칸에도 같은 `online` 이 있다.
 - 겹침: 같은 학기·요일에서 `start < 다른 칸 end` 이고 `다른 칸 start < end` 이면 `TIMETABLE_OVERLAP`(409). 끝과 시작이 같은 칸은 허용. 수정은 바꾼 뒤의 값으로 검사하고 자기 자신은 제외.
-- PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음). 남의 칸 → `TIMETABLE_ENTRY_NOT_FOUND`(404).
+- PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음). 예외로 `online: true` 는 요일·시간을 지우고, `online: false` 는 요일·시간을 같이 보내야 한다(없으면 `INVALID_TIME_RANGE`). 남의 칸 → `TIMETABLE_ENTRY_NOT_FOUND`(404).
 
 ### 4.6 학사관리 `academic`
 
@@ -414,6 +439,15 @@ enum Classification {             // 이수구분 (학교 코드)
 | DELETE | /api/academic/completed-courses/{id} | 🔒 → 204 |
 | GET | /api/academic/progress | 🔒 **이수현황 계산 결과** (학사관리 화면·홈·마이페이지의 원천) |
 | GET | /api/academic/gpa | 🔒 평점 평균 요약 (학사관리 학점 박스, T13) |
+| GET | /api/academic/remaining-courses | 🔒 남은 수강 과목 (졸업 로드맵, T17) |
+| GET | /api/academic/plans | 🔒 학기별 배치 조회 (졸업 로드맵, T18) |
+| PUT | /api/academic/plans | 🔒 학기별 배치 **통째로 교체**, 빈 목록 = 초기화 (T18) |
+| GET | /api/academic/double-major | 🔒 복수전공 진행 상황, 없으면 `data: null` (학사관리, T19) |
+| PUT | /api/academic/double-major | 🔒 복수전공 등록·변경 (T19) |
+| DELETE | /api/academic/double-major | 🔒 복수전공 해제 → 204 (T19) |
+| GET | /api/academic/micro-degrees | 🔒 내 마이크로디그리와 진행 상황, 등록순 (학사관리, T20) |
+| POST | /api/academic/micro-degrees | 🔒 등록 `{ "microDegreeId": 22 }` → 201, 내 목록 전체 (T20) |
+| DELETE | /api/academic/micro-degrees/{microDegreeId} | 🔒 해제 → 204 (T20) |
 
 ```json
 // POST /api/academic/completed-courses
@@ -492,6 +526,81 @@ enum Classification {             // 이수구분 (학교 코드)
 
 - 이수내역이 없으면 `{ "gpa": null, "majorGpa": null, "gradedCredits": 0, "earnedCredits": 0, "terms": [] }`(200). 입학년도·전공이 없어도 동작한다(졸업요건을 쓰지 않음). 계산 규칙은 5장 "평점 평균".
 
+```json
+// GET /api/academic/remaining-courses 응답 data (T17)
+{
+  "remainingCredits": 28,          // 졸업까지 남은 학점 = progress 의 total.remaining (courses 학점의 합이 아님)
+  "majorCoursesAvailable": true,   // false 면 전공 교과목 자료(course_unit)가 없는 전공이 있어 그 전공 과목이 빠진다
+  "courses": [
+    { "courseName": "주제연구", "courseCode": null, "classification": "GEN_REQUIRED", "credits": 3,
+      "targetGrade": "2", "openSemester": null, "unitName": null },
+    { "courseName": "디지털디자인", "courseCode": "FD105", "classification": "MAJOR_BASIC", "credits": 3,
+      "targetGrade": "1", "openSemester": "1,2", "unitName": "시각디자인학과" }
+  ]
+}
+```
+
+- 원천: **필수교양** = `progress` 의 `requiredGeneralCourses` 에서 `done: false` 인 과목(판정 규칙도 5장 9번 그대로). **전공** = `courses` 마스터에서 `unit_name = 내 전공 course_unit` 이고 전공기초·전공필수·전공선택인 과목 중 안 들은 과목. 교직·배분이수·자유이수는 정해진 과목이 없어 넣지 않는다.
+- 전공 과목 "들었다" 판정(F·NP 기록은 안 들은 것, 성적 미정은 들은 것): ① 학수번호가 같다 ② 학수번호 없이 저장한 기록의 과목명이 공백을 빼고 같다. 학수번호가 다르면 이름이 같아도 다른 과목으로 본다.
+- 정렬: 이수구분(필수교양 → 전공기초 → 전공필수 → 전공선택) → `targetGrade`(없으면 맨 뒤) → 과목명. 페이지 나눔 없음(학과당 최대 약 130과목), 이수구분 필터는 프론트에서 한다.
+- `targetGrade`: "1", "3-4", 교양은 "전학년"도 있다. `openSemester`: "1", "2", "1,2". 없으면 null. `credits` 0 인 과목도 있다(졸업논문 등 0학점 전공필수).
+- 교과목 마스터는 **2026 자료뿐**이라 다른 학번도 2026 교육과정으로 나온다. 필수교양은 `approximate` 면 2026 기준. 학사 프로필이 없으면 `PROFILE_INCOMPLETE`, 졸업요건이 없으면 `REQUIREMENT_NOT_FOUND`(`progress` 와 같음).
+- 복수전공이 있으면(T19) 제2전공 과목도 넣는다. 같은 학수번호는 제1전공 쪽 1행만 남기고, `unitName` 으로 어느 전공 과목인지 구분한다(필수교양은 null).
+
+```json
+// PUT /api/academic/plans (T18)
+{ "courses": [
+    { "year": 2027, "term": "FIRST", "courseName": "성찰과표현", "courseCode": null, "classification": "GEN_REQUIRED", "credits": 3 },
+    { "year": 2027, "term": "FIRST", "courseName": "타이포그래피1", "courseCode": "VID1004", "classification": "MAJOR_ELECTIVE", "credits": 3 }
+] }
+// GET·PUT 응답 data
+{ "totalCredits": 6,
+  "terms": [ { "year": 2027, "term": "FIRST", "label": "2027년 1학기", "credits": 6,
+               "courses": [ { "id": 7, "courseName": "성찰과표현", "courseCode": null, "classification": "GEN_REQUIRED", "credits": 3 },
+                            { "id": 8, "courseName": "타이포그래피1", "courseCode": "VID1004", "classification": "MAJOR_ELECTIVE", "credits": 3 } ] } ] }
+```
+
+- PUT 은 내 배치 전체를 보낸 목록으로 바꾼다(개별 이동 API 없음). 저장할 때마다 `id` 가 새로 나온다. `courses: []` = 초기화, `courses` 자체가 없으면 400.
+- 입력: `courses` 최대 100개, `year` 2000~2100, `term` 필수, `courseName` 필수 100자, `courseCode` 20자(빈 값은 null), `classification` 선택(직접 추가한 과목), `credits` 필수 **0~30**(0 은 T17 의 0학점 졸업논문 때문). 앞뒤 공백 제거.
+- 같은 학기에 같은 과목(학수번호, 없으면 공백 뺀 과목명)이 두 번이면 `INVALID_INPUT` 이고 아무것도 바꾸지 않는다. 다른 학기에는 다시 넣을 수 있다.
+- 응답은 **과목이 있는 학기만** 시간 순(학년도 → 1학기·여름·2학기·겨울), 학기 안은 보낸 순서. 학기 칸은 제한하지 않고, 화면의 빈 학기 칸은 프론트가 만든다.
+- 계획일 뿐이라 이수현황·평점·남은 수강 과목에 영향이 없다. 배치한 과목을 남은 과목 카드에서 뺄지는 프론트가 정한다. 졸업 시뮬레이션은 이번 범위가 아니다(`calculate` 로 나중에 붙일 수 있음).
+
+```json
+// PUT /api/academic/double-major (T19)
+{ "majorId": 12 }   // GET /api/catalog/majors?admissionYear=&includeConvergence=true 의 id
+// GET·PUT 응답 data (복수전공이 없으면 GET 은 data: null)
+{ "major": { "id": 12, "displayName": "산업디자인학과" },
+  "majorCoursesAvailable": true,           // false 면 교과목 자료가 없는 전공: courses 가 비고 earned 는 0
+  "total": { "earned": 6, "required": 42 },
+  "groups": [ { "key": "MAJOR_BASIC", "label": "전공기초", "earned": 6, "required": 9 },
+              { "key": "MAJOR_REQUIRED", "label": "전공필수", "earned": 0, "required": 12 },
+              { "key": "MAJOR_ELECTIVE", "label": "전공선택", "earned": 0, "required": 21 } ],
+  "courses": [ { "id": 3, "courseName": "드로잉", "courseCode": "FD101", "classification": "MAJOR_BASIC",
+                 "credits": 3, "grade": "A+" } ] }
+```
+
+- 계산 규칙은 5장 12번. `groups`·`courses` 의 이수구분은 성적표가 아니라 복수전공 학과 마스터 기준이다.
+- 등록하면 `progress`·`home`·`summary` 의 숫자가 바뀐다(제1전공 요건이 다전공 기준으로). `progress` 응답 모양은 그대로다.
+- 오류: 입학년도·주전공 없음 `PROFILE_INCOMPLETE`, 주전공과 같음 `INVALID_INPUT`, 없는 전공·내 입학년도에 요건이 없는 전공 `MAJOR_NOT_FOUND`. `majorId` 누락·0 이하는 400.
+- `PATCH /api/users/me` 로 주전공을 복수전공과 같게 하거나 복수전공 요건이 없는 입학년도로 바꾸면 `INVALID_INPUT`(복수전공을 먼저 해제). 그래서 복수전공 요건 행은 항상 있다.
+- 복수전공 1개만 저장한다(학교는 2개까지 승인). 오르도는 신청 창구가 아니라 승인받은 결과를 입력받으므로 다전공 금지 조합은 검사하지 않는다. `DELETE` 는 복수전공이 없어도 204.
+
+```json
+// GET /api/academic/micro-degrees 응답 data, POST 도 같은 모양(T20)
+[ { "id": 22, "name": "로컬브랜드매니지먼트", "hostDepartment": "시각디자인학과", "selective": false,
+    "guideUrl": "https://sdl.khu.ac.kr/bbs/board.php?bo_table=faq_global",
+    "earned": 9, "required": 9, "earnedCourses": 3, "requiredCourses": 3,
+    "completed": false, "unmet": ["DEPARTMENT_COUNT"],      // 비어 있으면 completed
+    "period": "2026. 2학기 ~ 2027. 1학기",                  // 센 과목의 첫~마지막 학기, 없으면 null
+    "courses": [ { "id": 7, "courseName": "아이덴티티디자인", "courseCode": "VID3038", "credits": 3, "grade": "A0", "counted": true } ] } ]
+```
+
+- 판정 규칙은 5장 끝의 "마이크로디그리 판정". `courses` 는 이 MD 과목 중 내가 들은 과목이고, `counted: false` 면 그룹 한도를 넘었거나 먼저 등록한 MD 에 배정된 과목이다.
+- `unmet`: `REQUIRED_COURSE`(필수 과목 미이수), `COURSE_COUNT`(과목 수 부족), `GROUP_MINIMUM`(선택그룹 최소 미달), `DEPARTMENT_COUNT`(참여학과 2개 미달).
+- 오류: 없는 MD 나 등록 안 한 MD 해제 `NOT_FOUND`, 이미 등록했거나 3개를 넘으면 `INVALID_INPUT`. `microDegreeId` 누락·0 이하는 400.
+- 오르도는 신청 창구가 아니다. 신청은 학교 포털에서 하고, 선발제(`selective`) 2개는 신청해도 선발돼야 이수할 수 있다. 신청 자격(2학기 이상)은 검사하지 않는다. 입학년도·전공이 없어도 쓸 수 있다.
+
 ### 4.7 홈 `home`
 
 | 메서드 | 경로 | 설명 |
@@ -515,6 +624,12 @@ enum Classification {             // 이수구분 (학교 코드)
       "courseName": "디자인씽킹", "url": "https://khcanvas.khu.ac.kr/..." }
   ],
   "todos": [ { "id": 60, "title": "자료 조사", "category": "ASSIGNMENT", "done": false } ],  // 오늘 날짜의 시간 없는 일정
+  "deadlines": [                               // T16 D-Day 알림: 7일 안, 가까운 순 최대 5개
+    { "source": "SCHEDULE", "id": 12, "title": "팀플 모임", "category": "PERSONAL", "date": "2026-10-16",
+      "time": "10:00", "dday": 0, "courseName": null, "url": null },
+    { "source": "ECAMPUS", "id": null, "title": "3주차 과제 제출", "category": "ASSIGNMENT", "date": "2026-10-18",
+      "time": "23:59", "dday": 2, "courseName": "디자인씽킹", "url": "https://khcanvas.khu.ac.kr/..." }
+  ],
   "graduation": { "earned": 102, "required": 130, "percent": 78.4, "remaining": 28 }           // 프로필 미완성이면 null
 }
 ```
@@ -523,6 +638,7 @@ enum Classification {             // 이수구분 (학교 코드)
 - `week.categories`: 그날의 일정 카테고리(중복 제거) + 그 요일에 시간표 수업이 있으면 `LECTURE` + **e캠퍼스 과제 마감(4.8)이 있으면 `ASSIGNMENT`**. 순서는 LECTURE·ASSIGNMENT·PERSONAL. e캠퍼스를 못 받아 오면 그 점만 빠지고 홈은 정상 응답.
 - `timeline`: 시작시간 순, 같은 시각이면 **시간표 수업 → 직접 등록한 일정 → e캠퍼스** 순. `todos`: 오늘 날짜의 시간 없는 일정(완료한 것도 `done: true` 로 포함). e캠퍼스 마감은 제출 여부를 몰라 할 일에는 넣지 않는다.
 - (T14) `source: "ECAMPUS"`: `date` 날짜에 마감인 e캠퍼스 과제(4.8). `startTime` = 마감 시각(시각 없는 하루 종일 마감은 **23:59**), `id`·`endTime`·`location` 은 null, `category` 는 항상 `ASSIGNMENT`. `courseName`·`url` 은 ECAMPUS 에만 값이 있고 나머지 항목은 null. e캠퍼스 요청은 주간 점과 합쳐 **홈 1번당 1번**. 미연동이거나 못 받아 오면 ECAMPUS 항목과 점만 빠지고 홈은 정상 응답. 제출한 과제도 뜨고(피드에 제출 여부 없음), 사용자가 같은 과제를 직접 등록했으면 두 번 보일 수 있다(제목 비교로 거르지 않음).
+- (T16) `deadlines`: `date`(생략 시 오늘)부터 **7일 뒤까지**의 완료 안 한 직접 등록 일정 중 `ASSIGNMENT`·`PERSONAL`(수업 `LECTURE` 제외) + e캠퍼스 과제 마감(4.8). 날짜 → 시각(시간 없는 일정은 그날 맨 뒤) → 일정·e캠퍼스 순, **최대 5개**. `dday` = `date` 부터 며칠 남았는지(0 = 그날). `time` 은 시간 없는 일정이면 null, 시각 없는 e캠퍼스 마감은 23:59. 실제 오늘 날짜의 항목은 **이미 지난 시각이면 뺀다**(시간 없는 일정은 남김). e캠퍼스 요청은 주간 점·timeline 과 합쳐 1번(조회 범위 = 그 주 월요일~`date`+7일). 미연동이거나 못 받아 오면 e캠퍼스 항목만 빠진다. 제출한 과제도 뜨고, 같은 과제를 직접 등록했으면 두 번 보일 수 있다(T14 와 같음).
 - ~~`recommendation`~~ **보류(2026-10-07)**: 최종 디자인에 카드가 없어 응답에서 뺐다. 3차 LLM 추천 때 규칙(오늘~7일 이내 미완료 과제 중 가장 가까운 것)과 함께 다시 넣는다.
 
 
@@ -568,7 +684,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
   - `grades`: `{ terms: [{ year, term }], courseCount, totalCredits, courses: [{ year, term, courseCode, section, courseName, credits, grade, classificationText, classification, distributionArea, needs }] }`
   - `warnings`: `[{ code, message }]`, code = NO_TIME / OVERLAP / UNKNOWN_CLASSIFICATION / DISTRIBUTION_AREA_REQUIRED / UNKNOWN_GRADE / DISCARDED / UNPARSED_ROW
 - 읽는 법: 모든 형식을 "행과 칸의 목록"으로 바꾼 뒤 같은 해석기로 읽는다. xlsx 는 **병합 영역 1개 = 칸 1개**(csv·txt 와 같은 행이 됨), txt 는 탭 구분, csv 는 따옴표·칸 안 줄바꿈 지원. 칸이 모두 빈 행은 빈 행.
-- 수강신청확인서: 머리글 글자로 열을 찾고, 수업 칸을 쉼표로 나눠 `교수 요일HH:MM-HH:MM 강의실` 마다 시간표 1칸(월=1…일=7). 시간이 없으면(온라인) 칸을 만들지 않고 NO_TIME. `학수번호-분반` 은 하이픈으로 나눔.
+- 수강신청확인서: 머리글 글자로 열을 찾고, 수업 칸을 쉼표로 나눠 `교수 요일HH:MM-HH:MM 강의실` 마다 시간표 1칸(월=1…일=7). 시간이 없으면 `online: true` 칸(요일·시간 null, 수업 칸의 첫 낱말을 교수명으로, 2026-10-30 T15)을 만들고 NO_TIME 경고로 알린다. `학수번호-분반` 은 하이픈으로 나눔.
 - 전체 성적 보기: `평점/등급` 머리글 다음부터 다른 요약 표 제목 전까지가 과목 표. 과목 행은 **뒤에서부터 센 위치**(-13 학수번호 … -5 등급, -3 폐기사유)로 읽고, 앞 두 칸이 `2026`·`1학기` 모양일 때만 학기를 새로 잡아 아래로 이어 쓴다. 폐기사유가 있으면 제외, 쪽 번호·반복 머리글은 건너뜀. 분반은 끝이 G두자리면 그것, 아니면 마지막 두 자리. 이수구분은 글자(없으면 학교 코드 04·05·08·11·14·15·16·17·06·20)로 매핑, 모르면 null + `needs: CLASSIFICATION`. 배분이수는 `needs: DISTRIBUTION_AREA`.
 - 5MB 초과는 Spring 업로드 한도에서도 `IMPORT_TOO_LARGE`. 업로드는 디스크 임시파일 없이 메모리에서만(`multipart.file-size-threshold`).
 - **PDF 는 받지 않는다**(9장 19): PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음.
@@ -611,24 +727,45 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
    - `GEN_REQUIRED` → 필수교양, `GEN_DISTRIBUTION` → 배분이수(+서로 다른 `distribution_area` 개수), `GEN_FREE` → 자유이수
    - `MAJOR_BASIC` / `MAJOR_REQUIRED` / `MAJOR_ELECTIVE` → 각 전공 영역
    - `GENERAL_ELECTIVE`, `TEACHING`, `TEACHING_MAJOR` → 기타
-6. 요구 학점: 전공 영역은 단일전공 컬럼(`basic_credits`, `required_credits`, `elective_credits`), **NULL은 0으로 취급하고 응답 `required`는 0**. 교양은 3번 기준.
+6. 요구 학점: 전공 영역은 단일전공 컬럼(`basic_credits`, `required_credits`, `elective_credits`), **NULL은 0으로 취급하고 응답 `required`는 0**. 교양은 3번 기준. 복수전공이 있으면 다전공 컬럼(12번).
 7. `total.earned` = 인정 과목 학점 합, `total.required` = `total_credits`, `remaining = max(0, required - earned)`, `percent = 소수 첫째 자리 버림(earned / required * 100)`.
 8. `groups`: 전공 = 세 전공영역 합 vs `major_total_credits`, 교양 = 세 교양영역 합 vs 교양 total, 기타 = 기타 합 vs `max(0, total_credits - major_total_credits - 교양 total)`.
 9. `requiredGeneralCourses`: 교양 필수과목 이름과 `GEN_REQUIRED` 이수 과목명을 공백 제거 후 비교해 `done`.
-10. `graduatable` = 총학점 충족 AND 모든 영역 `earned >= required` AND 배분 영역 수 충족 AND 필수교양 과목 전부 done.
-11. `checks`: 2026 부가요건 텍스트가 있는 항목만 `status: "MANUAL"` 로 안내(자동 판정하지 않음).
+10. `graduatable` = 총학점 충족 AND 모든 영역 `earned >= required` AND 배분 영역 수 충족 AND 필수교양 과목 전부 done. 복수전공이 있으면 제2전공 영역·합계 충족도 필요(12번).
+11. `checks`: 2026 부가요건 텍스트가 있는 항목만 `status: "MANUAL"` 로 안내(자동 판정하지 않음). 2026학년도 입학자부터 `다전공·부전공·마이크로디그리` 1개 이상 항목을 더한다(교육과정 p115). 부전공을 판정할 수 없어 다른 항목처럼 `graduatable` 에는 넣지 않는다.
+12. **복수전공**(T19, `users.double_major_id`, 교육과정 p115~116). 없으면 1~11 그대로이고, 있으면:
+    - 요건: 제1전공은 `double_basic/required/elective/total_credits`(6·8번의 단일 컬럼 대신, NULL 은 0). 제2전공도 그 학과의 같은 컬럼.
+    - 제2전공 소속: 학수번호가 제2전공 `courses`(전공기초·필수·선택)에 있음. 학수번호 없는 기록만 공백 뺀 과목명으로 비교한다. 이름만 같고 학수번호가 다르면 소속이 아니다(p115).
+    - 제2전공 학점: 소속 과목의 내 학점을 **그 학과 마스터의 이수구분**으로 합산한다. 성적표가 일반선택이어도 넣는다.
+    - 제1전공 학점: 성적표가 전공기초·필수·선택이면서 제2전공에만 있는 과목은 전공 영역에서 빼고 `기타`로 옮긴다. 양쪽에 있으면 양쪽 다 인정하고, 어느 쪽에도 없으면 지금처럼 성적표 이수구분으로 센다. 제1전공 `course_unit` 이 없으면 제1전공 과목을 알 수 없어 제2전공 소속 과목은 제2전공에만 있는 것으로 본다.
+    - `total`: 과목당 1번(7번 그대로, p116).
 
 **T7 세부 규칙** (구현하며 정한 것)
 
 - 성적 미정(`grade` null)은 인정한다(F·NP 만 제외). 4번은 적힌 순서대로 F·NP 를 먼저 빼고 재수강을 고른다 → 예전에 통과하고 재수강에서 F 면 예전 학점이 남는다(학과 시행세칙 확인 후 조정, 코드에 `ponytail:` 주석).
 - 재수강 판별 키: 학수번호, 없으면 공백을 뺀 과목명. 같은 학기면 나중에 등록한 것.
 - `areas` 의 `OTHER` 는 `required: null`, `areaCount`·`requiredAreaCount` 는 배분이수에만 있다. 요구 학점이 0 이면 `percent` 는 0.0.
-- `checks` 이름: SW기초교육 / 영어강의 / 졸업논문 / TOPIK(외국인) / 졸업능력인증 (값이 있는 것만).
+- `checks` 이름: SW기초교육 / 영어강의 / 졸업논문 / TOPIK(외국인) / 졸업능력인증 (값이 있는 것만) / 다전공·부전공·마이크로디그리 (2026학번부터).
 - 계산은 DB 조회 없는 정적 함수 `AcademicProgressService.calculate(...)` 로 분리 → 졸업 시뮬레이션은 계획 과목을 더해 그대로 부르면 된다.
 
-**반드시 단위 테스트할 케이스**: 빈 이수내역 / F 제외 / 재수강 중복 제거 / NULL 요구학점 / 배분 영역 수 부족 / 2025학번 교양 근사(approximate) / 졸업 가능 케이스.
+**반드시 단위 테스트할 케이스**: 빈 이수내역 / F 제외 / 재수강 중복 제거 / NULL 요구학점 / 배분 영역 수 부족 / 2025학번 교양 근사(approximate) / 졸업 가능 케이스. 복수전공: 제1전공 요건 교체 / 공통 과목 양쪽 합산·총학점 1번 / 제2전공만 소속 과목 기타 이동 / 마스터 이수구분 / 제2전공 미충족이면 졸업 불가.
 
-> 다전공·부전공 계산, 전공 초과학점의 전공선택 인정, 타전공 인정 한도는 **MVP 제외**(9장 미결정).
+> 부전공 계산, 전공 초과학점의 전공선택 인정, 타전공 인정 한도는 **MVP 제외**(9장 미결정).
+
+### 마이크로디그리 판정 (`MicroDegreeCalculation`, T20)
+
+운영지침(2026.5.8 시행)과 교육과정 p25·26 기준. 이수현황 계산(요건·학점)은 바꾸지 않는다(제5조④: MD 과목은 전공·교양 학점으로 그대로 인정).
+
+1. 인정 과목은 이수현황과 같다(F·NP 제외, 재수강 최근 1건). 신청 전 이수도 인정(제5조③). 이수구분은 보지 않는다.
+2. 과목 찾기: `course_code` 또는 `alias_code` 가 같은 기록. 학수번호 없는 기록은 공백 뺀 과목명으로 비교한다. `course_code` 가 없는 MD 과목(타대학 등 4행)은 기록의 학수번호와 상관없이 과목명으로 비교한다. 이름만 같고 학수번호가 다른 기록은 아니다.
+3. MD 간 중복(제5조⑤): 같은 과목은 **먼저 등록한 MD 에서 센 것**으로 끝난다. 뒤 MD 에 더 필요해도 넘겨주지 않는다. 앞 MD 에서 세지 않은 과목은 뒤 MD 에서 셀 수 있다.
+4. 세기: 선택그룹은 `group_max` 까지만 센다. 넘는 과목은 `counted: false` 일 뿐 **미충족 사유가 아니다.**
+5. `completed` = 필수 과목 전부 센다 AND 센 과목 수 ≥ `required_course_count` AND 그룹마다 센 과목 수 ≥ `group_min` AND 센 과목의 `department_name` 종류 ≥ `min_departments`.
+6. `earned` = 센 과목의 **내 이수 기록 학점** 합, `required_credits` 상한. `earnedCourses` 도 `required_course_count` 상한. 판정은 과목 수 기준이다(예술체험심화 11~12학점 때문).
+7. `period`: 센 과목의 첫 학기 ~ 마지막 학기(학교에 고정 기간이 없음, 제4조⑥). 같으면 학기 1개, 없으면 null.
+
+**반드시 단위 테스트할 케이스**: 필수 미이수 / 과목 수 / 그룹 상한(초과가 미충족이 아님) / 그룹 하한 / 2개 학과 / 별칭·과목명 찾기 / MD 간 중복 / 학점 상한 / 기간 / F·재수강.
+
 ### 평점 평균 (`AcademicGpaService`, T13)
 
 **등급 → 평점** (경희대 **4.3 만점**. A+·B+·B0·C+ 는 성적표 평점 칸으로 확인, 나머지는 4.3 척도 관례값 → 9장 20)
@@ -659,9 +796,10 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | 전공 76 | 기본구조 2020~2026 국제 시트 | 학번마다 이름이 달라 학번별 전공을 모두 등록 (예: 2020~21 '컴퓨터공학과', 2022~ '컴퓨터공학부 컴퓨터공학과') |
 | 졸업요건 393 | 같은 파일 | 학번×전공. 2026행만 SW·영어강의·논문·TOPIK·인증 텍스트 |
 | 교양 기준 1 + 필수과목 6 | 졸업관리데이터 ② | 2026만 |
-| 교과목 3,036 | 졸업관리데이터 ⑤ | 2026 전공 교과목만. 교양 과목 목록 없음 → 교양은 사용자가 이수구분 직접 선택 |
+| 교과목 3,036 (V16 후 3,060) | 졸업관리데이터 ⑤ | 2026 전공 교과목만. 교양 과목 목록 없음 → 교양은 사용자가 이수구분 직접 선택 |
+| 마이크로디그리 56 + 편성 과목 249 (V18) | `오르도_T19복수전공_T20마이크로디그리_최종.xlsx` MD목록·MD과목 | `tools/seed/generate_micro_degree_seed.py` 로 생성. 57행 중 타대학 융합 묶음 제외, 학점 추정 27행은 NULL, 구 학수번호·오기 12행은 `alias_code` |
 
-알려진 한계: 교과목은 2026 편성 기준이라 옛 학번 학생은 자동 판별이 틀릴 수 있음(수정 가능하게 함). `course_unit` 이 NULL인 전공 2개('글로벌한국학과', '스마트팜공학 융합전공')는 자동 판별 불가. 과목명 판독불가 4건, 개설학기 미표기 18건.
+알려진 한계: 교과목은 2026 편성 기준이라 옛 학번 학생은 자동 판별이 틀릴 수 있음(수정 가능하게 함). `course_unit` 이 NULL인 전공 2개('글로벌한국학과', '스마트팜공학 융합전공')는 자동 판별 불가. 깨진 과목명은 V15, 전문실기 소속은 V16 에서 교정(9장 24). 전문실기는 종목을 나누지 않고 학수번호당 1행이다. 개설학기 미표기 18건.
 
 ---
 
@@ -671,6 +809,12 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 새 마이그레이션 번호: **A 담당 V10~V49, B 담당 V50~V89**. 파일명 `V{번호}__{영문_설명}.sql`.
 - 사용 중: `V10__add_ecampus_feed_token.sql`(A, users 에 e캠퍼스 피드 토큰 칸 추가).
 - 사용 중: `V11__add_web_push.sql`(A, T11: `push_subscriptions` 새 테이블, `schedules.alarm_sent_for`·`idx_schedules_date`, `users.todo_alarm_time`, 2026-10-21 승인).
+- 사용 중: `V12__add_timetable_online.sql`(A, T15: `timetable_entries` 요일·시간 NULL 허용, `online` 추가, 2026-10-30 승인).
+- 사용 중: `V13__add_planned_courses.sql`(A, T18: `planned_courses` 새 테이블, 2026-10-30 승인).
+- 사용 중: `V14__add_user_double_major.sql`(A, T19: `users.double_major_id`, 2026-10-31 승인). `out-of-order: true` 라 V15·V16 뒤에 들어와도 적용된다.
+- 사용 중: `V17__add_micro_degrees.sql`(A, T20: `micro_degrees`·`micro_degree_courses`·`user_micro_degrees` 새 테이블, 2026-10-31 승인), `V18__seed_micro_degrees.sql`(A, T20 시드, 생성기 `tools/seed/generate_micro_degree_seed.py`).
+- 사용 중: `V15__fix_course_names.sql`(A, 시드 `courses` 과목명 174행 교정, 스키마 변경 없음, 9장 24, 2026-10-30 승인).
+- 사용 중: `V16__fix_sports_practice_course_units.sql`(A, 전문실기 6행을 체육대학 5개 학과로 이동, `courses` 3,036 → 3,060행, 스키마 변경 없음, 9장 24, 2026-10-30 승인).
 - 로컬 DB가 꼬이면: `DROP DATABASE ordo;` 후 서버 재시작 → Flyway가 V1부터 다시 적용.
 
 ---
@@ -692,10 +836,17 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | T8 ✅ | home 집계 | A (T7의 `findSummary` 사용) | 4.7 응답 형태 그대로 |
 | T9 ✅ | users/me/summary | A | |
 | T11 | 일정 알림 웹푸시 (4.10) | A | 구독 API 4개, 1분 스케줄러, 중복 발송 없음(선점 UPDATE), RFC 8291 테스트 벡터, 허용 주소 검증, 할 일 알림 시각 설정, 실기기(PC·안드로이드·아이폰) 수신 확인 |
-| T12 ✅ | 성적·시간표 파일 가져오기 (4.9) | A | 샘플 기대값(신청 6과목 18학점·7칸·경고 1, 성적 8과목 20학점), xlsx·csv·txt 결과 동일, 학번 대조, 재업로드 중복 없음 |
+| T12 ✅ | 성적·시간표 파일 가져오기 (4.9) | A | 샘플 기대값(신청 6과목 18학점·7칸(T15 후 온라인 1칸 추가)·경고 1, 성적 8과목 20학점), xlsx·csv·txt 결과 동일, 학번 대조, 재업로드 중복 없음 |
 | T10 ✅ | e캠퍼스 피드 연동 (4.8) | A | 피드 주소 검증, 10분 캐시, 실패 시 예전 데이터, 토큰 비노출 |
 | T14 ✅ | 홈 오늘 일정에 e캠퍼스 과제 (4.7) | A | ECAMPUS 항목, 23:59 규칙, 같은 시각 정렬(수업→일정→e캠퍼스), 미연동·실패 시 정상, e캠퍼스 호출 1번 |
 | T13 ✅ | 학사관리 평점 평균 (4.6, 5장 평점 평균) | A | 등급표(4.3), P·NP 제외, 재수강 최근 1건(F 포함), 학기별, 전공 평점, 셋째 자리 반올림, 성적표 샘플 대조(3.417·3.3), 빈 이수내역 |
+
+| T15 ✅ | 시간표 온라인 강의 (4.5, `docs/plans/T15-figma-final.md`) | A | 요일·시간 없는 칸 저장, 겹침 검사 제외, 온라인 맨 뒤 정렬, 홈에서 제외, 파일 가져오기의 시간 없는 과목이 온라인 칸으로 저장 |
+| T16 ✅ | 홈 D-Day 알림 (4.7, `docs/plans/T15-figma-final.md`) | A | 7일 이내 미완료 과제·개인일정 + e캠퍼스 과제, 최대 5개, 지난 시각 제외, e캠퍼스 호출 1번 |
+| T17 ✅ | 남은 수강 과목 (4.6, `docs/plans/T15-figma-final.md`) | A | 필수교양·전공 중 안 들은 과목, 학수번호 → 과목명 판정, F 는 남음, course_unit 없는 전공 처리 |
+| T18 ✅ | 학기별 배치하기 (4.6, `docs/plans/T15-figma-final.md`) | A | GET·PUT(통째로 교체), V13, 빈 목록 초기화, 같은 학기 중복 400, 남의 배치 분리, 이수현황·평점에 영향 없음 |
+| T19 ✅ | 복수전공 (4.6·5장 12번, `docs/plans/T19-T20-double-major-micro-degree.md`) | A | V14, GET·PUT·DELETE, 제1전공 요건 교체, 공통 과목 양쪽 인정, 제2전공만 소속 과목 기타 이동, 융합전공 등록·`includeConvergence`, 남은 과목 합치기, 프로필 변경 충돌 400 |
+| T20 ✅ | 마이크로디그리 (4.3·4.6·5장, `docs/plans/T19-T20-double-major-micro-degree.md`) | A | V17·V18(56개·249행), 목록 API, 등록·해제·최대 3개, 필수·과목 수·그룹·참여학과 판정, 별칭·과목명 찾기, MD 간 중복, 기간 계산 |
 
 ### AI에게 줄 프롬프트 예시 (그대로 복사해서 사용)
 
@@ -740,10 +891,10 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 2 | 홈 주간일정: 회의록 1차 "오늘이 맨 왼쪽" vs 디자인 "월요일 시작" | 월요일 시작(디자인). 바뀌면 `week` 시작일만 변경 |
 | 3 | 이수내역 입력 화면이 디자인에 없음 | 학사관리에 "과목 추가" 모달 필요 → 디자인팀 요청 |
 | 4 | 가입 이메일을 학교메일(@khu.ac.kr)로 제한할지 | 제한 안 함 |
-| 5 | 마이크로디그리 화면 | 데이터 없음 → 보류 |
+| 5 | 마이크로디그리 화면 | **결정(2026-10-31): 목록을 시드로 넣고 자동 판정**(T20, 5장 끝, V17·V18). 사용자 직접 입력(B안)은 만들지 않음 |
 | 6 | 전공 초과학점 전공선택 인정, 타전공 인정 한도, 재수강 세부 규칙 | 학과 시행세칙 확인 전까지 5장 단순 규칙 |
 | 7 | 2025학번 이하 교양 기준 | 2026 값으로 근사 + approximate 표시 |
-| 8 | 다전공·부전공 | MVP 제외 (데이터는 이미 시드에 있음) |
+| 8 | 다전공·부전공 | **결정(2026-10-31): 다전공 1개(복수전공·융합전공) 지원**(T19, 5장 12번). 부전공은 제외 |
 | 9 | 알림 실제 발송 | **T11 로 앞당김(2026-10-08)**, 2026-10-09 카카오 → **웹푸시**로 변경 → 4.10 |
 | 10 | 디자인에 남아있는 '과제', '설정' 메뉴 | 회의록 2차대로 삭제 |
 | 11 | e캠퍼스 연동 | **결정(2026-10-06): MVP 포함.** Canvas 개인 캘린더 피드(.ics) 주소를 사용자가 등록, 캘린더를 열 때 가져오고 10분 캐시, cron 없음 → 4.8. **학교 비밀번호를 서버에 저장하는 방식은 금지** |
@@ -757,3 +908,12 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 19 | PDF 가져오기 (T12) | **결정(2026-10-08): 거절.** PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음. 원본 PDF 의 칸 테두리로 표를 재구성하는 방법은 여러 학기 성적표 샘플이 생기면 재검토 |
 | 20 | 평점 척도·반올림 (T13) | **결정(2026-10-16): 4.3 만점, 소수 셋째 자리 반올림**(성적표로 확인). A0·C0·D+·D0 점수(4.0·2.0·1.3·1.0)는 샘플에 없어 관례값 → 실제 성적표에 나오면 대조 |
 | 21 | 재수강 처리: 평점 vs 이수현황 (T13) | 평점은 최근 1건(최근이 F 면 0점), 이수현황은 F 를 먼저 빼고 최근 1건(5장 4번) → 결과가 다를 수 있음. 학과 시행세칙(재수강 성적 상한 등) 확인 후 맞춤 |
+| 22 | 시간표의 시간 없는 수업 (T15) | **결정(2026-10-30): 온라인 강의 = 요일·시간 없음.** 디자인의 수업 추가 창에는 시간 칸과 온라인 체크가 함께 있지만, 온라인 수업은 표 아래 줄에 시간 없이 나오므로 시간은 저장하지 않는다. 파일 가져오기의 시간 없는 과목도 온라인 칸으로 넣는다 |
+| 23 | 남은 수강 과목의 전공선택 (T17) | **결정(2026-10-30): 전공선택도 전부 넣는다**(디자인 카드에 있음). 졸업에 다 들어야 하는 과목은 아니다. 필요한 학점은 `remainingCredits`·`progress` 로 본다 |
+| 24 | 교과목 시드의 깨진 과목명 (T3, T17 에서 발견) | **V15 로 교정(2026-10-30, `fix/course-names`).** 원인은 `generate_seed.py` 가 아니라 엑셀 ⑤교과목마스터를 PDF 에서 뽑을 때의 오류다(생성기 재실행 결과가 V2 와 같음). 3036행을 PDF 와 전수 대조해 깨진 163행(숫자 시작 54, 소문자 시작 48, 첫 글자로 안 잡히는 61, 예: `Foreign Policy`)과 영어 공백만 사라진 11행을 고쳤다. 숫자·소문자로 시작해도 정상인 21행(`3D모델링`, `h-STEM융합개론` 등)은 그대로 둔다. 원문이 서로 다른 5행(`IS2102`, `IS3102`, `IS3103`, `PAM320`, `EDU3167`)은 **편성표 기준으로 결정.** 전문실기 `CPE201`~`CPE402` 6행은 소속이 `포스트모던음악학과`로 잘못 들어가 있어 **V16 에서 체육대학 5개 학과로 옮겼다**(PDF 체육대학 공통 편성표, 5개 학과 시행세칙). 종목은 수강할 때 고르므로 이름은 `전문실기1`~`6`, 학수번호·학과당 1행이다. 학과별 전문실기 필수 학점(체육학과·스포츠지도학과 8학점 등)은 졸업요건 계산에 넣지 않았다. B 에게 공유 필요 |
+| 25 | 졸업 로드맵 "수업 추가" 창 (T18) | 디자인이 시간표 창(강의실·요일·시간·온라인)과 똑같다. 학기별 배치에 저장하는 값은 **과목명·학수번호·이수구분·학점**이라 강의실·시간은 받지 않는다. 디자인 수정 여부 확인 필요 |
+| 26 | 단과대 시행세칙의 다전공 중복 인정 한도 (T19) | 넣지 않음. 공통 과목은 전부 양쪽 인정한다. 알려진 예: 영미어문↔영미문화 전공필수 15학점, 체육대학 전문실기. "전공기초가 같은 두 전공"의 기준도 학과 확인 필요(시각·산업은 전공기초 9과목 중 8과목이 같고, 학수번호별로 양쪽 인정하므로 별도 판정을 두지 않음) |
+| 27 | 복수전공 학생의 실제 성적표 (T19) | 샘플 없음. 책자 코드표에 전용 코드가 없어 학수번호로 판정한다. 전용 코드가 있으면 소속 판정보다 우선하도록 고친다 |
+| 28 | 시각디자인 전공기초 학점 (T19) | 문서마다 다름: 6(교육과정 p122, 시드) vs 12(p1042·시행세칙). 합계 67/42 는 같아 시드 값을 유지. 학과 확인 필요 |
+| 29 | 졸업 판정에 아직 없는 규칙 (T19 조사) | 전공탐색 세미나 필수·면제(p22), 전공필수 초과 이월(p119), 타전공 인정 한도, 대학영어 면제 학점, 적용 교육과정 연도 선택(p119), 빅뱅·배분 대체, 외국인 대학영어 대체. 이 때문에 `graduatable` 이 실제보다 true 로 나올 수 있다 |
+| 30 | 마이크로디그리 자료에서 확인할 것 (T20) | 참여학과 2개 조건: 적용 3개는 책자 본문이 근거, **AI로봇은 2026 책자에 없어 2026 이후 신설로 추정해 적용**, 실감미디어기술·테크놀로지&디자인융합콘텐츠제작은 책자에 있어 2025 이전 신설로 추정해 미적용. 의료인공지능의 국제캠 신청 가능 여부, 디자인 소프트웨어의 `SWCON492`, 그린바이오소재의 두 과목표(사이트 기준으로 넣음), 학점 미확인 27행(NULL). 실감미디어융합전공 이수자의 추가 등록 허용은 넣지 않음(최대 3개 고정). 2026학번 의무(`checks`)는 MD 를 완료해도 자동으로 표시되지 않는다 |

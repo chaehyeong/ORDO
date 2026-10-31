@@ -3,21 +3,28 @@ package com.ordo.catalog.service;
 import com.ordo.catalog.domain.Classification;
 import com.ordo.catalog.domain.GeneralEducationRequirement;
 import com.ordo.catalog.domain.Major;
+import com.ordo.catalog.domain.MicroDegree;
+import com.ordo.catalog.domain.MicroDegreeCourse;
 import com.ordo.catalog.dto.CollegeResponse;
 import com.ordo.catalog.dto.CoursePageResponse;
 import com.ordo.catalog.dto.GeneralEducationResponse;
 import com.ordo.catalog.dto.GraduationRequirementResponse;
 import com.ordo.catalog.dto.MajorResponse;
+import com.ordo.catalog.dto.MicroDegreeResponse;
 import com.ordo.catalog.repository.CollegeRepository;
 import com.ordo.catalog.repository.CourseRepository;
 import com.ordo.catalog.repository.GeneralEducationRequirementRepository;
 import com.ordo.catalog.repository.GeneralEducationRequiredCourseRepository;
 import com.ordo.catalog.repository.GraduationRequirementRepository;
 import com.ordo.catalog.repository.MajorRepository;
+import com.ordo.catalog.repository.MicroDegreeCourseRepository;
+import com.ordo.catalog.repository.MicroDegreeRepository;
 import com.ordo.global.error.BusinessException;
 import com.ordo.global.error.ErrorCode;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,13 +45,16 @@ public class CatalogService {
     private final GraduationRequirementRepository graduationRequirementRepository;
     private final GeneralEducationRequirementRepository generalEducationRequirementRepository;
     private final GeneralEducationRequiredCourseRepository generalEducationRequiredCourseRepository;
+    private final MicroDegreeRepository microDegreeRepository;
+    private final MicroDegreeCourseRepository microDegreeCourseRepository;
 
     public List<CollegeResponse> getColleges() {
         return collegeRepository.findAllByOrderByNameAscIdAsc().stream().map(CollegeResponse::from).toList();
     }
 
-    public List<MajorResponse> getMajors(int admissionYear, Long collegeId) {
-        return majorRepository.findAllSelectable(admissionYear, collegeId).stream().map(MajorResponse::from).toList();
+    public List<MajorResponse> getMajors(int admissionYear, Long collegeId, boolean includeConvergence) {
+        return majorRepository.findAllSelectable(admissionYear, collegeId, includeConvergence).stream()
+                .map(MajorResponse::from).toList();
     }
 
     public GraduationRequirementResponse getRequirements(Long majorId, int admissionYear) {
@@ -74,6 +84,15 @@ public class CatalogService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.REQUIREMENT_NOT_FOUND));
         return GeneralEducationResponse.from(admissionYear, requirement,
                 generalEducationRequiredCourseRepository.findAllByAdmissionYearOrderByIdAsc(requirement.getAdmissionYear()));
+    }
+
+    public List<MicroDegreeResponse> getMicroDegrees() {
+        List<MicroDegree> degrees = microDegreeRepository.findAllByOrderByNameAscIdAsc();
+        Map<Long, List<MicroDegreeCourse>> courses = microDegreeCourseRepository.findAllByOrderByIdAsc().stream()
+                .collect(Collectors.groupingBy(course -> course.getMicroDegree().getId()));
+        return degrees.stream()
+                .map(degree -> MicroDegreeResponse.from(degree, courses.getOrDefault(degree.getId(), List.of())))
+                .toList();
     }
 
     private Major getMajor(Long majorId) {

@@ -43,7 +43,7 @@ class ImportServiceTest {
 
         assertThat(enrollment.type()).isEqualTo("TIMETABLE");
         assertThat(enrollment.format()).isEqualTo("XLSX");
-        assertThat(enrollment.timetable().entries()).hasSize(7);
+        assertThat(enrollment.timetable().entries()).hasSize(8);  // 시간 있는 7칸 + 온라인 1칸
         assertThat(enrollment.grades()).isNull();
         assertThat(transcript.type()).isEqualTo("GRADES");
         assertThat(transcript.format()).isEqualTo("TXT");

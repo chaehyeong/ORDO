@@ -66,10 +66,11 @@ final class EnrollmentInterpreter {
             String[] codeAndSection = splitCode(cell(row, code));
             String courseName = row.get(name);
             List<Entry> courseEntries = sessions(row.get(sessions), courseName, codeAndSection[0]);
-            if (courseEntries.isEmpty()) {
-                warnings.add(new ImportWarning("NO_TIME", "시간 없는 과목: " + courseName));
-            }
             entries.addAll(courseEntries);
+            if (courseEntries.isEmpty()) {
+                entries.add(new Entry(courseName, codeAndSection[0], null, null, null, null, onlineProfessor(row.get(sessions)), null, true));
+                warnings.add(new ImportWarning("NO_TIME", "온라인(시간 없음)으로 넣었어요: " + courseName));
+            }
             String classificationText = cell(row, classification);
             courses.add(new EnrolledCourse(codeAndSection[0], codeAndSection[1], courseName, TermText.intOrZero(cell(row, credits)),
                     classificationText, ClassificationMapper.map(classificationText, null),
@@ -103,16 +104,22 @@ final class EnrollmentInterpreter {
             }
             String room = m.group("room").strip();
             entries.add(new Entry(courseName, courseCode, DAYS.indexOf(m.group("day")) + 1, start, end,
-                    room.isEmpty() ? null : room, professor, null));
+                    room.isEmpty() ? null : room, professor, null, false));
         }
         return entries;
+    }
+
+    // 시간 없는 과목의 칸은 "정교수  온라인" 꼴. 첫 낱말이 교수명이고, 없거나 "온라인"뿐이면 null
+    private static String onlineProfessor(String text) {
+        String first = text.strip().split("[\\s,]+")[0];
+        return first.isEmpty() || first.equals("온라인") ? null : first;
     }
 
     private static void addOverlapWarnings(List<Entry> entries, List<ImportWarning> warnings) {
         for (int i = 0; i < entries.size(); i++) {
             for (int j = i + 1; j < entries.size(); j++) {
                 Entry a = entries.get(i), b = entries.get(j);
-                if (a.dayOfWeek().equals(b.dayOfWeek()) && a.startTime().isBefore(b.endTime()) && b.startTime().isBefore(a.endTime())) {
+                if (a.dayOfWeek() != null && a.dayOfWeek().equals(b.dayOfWeek()) && a.startTime().isBefore(b.endTime()) && b.startTime().isBefore(a.endTime())) {
                     warnings.add(new ImportWarning("OVERLAP", "시간이 겹쳐요: " + a.courseName() + ", " + b.courseName()));
                 }
             }

@@ -70,7 +70,7 @@ class CatalogQueryTest {
 
     @Test
     void majorsExcludeConvergenceAndOtherAdmissionYearsAndMatchSignupRules() {
-        var majors = service.getMajors(2026, null);
+        var majors = service.getMajors(2026, null, false);
         assertThat(majors).extracting(MajorResponse::id).containsExactlyInAnyOrder(102L, 103L, 106L);
         for (var major : majors) {
             assertThat(majorRepository.findSelectable(major.id(), 2026)).isPresent();
@@ -80,16 +80,23 @@ class CatalogQueryTest {
     }
 
     @Test
+    void majorsIncludeConvergenceOnlyWhenAskedAndStillFollowAdmissionYear() {
+        assertThat(service.getMajors(2026, null, true)).extracting(MajorResponse::id)
+                .containsExactlyInAnyOrder(102L, 103L, 104L, 106L);
+        assertThat(service.getMajors(2025, null, true)).extracting(MajorResponse::id).containsExactly(101L);
+    }
+
+    @Test
     void majorsCanBeFilteredByCollegeAndHistoricalAdmissionYear() {
-        assertThat(service.getMajors(2026, 1L)).extracting(MajorResponse::id).containsExactly(102L);
-        assertThat(service.getMajors(2025, null)).extracting(MajorResponse::id).containsExactly(101L);
-        assertThat(service.getMajors(2019, null)).isEmpty();
-        assertThat(service.getMajors(2026, 999L)).isEmpty();
+        assertThat(service.getMajors(2026, 1L, false)).extracting(MajorResponse::id).containsExactly(102L);
+        assertThat(service.getMajors(2025, null, false)).extracting(MajorResponse::id).containsExactly(101L);
+        assertThat(service.getMajors(2019, null, false)).isEmpty();
+        assertThat(service.getMajors(2026, 999L, false)).isEmpty();
     }
 
     @Test
     void majorsContainCollegeInformationAndCollegesHaveStableOrder() {
-        var major = service.getMajors(2026, 1L).get(0);
+        var major = service.getMajors(2026, 1L, false).get(0);
         assertThat(major.collegeId()).isEqualTo(1L);
         assertThat(major.collegeName()).isEqualTo("공과대학");
         assertThat(service.getColleges()).extracting("name").containsExactly("공과대학", "예술대학");
