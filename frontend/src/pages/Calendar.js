@@ -21,7 +21,7 @@ function Calendar() {
 
     const [syncOn, setSyncOn] = useState(false);
     const [notifyOn, setNotifyOn] = useState(true);
-    const [calendarUrl, setCalendarUrl] = useState("");
+    const [, setCalendarUrl] = useState("");
     const [showUrlPopup, setShowUrlPopup] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
 
