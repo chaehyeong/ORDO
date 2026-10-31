@@ -83,6 +83,22 @@ class ImportParsingTest {
     }
 
     @Test
+    void transcriptKeepsMinusGradesAndWarnsOnlyOnUnknownOnes() {
+        RawDocument doc = new RawDocument(List.of(
+                List.of("전체 성적 보기"),
+                List.of("성명", "홍길동", "학번", "2026000000"),
+                List.of("학년도/학기", "교과목", "이수구분", "평가방법", "학점", "점수", "평점/등급", "교강사명", "폐기사유", "취득구분", "취득대학"),
+                row("2026", "1학기", "CSE10100", "컴퓨터개론", "05", "전공선택", "A-", ""),
+                row(null, null, "CSE10200", "자료구조", "04", "전공필수", "D-", ""),
+                row(null, null, "CSE10300", "운영체제", "04", "전공필수", "E0", "")));
+
+        TranscriptInterpreter.Result result = TranscriptInterpreter.interpret(doc);
+
+        assertThat(result.draft().courses()).extracting(GradeCourse::grade).containsExactly("A-", "D-", null);
+        assertThat(result.warnings()).extracting(ImportWarning::code).containsExactly("UNKNOWN_GRADE");
+    }
+
+    @Test
     void transcriptForwardFillsTermSkipsDiscardedAndRepeatedHeaders() {
         List<String> header = List.of("학년도/학기", "교과목", "이수구분", "평가방법", "학점", "점수", "평점/등급", "교강사명",
                 "폐기사유", "취득구분", "취득대학");

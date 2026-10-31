@@ -426,7 +426,7 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
   "credits": 3,              // 필수 0~30
   "classification": null,    // 자동 판별 안 될 때 필수 (교양·일반선택 등). 명세 3.1 의 대문자 이름
   "distributionArea": null,  // GEN_DISTRIBUTION 이면 1~5 필수
-  "grade": "A+",             // A+ A0 B+ B0 C+ C0 D+ D0 F P NP, 미정이면 null
+  "grade": "A+",             // A+ A0 A- B+ B0 B- C+ C0 C- D+ D0 D- F P NP (15개), 미정이면 null
   "year": 2026, "term": "FIRST" }
 // 응답 data (목록 원소·수정 응답도 같은 모양): 위 필드 + id, classification 은 실제로 저장된 값
 ```
@@ -439,7 +439,7 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
 
 **졸업 로드맵 화면 (T17)**
 
-- 학기별 곡선: `gpa` 의 `terms`(학기별 `gpa`·`earnedCredits`). "1-1" 표기와 "지금 여기"는 `GET /api/users/me` 의 `admissionYear`·`currentSemester` 로 만든다. 이수한 과목 표는 `completed-courses`.
+- 학기별 곡선: `gpa` 의 `terms` 에서 `semesterLabel` 이 있는 행(정규 학기)이 곡선의 점이다. 계절학기는 `semesterLabel: null` 이라 빼면 된다(디자인에 없음). 평점은 `gpa`(셋째 자리까지 오므로 디자인처럼 둘째 자리로 표시), 학점은 `earnedCredits`. **"지금 여기"는 `currentSemesterLabel`**(예: `"3-2"`, 항상 값이 있음). 수강 중인 학기는 `gpa` 가 null, `earnedCredits` 가 0 이다. `GET /api/users/me` 의 `currentSemester` 는 입력받는 화면이 없어 비어 있으니 쓰지 마세요. 이수한 과목 표는 `completed-courses`.
 - 남은 수강 과목 카드: `GET /api/academic/remaining-courses`.
 
 ```json
@@ -476,7 +476,7 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
 ```
 
 - **끌어 놓기가 끝날 때마다 전체 목록을 PUT** 한다(과목 1개 이동 API 없음). "초기화" 버튼은 `{ "courses": [] }`. 한 번에 최대 100과목.
-- 응답에는 **과목이 있는 학기만** 온다. 빈 학기 칸("과목을 여기로 드래그하세요")과 칸의 범위는 `GET /api/users/me` 의 `admissionYear`·`currentSemester` 로 프론트가 만든다. 학기별 합은 `credits`.
+- 응답에는 **과목이 있는 학기만** 온다. 빈 학기 칸("과목을 여기로 드래그하세요")은 프론트가 만든다. 범위는 `currentSemesterLabel` 다음 학기부터 `4-2` 까지다(이미 넘었으면 다음 학기 1칸). 현재 학기의 연도·학기는 `gpa.terms` 에서 라벨이 같은 행, 없으면 마지막 정규 학기의 다음 학기, 기록이 없으면 오늘 날짜(3~8월 1학기, 9~12월 2학기, 1~2월 전년도 2학기)로 구한다. 학기별 합은 `credits`.
 - 같은 학기에 같은 과목(학수번호, 없으면 이름)을 두 번 넣으면 400 `INVALID_INPUT` 이고 저장되지 않는다. 다른 학기에는 넣을 수 있다.
 - 저장할 때마다 `id` 가 바뀌므로 오래 들고 있지 말고 응답으로 화면을 다시 그린다.
 - 남은 수강 과목 응답은 배치와 무관하다. 이미 배치한 과목을 카드에서 빼려면 `courseCode`(없으면 이름)로 프론트에서 거른다. 배치는 이수현황·평점에 들어가지 않는다.

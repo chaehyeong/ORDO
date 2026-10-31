@@ -21,7 +21,7 @@
 | 학사관리 | 학점 취득 현황(총 18/130, 영역 6개) | `GET /api/academic/progress` |
 | 학사관리 | 평균 학점 3.68/4.3 | `GET /api/academic/gpa` |
 | 학사관리 | 이수한 과목 관리(연도·학기·이수구분 필터) + 추가 창(학년도·학기·과목명·과목코드·이수구분·학점·성적) | `GET/POST/PATCH/DELETE /api/academic/completed-courses` |
-| 졸업 로드맵 | 학기별 곡선(1-1 3.53 18학점 …), "지금 여기" | `GET /api/academic/gpa` 의 `terms`(학기별 평점·학점) + `GET /api/users/me` 의 `admissionYear`·`currentSemester` |
+| 졸업 로드맵 | 학기별 곡선(1-1 3.53 18학점 …), "지금 여기" | `GET /api/academic/gpa` 의 `terms`(학기별 평점·학점). 학기 번호·"지금 여기"는 당시 `currentSemester` 로 된다고 봤지만 입력받는 곳이 없어 틀렸고, 2026-10-31 `semesterLabel`·`currentSemesterLabel` 을 추가함 |
 | 졸업 로드맵 | 이수한 과목 표 | `GET /api/academic/completed-courses` |
 | 마이페이지 | 이름·학번·학과·연락처·이메일, 로그아웃 | `GET/PATCH /api/users/me`, `POST /api/auth/logout` |
 

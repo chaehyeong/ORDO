@@ -6,8 +6,10 @@ import com.ordo.academic.dto.GpaSummary.TermGpa;
 import com.ordo.academic.repository.CompletedCourseRepository;
 import com.ordo.catalog.domain.Classification;
 import com.ordo.global.common.AcademicTerm;
+import com.ordo.global.common.Term;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,14 +26,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AcademicGpaService {
 
-    // 경희대 4.3 만점. A+·B+·B0·C+ 는 성적표로 확인, 나머지는 4.3 척도 관례값 (명세 9장 20)
-    static final Map<String, BigDecimal> GRADE_POINTS = Map.of(
-            "A+", new BigDecimal("4.3"), "A0", new BigDecimal("4.0"),
-            "B+", new BigDecimal("3.3"), "B0", new BigDecimal("3.0"),
-            "C+", new BigDecimal("2.3"), "C0", new BigDecimal("2.0"),
-            "D+", new BigDecimal("1.3"), "D0", new BigDecimal("1.0"),
-            "F", BigDecimal.ZERO);
+    // 경희대 4.3 만점, 학교 등급표 기준 (명세 5장, 9장 20)
+    static final Map<String, BigDecimal> GRADE_POINTS = Map.ofEntries(
+            Map.entry("A+", new BigDecimal("4.3")), Map.entry("A0", new BigDecimal("4.0")), Map.entry("A-", new BigDecimal("3.7")),
+            Map.entry("B+", new BigDecimal("3.3")), Map.entry("B0", new BigDecimal("3.0")), Map.entry("B-", new BigDecimal("2.7")),
+            Map.entry("C+", new BigDecimal("2.3")), Map.entry("C0", new BigDecimal("2.0")), Map.entry("C-", new BigDecimal("1.7")),
+            Map.entry("D+", new BigDecimal("1.3")), Map.entry("D0", new BigDecimal("1.0")), Map.entry("D-", new BigDecimal("0.7")),
+            Map.entry("F", BigDecimal.ZERO));
     private static final Set<String> NOT_EARNED_GRADES = Set.of("F", "NP");
+    private static final Set<Term> REGULAR_TERMS = Set.of(Term.FIRST, Term.SECOND);
     // 성적표 산정기준: 전공 = 전공필수·전공선택·전공기초
     private static final Set<Classification> MAJOR = Set.of(
             Classification.MAJOR_BASIC, Classification.MAJOR_REQUIRED, Classification.MAJOR_ELECTIVE);
@@ -54,12 +57,28 @@ public class AcademicGpaService {
 
         Map<AcademicTerm, List<CompletedCourse>> byTerm = sorted.stream().collect(Collectors.groupingBy(
                 c -> new AcademicTerm(c.getAcademicYear(), c.getTerm()), LinkedHashMap::new, Collectors.toList()));
-        List<TermGpa> terms = byTerm.entrySet().stream()
-                .map(e -> new TermGpa(e.getKey().year(), e.getKey().term(), average(e.getValue()),
-                        gradedCredits(e.getValue()), earnedCredits(e.getValue())))
-                .toList();
+        // 학기 번호: 입학년도로 계산하면 휴학생이 틀리므로 기록이 있는 정규 학기 순서로 매긴다 (명세 5장)
+        // ponytail: 편입생도 1-1 부터 세고 기록을 빠뜨리면 앞당겨진다. 편입 정보를 받게 되면 그때 시작 번호를 더한다
+        List<TermGpa> terms = new ArrayList<>();
+        int semester = 0;
+        boolean lastRegularInProgress = false;
+        for (Map.Entry<AcademicTerm, List<CompletedCourse>> e : byTerm.entrySet()) {
+            String label = null;
+            if (REGULAR_TERMS.contains(e.getKey().term())) {
+                label = semesterLabel(++semester);
+                lastRegularInProgress = e.getValue().stream().anyMatch(c -> c.getGrade() == null);
+            }
+            terms.add(new TermGpa(e.getKey().year(), e.getKey().term(), label, average(e.getValue()),
+                    gradedCredits(e.getValue()), earnedCredits(e.getValue())));
+        }
+        String current = semesterLabel(lastRegularInProgress ? semester : semester + 1);
 
-        return new GpaSummary(average(counted), average(major), gradedCredits(counted), earnedCredits(counted), terms);
+        return new GpaSummary(average(counted), average(major), gradedCredits(counted), earnedCredits(counted), current, terms);
+    }
+
+    /** 1 → "1-1", 2 → "1-2", 3 → "2-1" */
+    private static String semesterLabel(int semester) {
+        return (semester + 1) / 2 + "-" + (semester % 2 == 0 ? 2 : 1);
     }
 
     /** Σ(평점×학점) ÷ Σ학점, 셋째 자리 반올림. P·NP·성적 미정은 분모·분자 모두 제외 */
