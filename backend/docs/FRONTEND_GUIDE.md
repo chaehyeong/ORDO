@@ -165,11 +165,13 @@ async function api(path, options = {}) {
 // POST /api/auth/signup — SignUp.js 입력칸 기준
 {
   "name": "이하은",               // 필수, 30자 이하
-  "phone": "010-1234-5678",      // 선택, 20자 이하
-  "email": "haeun@khu.ac.kr",    // 필수, 이메일 형식
-  "password": "ordo1234!",       // 필수, 8~64자, 영문+숫자 포함 ('비밀번호 확인'은 프론트에서 비교)
+  "phone": "010-1234-5678",      // 필수, 01X 휴대폰 번호, 하이픈 생략 가능
+  "email": "haeun@khu.ac.kr",    // 필수, 100자 이하, 이메일 형식(도메인에 점 필요)
+  "password": "ordo1234!",       // 필수, 8~64자, 영문+숫자 포함
+  "passwordConfirm": "ordo1234!", // 필수, '비밀번호 확인' 칸 값. password 와 같아야 함
   "majorId": 35,                 // 필수 (아래 5-1 참고)
-  "studentNumber": "2026105632"  // 필수, 숫자 10자리 "문자열". 앞 4자리가 입학년도
+  "studentNumber": "2026105632", // 필수, 숫자 10자리 "문자열". 앞 4자리가 입학년도
+  "termsAgreed": true            // 필수, 이용약관 체크박스 값. true 가 아니면 400
 }
 
 // POST /api/auth/login
@@ -685,6 +687,8 @@ e캠퍼스 과제 마감을 캘린더에 함께 보여준다. 사용자가 **자
 Swagger 확인 순서: 회원가입/로그인 → Authorize → 공개 부전공 목록 → PUT 등록 → GET 확인 → 성적 한 과목 등록 → GET 후보 변화 확인 → DELETE 해제.
 
 ## 5. 프론트에 부탁할 수정 (SignUp.js / SignIn.js)
+
+서버 입력 검사는 **가입 API를 호출해야** 동작한다. 지금 회원가입 버튼은 `NavLink` 로 화면만 넘겨서 잘못 입력해도 막히지 않는다. 입력칸마다 state 로 값을 받고, 버튼을 누르면 위 형식으로 `POST /api/auth/signup` 을 호출한다. 체크박스 값은 `termsAgreed`, '비밀번호 확인' 칸 값은 `passwordConfirm` 으로 보낸다. 빈칸·형식·비밀번호 확인·약관은 서버가 검사하므로 프론트가 따로 비교하지 않아도 된다. 성공(201)하면 화면을 넘기고, 실패(400·404·409)하면 `error.message` 를 보여 준다. 400 문구는 `password: 비밀번호는 8~64자, 영문과 숫자를 모두 포함해야 합니다.` 처럼 앞에 필드명이 붙고, 여러 칸이 틀리면 쉼표로 이어지며 순서는 일정하지 않다.
 
 1. **학과 목록이 하드코딩(value 1·2·3)** 이라 실제 전공 id 와 다르다. 그대로 보내면 엉뚱한 전공으로 가입되거나 `MAJOR_NOT_FOUND`.
    - `GET /api/catalog/majors?admissionYear=2026` 으로 실제 목록을 받아 선택하도록 교체한다 (T3 구현).

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ordo.auth.domain.RefreshToken;
 import com.ordo.auth.dto.LoginRequest;
 import com.ordo.auth.dto.SignupRequest;
@@ -20,7 +21,11 @@ import com.ordo.global.error.ErrorCode;
 import com.ordo.global.security.JwtProvider;
 import com.ordo.user.domain.User;
 import com.ordo.user.repository.UserRepository;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +42,8 @@ class AuthServiceTest {
 
     private static final String EMAIL = "haeun@khu.ac.kr";
     private static final String PASSWORD = "ordo1234!";
+    private static final Validator VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Mock
     UserRepository userRepository;
@@ -87,6 +94,53 @@ class AuthServiceTest {
 
         assertError(() -> authService.signup(signupRequest()), ErrorCode.MAJOR_NOT_FOUND);
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void signupRejectsEachBadInputWithOneFieldError() {
+        Object[][] badInputs = {
+                {"name", null}, {"name", ""}, {"name", "   "}, {"name", "가".repeat(31)},
+                {"phone", null}, {"phone", ""}, {"phone", "abc"}, {"phone", "02-1234-5678"}, {"phone", "010-12-5678"},
+                {"email", null}, {"email", ""}, {"email", "   "}, {"email", "abc"}, {"email", "a@test"},
+                {"email", "a".repeat(60) + "@" + "b".repeat(40) + ".kr"},
+                {"password", null}, {"password", ""}, {"password", "abc1234"}, {"password", "abcdefgh"}, {"password", "12345678"},
+                {"passwordConfirm", null}, {"passwordConfirm", ""}, {"passwordConfirm", "ordo12345!"},
+                {"majorId", null},
+                {"studentNumber", null}, {"studentNumber", ""}, {"studentNumber", "202610563"}, {"studentNumber", "abcdefghij"},
+                {"termsAgreed", null}, {"termsAgreed", false}};
+
+        for (Object[] input : badInputs) {
+            String field = (String) input[0];
+            Map<String, Object> json = validSignupJson();
+            json.put(field, input[1]);
+            if (field.equals("password")) {
+                json.put("passwordConfirm", input[1]);
+            }
+            assertThat(VALIDATOR.validate(MAPPER.convertValue(json, SignupRequest.class)))
+                    .as("%s=%s", field, input[1])
+                    .extracting(violation -> violation.getPropertyPath().toString())
+                    .containsExactly(field.equals("passwordConfirm") ? "passwordConfirmed" : field);
+        }
+    }
+
+    @Test
+    void signupWithoutTermsAgreedFieldFails() {
+        Map<String, Object> json = validSignupJson();
+        json.remove("termsAgreed");
+
+        assertThat(VALIDATOR.validate(MAPPER.convertValue(json, SignupRequest.class)))
+                .extracting(violation -> violation.getPropertyPath().toString())
+                .containsExactly("termsAgreed");
+    }
+
+    @Test
+    void signupAcceptsValidInputWithOrWithoutPhoneHyphens() {
+        assertThat(VALIDATOR.validate(signupRequest())).isEmpty();
+        for (String phone : new String[]{"010-1234-5678", "01012345678", "011-123-4567"}) {
+            Map<String, Object> json = validSignupJson();
+            json.put("phone", phone);
+            assertThat(VALIDATOR.validate(MAPPER.convertValue(json, SignupRequest.class))).as(phone).isEmpty();
+        }
     }
 
     @Test
@@ -142,7 +196,12 @@ class AuthServiceTest {
     }
 
     private SignupRequest signupRequest() {
-        return new SignupRequest("이하은", "010-1234-5678", EMAIL, PASSWORD, 35L, "2026105632", null, null, null);
+        return new SignupRequest("이하은", "010-1234-5678", EMAIL, PASSWORD, PASSWORD, 35L, "2026105632", null, null, null, true);
+    }
+
+    private static Map<String, Object> validSignupJson() {
+        return new HashMap<>(Map.of("name", "이하은", "phone", "010-1234-5678", "email", EMAIL, "password", PASSWORD,
+                "passwordConfirm", PASSWORD, "majorId", 35L, "studentNumber", "2026105632", "termsAgreed", true));
     }
 
     private User user() {
