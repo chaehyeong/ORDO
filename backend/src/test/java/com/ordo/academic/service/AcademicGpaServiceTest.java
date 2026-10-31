@@ -87,7 +87,7 @@ class AcademicGpaServiceTest {
         assertThat(summary.majorGpa()).isEqualTo(3.3);
         assertThat(summary.gradedCredits()).isEqualTo(18);
         assertThat(summary.earnedCredits()).isEqualTo(20);
-        assertThat(summary.terms()).containsExactly(new TermGpa(2026, Term.FIRST, 3.417, 18, 20));
+        assertThat(summary.terms()).containsExactly(new TermGpa(2026, Term.FIRST, "1-1", 3.417, 18, 20));
     }
 
     @Test
@@ -110,7 +110,7 @@ class AcademicGpaServiceTest {
         assertThat(summary.gpa()).isNull();
         assertThat(summary.majorGpa()).isNull();
         assertThat(summary.earnedCredits()).isEqualTo(1);
-        assertThat(summary.terms()).containsExactly(new TermGpa(2026, Term.FIRST, null, 0, 1));
+        assertThat(summary.terms()).containsExactly(new TermGpa(2026, Term.FIRST, "1-1", null, 0, 1));
     }
 
     @Test
@@ -164,10 +164,10 @@ class AcademicGpaServiceTest {
                 course("X2", 2, Classification.GEN_FREE, "B0", 2025, Term.SUMMER));
 
         assertThat(summary.terms()).containsExactly(
-                new TermGpa(2025, Term.SUMMER, 3.0, 2, 2),
-                new TermGpa(2025, Term.SECOND, 2.0, 3, 3),  // 재수강으로 대체됐어도 그 학기 값에는 남는다
-                new TermGpa(2025, Term.WINTER, 4.0, 1, 1),
-                new TermGpa(2026, Term.FIRST, 4.3, 3, 3));
+                new TermGpa(2025, Term.SUMMER, null, 3.0, 2, 2),
+                new TermGpa(2025, Term.SECOND, "1-1", 2.0, 3, 3),  // 재수강으로 대체됐어도 그 학기 값에는 남는다
+                new TermGpa(2025, Term.WINTER, null, 4.0, 1, 1),
+                new TermGpa(2026, Term.FIRST, "1-2", 4.3, 3, 3));
         assertThat(summary.gradedCredits()).isEqualTo(6);  // 전체는 CSE1 최근 것만
     }
 
@@ -200,7 +200,64 @@ class AcademicGpaServiceTest {
     void emptyCoursesGiveNullGpaAndNoTerms() {
         given(completedCourseRepository.findByUserId(1L)).willReturn(List.of());
 
-        assertThat(academicGpaService.getGpa(1L)).isEqualTo(new GpaSummary(null, null, 0, 0, List.of()));
+        assertThat(academicGpaService.getGpa(1L)).isEqualTo(new GpaSummary(null, null, 0, 0, "1-1", List.of()));
+    }
+
+    @Test
+    void semesterLabelsFollowRegularTermsAndCurrentIsTheNextOne() {
+        GpaSummary summary = calculate(
+                course("X1", 3, Classification.GEN_FREE, "A0", 2026, Term.FIRST),
+                course("X2", 3, Classification.GEN_FREE, "A0", 2026, Term.SECOND),
+                course("X3", 3, Classification.GEN_FREE, "A0", 2027, Term.FIRST));
+
+        assertThat(summary.terms()).extracting(TermGpa::semesterLabel).containsExactly("1-1", "1-2", "2-1");
+        assertThat(summary.currentSemesterLabel()).isEqualTo("2-2");
+    }
+
+    @Test
+    void leaveOfAbsenceDoesNotShiftSemesterNumbers() {
+        GpaSummary summary = calculate(
+                course("X1", 3, Classification.GEN_FREE, "A0", 2026, Term.FIRST),
+                course("X2", 3, Classification.GEN_FREE, "A0", 2027, Term.SECOND));
+
+        assertThat(summary.terms()).extracting(TermGpa::semesterLabel).containsExactly("1-1", "1-2");
+        assertThat(summary.currentSemesterLabel()).isEqualTo("2-1");
+    }
+
+    @Test
+    void lastRegularTermWithUngradedCourseIsCurrent() {
+        GpaSummary summary = calculate(
+                course("X1", 3, Classification.GEN_FREE, "A0", 2026, Term.FIRST),
+                course("X2", 3, Classification.GEN_FREE, "B0", 2026, Term.SECOND),
+                course("X3", 3, Classification.GEN_FREE, null, 2026, Term.SECOND));
+
+        assertThat(summary.currentSemesterLabel()).isEqualTo("1-2");
+    }
+
+    @Test
+    void ungradedCourseOutsideLastRegularTermDoesNotMakeItCurrent() {
+        assertThat(calculate(
+                course("X1", 3, Classification.GEN_FREE, null, 2026, Term.FIRST),
+                course("X2", 3, Classification.GEN_FREE, "A0", 2026, Term.SECOND)).currentSemesterLabel()).isEqualTo("2-1");
+        assertThat(calculate(
+                course("X1", 3, Classification.GEN_FREE, "A0", 2026, Term.FIRST),
+                course("X2", 3, Classification.GEN_FREE, null, 2026, Term.SUMMER)).currentSemesterLabel()).isEqualTo("1-2");
+    }
+
+    // 3-2 수강 중: 디자인의 "지금 여기". 초과 학기도 같은 규칙으로 센다
+    @Test
+    void currentSemesterWorksForLaterYears() {
+        CompletedCourse[] sixTerms = new CompletedCourse[6];
+        for (int i = 0; i < 6; i++) {
+            sixTerms[i] = course("X" + i, 3, Classification.GEN_FREE, i == 5 ? null : "A0", 2024 + i / 2, i % 2 == 0 ? Term.FIRST : Term.SECOND);
+        }
+        assertThat(calculate(sixTerms).currentSemesterLabel()).isEqualTo("3-2");
+
+        CompletedCourse[] eightTerms = new CompletedCourse[8];
+        for (int i = 0; i < 8; i++) {
+            eightTerms[i] = course("X" + i, 3, Classification.GEN_FREE, "A0", 2024 + i / 2, i % 2 == 0 ? Term.FIRST : Term.SECOND);
+        }
+        assertThat(calculate(eightTerms).currentSemesterLabel()).isEqualTo("5-1");
     }
 
     private static GpaSummary calculate(CompletedCourse... courses) {
