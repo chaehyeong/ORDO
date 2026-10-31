@@ -33,6 +33,8 @@ public class Schedule extends BaseTimeEntity {
 
     private static final Set<Integer> ALARM_MINUTES = Set.of(10, 30, 60, 1440);
     private static final int ALARM_OFF = 0;  // PATCH 에서 알람 끄기 (null 은 '그대로'라서 따로 둔다). 저장은 null
+    private static final int MIN_YEAR = 2000;  // 시간표·이수내역과 같은 범위. 아주 옛날 날짜는 DB 에 다른 날짜로 저장된다
+    private static final int MAX_YEAR = 2100;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -98,6 +100,9 @@ public class Schedule extends BaseTimeEntity {
 
     // 종료 시간이 있으면 시작 시간 필수 + 종료 > 시작. 알람은 null/10/30/60/1440 (명세 3.3)
     private void validate() {
+        if (scheduleDate != null && (scheduleDate.getYear() < MIN_YEAR || scheduleDate.getYear() > MAX_YEAR)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
         if (endTime != null && (startTime == null || !endTime.isAfter(startTime))) {
             throw new BusinessException(ErrorCode.INVALID_TIME_RANGE);
         }

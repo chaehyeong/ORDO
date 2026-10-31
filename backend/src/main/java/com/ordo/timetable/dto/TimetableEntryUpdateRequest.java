@@ -11,7 +11,7 @@ import java.time.LocalTime;
 public record TimetableEntryUpdateRequest(
         @Min(2000) @Max(2100) Integer year,
         Term term,
-        @Size(min = 1, max = 100) String courseName,
+        @Size(min = 1, max = 100) @Pattern(regexp = "(?s).*\\S.*", message = "공백만 입력할 수 없습니다.") String courseName,
         @Size(max = 20) String courseCode,
         @Min(1) @Max(7) Integer dayOfWeek,
         LocalTime startTime,

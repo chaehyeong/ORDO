@@ -10,9 +10,11 @@ import java.util.Date;
 import java.util.UUID;
 import javax.crypto.SecretKey;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class JwtProvider {
 
@@ -29,7 +31,12 @@ public class JwtProvider {
     public JwtProvider(@Value("${app.jwt.secret}") String secret,
                        @Value("${app.jwt.access-token-validity-seconds}") long accessTokenValiditySeconds,
                        @Value("${app.jwt.refresh-token-validity-seconds}") long refreshTokenValiditySeconds) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));  // 32바이트 미만이면 부팅 실패
+        if (secret.isBlank()) {
+            log.warn("JWT_SECRET 이 없어 임시 키를 씁니다. 서버를 다시 켜면 다시 로그인해야 합니다");
+            this.key = Jwts.SIG.HS256.key().build();
+        } else {
+            this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));  // 32바이트 미만이면 부팅 실패
+        }
         this.accessTokenValiditySeconds = accessTokenValiditySeconds;
         this.refreshTokenValiditySeconds = refreshTokenValiditySeconds;
     }

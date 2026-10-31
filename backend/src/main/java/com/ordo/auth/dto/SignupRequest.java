@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /** 프론트 SignUp.js 입력칸 기준 (명세 4.1). 칸마다 오류 문구가 하나만 나오도록, 형식 검사가 있는 칸은 빈 값도 형식 검사로 거른다 */
@@ -38,5 +39,12 @@ public record SignupRequest(
     @AssertTrue(message = "비밀번호와 비밀번호 확인이 일치하지 않습니다.")
     public boolean isPasswordConfirmed() {
         return Objects.equals(password, passwordConfirm);
+    }
+
+    // BCrypt 는 72바이트까지만 본다. 넘으면 뒷부분이 달라도 로그인이 된다
+    @JsonIgnore
+    @AssertTrue(message = "비밀번호가 너무 깁니다. 72바이트(한글 24자) 이하로 입력해 주세요.")
+    public boolean isPasswordLengthValid() {
+        return password == null || password.getBytes(StandardCharsets.UTF_8).length <= 72;
     }
 }

@@ -53,6 +53,16 @@ class ScheduleServiceTest {
     }
 
     @Test
+    void yearsOutsideTheSupportedRangeAreRejected() {
+        given(userRepository.getReferenceById(1L)).willReturn(user());
+
+        for (LocalDate date : List.of(LocalDate.of(1999, 12, 31), LocalDate.of(2101, 1, 1), LocalDate.parse("-0001-01-01"))) {
+            assertErrorCode(() -> scheduleService.create(1L, new ScheduleCreateRequest(
+                    "먼 날짜", ScheduleCategory.PERSONAL, date, null, null, null, null, null)), ErrorCode.INVALID_INPUT);
+        }
+    }
+
+    @Test
     void createWithStartTimeIsEvent() {
         given(userRepository.getReferenceById(1L)).willReturn(user());
         given(scheduleRepository.save(any(Schedule.class))).willAnswer(invocation -> invocation.getArgument(0));

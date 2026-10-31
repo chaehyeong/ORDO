@@ -14,6 +14,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.ECFieldFp;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
@@ -81,9 +82,15 @@ final class WebPushCrypto {
         if (uncompressed.length != 65 || uncompressed[0] != 4) {
             throw new GeneralSecurityException("P-256 공개키 형식이 아님");
         }
-        ECPoint point = new ECPoint(new BigInteger(1, Arrays.copyOfRange(uncompressed, 1, 33)),
-                new BigInteger(1, Arrays.copyOfRange(uncompressed, 33, 65)));
-        return (ECPublicKey) KeyFactory.getInstance("EC").generatePublic(new ECPublicKeySpec(point, P256));
+        BigInteger x = new BigInteger(1, Arrays.copyOfRange(uncompressed, 1, 33));
+        BigInteger y = new BigInteger(1, Arrays.copyOfRange(uncompressed, 33, 65));
+        // KeyFactory 는 곡선 위의 점인지 확인하지 않는다. y² = x³ + ax + b (mod p)
+        BigInteger p = ((ECFieldFp) P256.getCurve().getField()).getP();
+        BigInteger right = x.pow(3).add(P256.getCurve().getA().multiply(x)).add(P256.getCurve().getB()).mod(p);
+        if (x.compareTo(p) >= 0 || y.compareTo(p) >= 0 || !y.pow(2).mod(p).equals(right)) {
+            throw new GeneralSecurityException("P-256 곡선 위의 점이 아님");
+        }
+        return (ECPublicKey) KeyFactory.getInstance("EC").generatePublic(new ECPublicKeySpec(new ECPoint(x, y), P256));
     }
 
     /** 32바이트 비밀값 → 개인키 */

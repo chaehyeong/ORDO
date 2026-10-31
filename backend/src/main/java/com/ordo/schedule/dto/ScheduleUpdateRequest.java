@@ -1,13 +1,14 @@
 package com.ordo.schedule.dto;
 
 import com.ordo.schedule.domain.ScheduleCategory;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 /** 보낸 필드만 변경 (null = 그대로, 값을 비우는 기능은 없음) */
 public record ScheduleUpdateRequest(
-        @Size(min = 1, max = 100) String title,
+        @Size(min = 1, max = 100) @Pattern(regexp = "(?s).*\\S.*", message = "공백만 입력할 수 없습니다.") String title,
         ScheduleCategory category,
         LocalDate date,
         LocalTime startTime,

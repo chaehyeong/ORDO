@@ -63,6 +63,28 @@ class CompletedCourseServiceTest {
     }
 
     @Test
+    void lowercaseCodeIsStoredInUppercase() {
+        givenUser();
+        givenMasterCourse("CSE204", "자료구조", Classification.MAJOR_REQUIRED);
+        givenSaveReturnsArgument();
+
+        assertThat(completedCourseService.create(1L, request(" cse204 ", null, null, null)).courseCode()).isEqualTo("CSE204");
+    }
+
+    @Test
+    void gradeOnlyUpdateKeepsTranscriptClassification() {
+        CompletedCourse imported = CompletedCourse.builder().user(user).courseCode("CSE204").courseName("자료구조").credits(3)
+                .classification(Classification.GENERAL_ELECTIVE).grade("B0").academicYear(2025).term(Term.FIRST).build();
+        given(completedCourseRepository.findByIdAndUserId(7L, 1L)).willReturn(Optional.of(imported));
+        givenMasterCourse("CSE204", "자료구조", Classification.MAJOR_REQUIRED);
+
+        completedCourseService.update(1L, 7L, new CompletedCourseUpdateRequest(null, null, null, null, null, "A0", null, null));
+
+        assertThat(imported.getClassification()).isEqualTo(Classification.GENERAL_ELECTIVE);
+        assertThat(imported.getGrade()).isEqualTo("A0");
+    }
+
+    @Test
     void unknownCourseNeedsClassification() {
         givenUser();
         given(courseRepository.findFirstByUnitNameAndCourseCodeOrderByIdAsc("컴퓨터공학", "GEE1001"))

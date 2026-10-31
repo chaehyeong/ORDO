@@ -8,6 +8,7 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.multipart.MultipartException;
 
 @ExtendWith(OutputCaptureExtension.class)
 class GlobalExceptionHandlerTest {
@@ -20,6 +21,14 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode().value()).isEqualTo(404);
         assertThat(response.getBody().error().code()).isEqualTo("NOT_FOUND");
+    }
+
+    @Test
+    void brokenMultipartIsBadRequest() {
+        var response = handler.handleUnreadable(new MultipartException("Failed to parse multipart servlet request"));
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody().error().code()).isEqualTo("INVALID_INPUT");
     }
 
     @Test

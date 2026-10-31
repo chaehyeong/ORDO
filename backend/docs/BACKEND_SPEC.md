@@ -102,6 +102,7 @@ spring:
   jackson:
     time-zone: Asia/Seoul
     serialization.write-dates-as-timestamps: false
+    deserialization.accept-float-as-int: false   # 정수 칸의 소수(학점 2.5)를 버리지 않고 400
 
 logging:
   level:
@@ -109,7 +110,7 @@ logging:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:local-dev-secret-key-must-be-at-least-32-bytes!!}
+    secret: ${JWT_SECRET:}   # 없으면 실행마다 임시 키. 공개 저장소라 기본 키를 두지 않는다
     access-token-validity-seconds: 3600       # 1시간
     refresh-token-validity-seconds: 1209600   # 14일
   cors:
@@ -252,7 +253,7 @@ enum Classification {             // 이수구분 (학교 코드)
   "name": "이하은",                  // 필수, 30자 이하
   "phone": "010-1234-5678",         // 필수, 01X 휴대폰 번호, 하이픈 생략 가능
   "email": "haeun@khu.ac.kr",       // 필수, 100자 이하, 도메인에 점 필요
-  "password": "ordo1234!",          // 필수, 8~64자, 영문+숫자 포함
+  "password": "ordo1234!",          // 필수, 8~64자, 영문+숫자 포함, 72바이트 이하(한글 24자)
   "passwordConfirm": "ordo1234!",   // 필수, password 와 같아야 함. 저장하지 않음
   "majorId": 35,                    // 필수
   "studentNumber": "2026105632",    // 필수, 10자리 숫자 (문자열)
@@ -270,8 +271,7 @@ enum Classification {             // 이수구분 (학교 코드)
 //            융합전공(convergence=true)은 주전공으로 가입 불가 → MAJOR_NOT_FOUND. 이메일 중복 → 409 EMAIL_DUPLICATED.
 //            termsAgreed 가 true 가 아니면(false·null·생략) 400 INVALID_INPUT. 동의 기록은 남기지 않는다.
 //            입력 오류는 칸마다 문구 하나. message 는 `필드: 사유` 이고, 여러 칸이면 쉼표로 이어지며 순서는 일정하지 않다.
-//            비밀번호 확인 불일치의 필드명은 passwordConfirmed. 학번 중복은 막지 않는다(본인 확인이 없어 먼저 가입한 사람이 막을 수 있음).
-//            프론트 학과 목록은 지금 하드코딩(3개) → GET /api/catalog/majors 로 교체 필요 (프론트 담당과 협의)
+//            비밀번호 확인 불일치의 필드명은 passwordConfirmed, 72바이트 초과는 passwordLengthValid. 학번 중복은 막지 않는다(본인 확인이 없어 먼저 가입한 사람이 막을 수 있음).
 // '로그인 상태 유지'를 체크하지 않으면 프론트가 refreshToken 을 저장하지 않으면 됨 (서버 동작은 동일)
 // '경희대학교 통합 로그인' 버튼은 info21 링크일 뿐, 백엔드 연동 대상 아님
 // POST /api/auth/login  요청
@@ -292,7 +292,7 @@ enum Classification {             // 이수구분 (학교 코드)
 | GET | /api/users/me/summary | 🔒 마이페이지 요약 |
 
 - PATCH 두 API의 응답 data 는 `GET /api/users/me` 와 같은 형태(수정 후 값).
-- 보낸 필드만 변경: 생략하거나 null 이면 그대로 둔다(값을 비우는 기능은 없음).
+- 보낸 필드만 변경: 생략하거나 null 이면 그대로 둔다(값을 비우는 기능은 없음). 이름·일정 제목·수업명에 공백만 보내면 `INVALID_INPUT`.
 - `majorId`·`admissionYear` 를 바꾸면 가입과 같은 규칙으로 확인 → 안 맞으면 `MAJOR_NOT_FOUND`.
 - (T11) `todoAlarmTime`: 시간 없는 할 일의 알림 기준 시각 `HH:mm`(기본 09:00, 형식이 틀리면 `INVALID_INPUT`). 예: 21:00 이고 알람이 하루 전이면 전날 21:00 에 온다. `notificationEnabled=false` 면 웹푸시를 보내지 않는다(4.10).
 
@@ -333,7 +333,7 @@ enum Classification {             // 이수구분 (학교 코드)
 - 검색의 `majorId` 는 전공 id이며 과목 id나 단과대 id가 아니다. 해당 전공의 `course_unit` 과 정확히 일치하는 과목만 검색한다. 연결된 교육과정이 없는 전공은 성공 + 빈 페이지.
 - `q` 는 최대 100자. 생략·빈 문자열·공백이면 해당 전공의 전체 과목; 그 외에는 앞뒤 공백 제거 후 과목명/학수번호 부분일치, 영문 대소문자 구분 없음. `%`, `_`, `!` 도 일반 문자로 검색한다.
 - `classification` 은 3.1의 enum 이름(대문자), 생략·빈 문자열이면 전체 이수구분. 검색어와 함께 보내면 두 조건을 모두 만족해야 한다.
-- `page` 는 0부터, 기본 0. `size` 는 1~100, 기본 20. 과목명→id 오름차순으로 정렬하며 마지막 페이지 이후는 빈 `content` 를 반환한다.
+- `page` 는 0부터, 기본 0, 최대 21474836. `size` 는 1~100, 기본 20. 과목명→id 오름차순으로 정렬하며 마지막 페이지 이후는 빈 `content` 를 반환한다.
 - 잘못된 형식·누락된 필수값·범위 초과는 `400 INVALID_INPUT`. 없는 전공 id는 `404 MAJOR_NOT_FOUND`, 없는 전공×입학년도 졸업요건 또는 대체 자료마저 없는 교양 기준은 `404 REQUIREMENT_NOT_FOUND`.
 - 교과목은 **2026 교육과정 편성 자료**다. `openSemester` 는 편성상의 개설학기 표기이며, 특정 학기의 실제 개설·수강신청 가능 여부를 보장하지 않는다.
 
@@ -406,7 +406,7 @@ enum Classification {             // 이수구분 (학교 코드)
 - PATCH 는 4.2 와 같은 규칙: 생략·null 이면 그대로, **값을 비우는 기능은 없음**(시간 지우기는 삭제 후 재생성). 예외로 **알람 끄기는 `"alarmMinutesBefore": 0`**(응답은 `null`). 바꾼 뒤의 값으로 3.3 시간 규칙을 다시 검사.
 - `alarmMinutesBefore` 가 3.3 목록(+ 끄기 `0`) 밖의 값이면 `INVALID_INPUT`. 생성 때 `0` 은 알람 없음과 같다.
 - `PATCH /{id}/done` 은 값을 뒤집지 않고 보낸 `done` 값으로 설정한다(여러 번 보내도 결과 같음).
-- 남의 일정 → `SCHEDULE_NOT_FOUND`(404). 시간은 JSON `"HH:mm"`(응답 DTO 의 `@JsonFormat`).
+- 남의 일정 → `SCHEDULE_NOT_FOUND`(404). 시간은 JSON `"HH:mm"`(응답 DTO 의 `@JsonFormat`). `date` 의 연도는 2000~2100, 벗어나면 `INVALID_INPUT`.
 
 ### 4.5 시간표 `timetable`
 
@@ -432,9 +432,9 @@ enum Classification {             // 이수구분 (학교 코드)
                { "id": 4, "courseName": "빅뱅에서 문명까지", "courseCode": null, "dayOfWeek": null, "startTime": null,
                  "endTime": null, "location": null, "professor": null, "color": null, "online": true } ] }
 ```
-- GET: `year`·`term` 중 생략한 값만 현재 학기(3.3) 값으로 채운다. `label` 은 "2026년 1학기 / 2학기 / 여름계절학기 / 겨울계절학기".
+- GET: `year`·`term` 중 생략한 값만 현재 학기(3.3) 값으로 채운다. `year` 는 2000~2100. `label` 은 "2026년 1학기 / 2학기 / 여름계절학기 / 겨울계절학기".
 - 칸 객체(`entries` 원소, POST·PATCH 응답 data): `id, courseName, courseCode, dayOfWeek, startTime, endTime, location, professor, color, online`. 요일 → 시작시간 순, 온라인 강의는 맨 뒤에 이름 순.
-- 입력: `year` 2000~2100, `dayOfWeek` 1(월)~7(일), `courseName` 100자, `courseCode` 20자, `location` 100자, `professor` 50자, `color` `#RRGGBB`. 종료 ≤ 시작이면 `INVALID_TIME_RANGE`.
+- 입력: `year` 2000~2100, `dayOfWeek` 1(월)~7(일), `courseName` 100자, `courseCode` 20자, `location` 100자, `professor` 50자, `color` `#RRGGBB`. 종료 ≤ 시작이면 `INVALID_TIME_RANGE`. `bulk` 의 시간은 `"HH:mm"` 만 받는다(가져오기 미리보기도 이 모양).
 - **온라인 강의(T15)**: 시간 없는 수업. `online=true` 면 요일·시간을 보내도 저장하지 않는다(null). `online` 이 false·생략이면 `dayOfWeek`·`startTime`·`endTime` 이 모두 필수이고 없으면 `INVALID_TIME_RANGE`. 온라인 강의는 겹침 검사를 하지 않고, 홈 주간 점·오늘 타임라인에 나오지 않는다. `POST .../bulk` 의 칸에도 같은 `online` 이 있다.
 - 겹침: 같은 학기·요일에서 `start < 다른 칸 end` 이고 `다른 칸 start < end` 이면 `TIMETABLE_OVERLAP`(409). 끝과 시작이 같은 칸은 허용. 수정은 바꾼 뒤의 값으로 검사하고 자기 자신은 제외.
 - PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음). 예외로 `online: true` 는 요일·시간을 지우고, `online: false` 는 요일·시간을 같이 보내야 한다(없으면 `INVALID_TIME_RANGE`). 남의 칸 → `TIMETABLE_ENTRY_NOT_FOUND`(404).
@@ -488,7 +488,7 @@ enum Classification {             // 이수구분 (학교 코드)
 - 과목 객체(목록 원소, POST·PATCH 응답 data): `id, courseCode, courseName, credits, classification, distributionArea, grade, year, term`. 목록은 학년도 → 학기(1학기·여름·2학기·겨울) → 등록 순.
 - `bulk` 는 `courses` 1~100건, 하나라도 실패하면 전부 저장하지 않는다 → 201, data = 과목 객체 배열.
 - (T12) `replaceTerms: [{ year, term }]` 를 주면 그 학기들의 내 이수내역을 지우고 새로 넣는다(같은 트랜잭션, 재업로드해도 중복 없음). `keepClassification: true` 면 요청에 이수구분이 있는 과목은 자동 판별을 건너뛰고 요청값을 쓴다(성적표가 공식 기록이라서, 9장 17).
-- PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음)이고, 합친 값으로 자동 판별을 다시 한다. 남의 과목 → `COMPLETED_COURSE_NOT_FOUND`(404).
+- PATCH 는 4.2·4.4 와 같은 규칙(생략·null 이면 그대로, 값 비우기 없음)이다. 학수번호를 바꾸면 합친 값으로 자동 판별을 다시 하고, 안 바꾸면 이수구분을 유지한다(보낸 값이 있으면 그 값, 9장 17). 학수번호는 대문자로 저장한다. 남의 과목 → `COMPLETED_COURSE_NOT_FOUND`(404).
 
 ```json
 // GET /api/academic/progress 응답 data
@@ -735,7 +735,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
   "keys": { "p256dh": "BNc…(87자)", "auth": "tBH…(22자)" } }
 ```
 
-- 검증(아니면 `INVALID_INPUT`): endpoint 는 `https`·포트 지정 없음·사용자정보 없음·700자 이하·호스트가 **허용 목록**(`fcm.googleapis.com`, `updates.push.services.mozilla.com`, `*.push.apple.com`, `*.notify.windows.com`). 서버가 이 주소로 직접 요청하므로 다른 주소는 받지 않는다(SSRF 방지, 보낼 때도 다시 확인). `p256dh` = Base64url 65바이트 P-256 공개키, `auth` = 16바이트.
+- 검증(아니면 `INVALID_INPUT`): endpoint 는 `https`·포트 지정 없음·사용자정보 없음·700자 이하·호스트가 **허용 목록**(`fcm.googleapis.com`, `updates.push.services.mozilla.com`, `*.push.apple.com`, `*.notify.windows.com`). 서버가 이 주소로 직접 요청하므로 다른 주소는 받지 않는다(SSRF 방지, 보낼 때도 다시 확인). `p256dh` = Base64url 65바이트 P-256 공개키(곡선 위의 점인지 확인), `auth` = 16바이트.
 - 사용자당 기기 최대 10개, 넘으면 먼저 등록한 것부터 지운다. 서버에 VAPID 키가 없으면 4개 모두 `PUSH_NOT_CONFIGURED`(503), 서버는 정상 시작.
 - **발송**: 1분마다 `날짜 + (시작시간 ?? 사용자의 todoAlarmTime(4.2, 기본 09:00)) − alarm_minutes_before` 가 **지난 10분 안**(`now − 10분 < 발송 시각 ≤ now`, Asia/Seoul)인 일정을 그 사용자의 모든 기기로 보낸다. `done` 이거나 `notificationEnabled=false` 면 안 보냄(구독은 유지).
 - **한 번만**: 보내기 전에 `schedules.alarm_sent_for` 를 조건부 UPDATE 로 선점(바뀐 행 1 = 내 차례). 서버를 재시작하거나 여러 대여도 같은 알림은 한 번. 일정 시간·알람을 바꾸면 발송 시각이 달라져 다시 보낸다.
@@ -837,7 +837,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 | 교과목 3,036 (V16 후 3,060) | 졸업관리데이터 ⑤ | 2026 전공 교과목만. 교양 과목 목록 없음 → 교양은 사용자가 이수구분 직접 선택 |
 | 마이크로디그리 56 + 편성 과목 249 (V18) | `오르도_T19복수전공_T20마이크로디그리_최종.xlsx` MD목록·MD과목 | `tools/seed/generate_micro_degree_seed.py` 로 생성. 57행 중 타대학 융합 묶음 제외, 학점 추정 27행은 NULL, 구 학수번호·오기 12행은 `alias_code` |
 
-알려진 한계: 교과목은 2026 편성 기준이라 옛 학번 학생은 자동 판별이 틀릴 수 있음(수정 가능하게 함). `course_unit` 이 NULL인 전공 2개('글로벌한국학과', '스마트팜공학 융합전공')는 자동 판별 불가. 깨진 과목명은 V15, 전문실기 소속은 V16 에서 교정(9장 24). 전문실기는 종목을 나누지 않고 학수번호당 1행이다. 개설학기 미표기 18건.
+알려진 한계: 교과목은 2026 편성 기준이라 옛 학번 학생은 자동 판별이 틀릴 수 있음(수정 가능하게 함). `course_unit` 이 NULL인 전공 2개('글로벌한국학과', '스마트팜공학 융합전공')는 자동 판별 불가. 깨진 과목명은 V15, 전문실기 소속은 V16, 포스트모던음악학과 부전공 합계는 V21 에서 교정(9장 24). 전문실기는 종목을 나누지 않고 학수번호당 1행이다. 개설학기 미표기 18건.
 
 ---
 
@@ -854,6 +854,7 @@ e캠퍼스(Canvas, `khcanvas.khu.ac.kr`)의 **개인 캘린더 피드(.ics)** �
 - 사용 중: `V17__add_micro_degrees.sql`(A, T20: `micro_degrees`·`micro_degree_courses`·`user_micro_degrees` 새 테이블, 2026-10-31 승인), `V18__seed_micro_degrees.sql`(A, T20 시드, 생성기 `tools/seed/generate_micro_degree_seed.py`).
 - 사용 중: `V19__add_exploration_seminar.sql`(A, 교양 필수과목 표에 전공탐색및기업가정신세미나 1행, 스키마 변경 없음, 5장 9번, 2026-11-01 승인). `out-of-order: true` 라 V50 뒤에 들어와도 적용된다.
 - 사용 중: `V20__add_general_education_2020_2023.sql`(A, 2020~2023학번 교양 기준 4행과 필수과목 28행, 스키마 변경 없음, 교육과정 p45, 2026-11-01 승인). `out-of-order: true` 라 V50 뒤에 들어와도 적용된다.
+- 사용 중: `V21__fix_postmodern_music_minor_total.sql`(A, 포스트모던음악학과 2026학번 부전공 합계 21 → 33, 스키마 변경 없음, 교육과정 p1177·학사지원팀 답변 2026-07-23, 2026-11-01 승인).
 - 사용 중: `V15__fix_course_names.sql`(A, 시드 `courses` 과목명 174행 교정, 스키마 변경 없음, 9장 24, 2026-10-30 승인).
 - 사용 중: `V16__fix_sports_practice_course_units.sql`(A, 전문실기 6행을 체육대학 5개 학과로 이동, `courses` 3,036 → 3,060행, 스키마 변경 없음, 9장 24, 2026-10-30 승인).
 - 로컬 DB가 꼬이면: `DROP DATABASE ordo;` 후 서버 재시작 → Flyway가 V1부터 다시 적용.
@@ -928,7 +929,7 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 
 | # | 내용 | 임시 결정 |
 |---|---|---|
-| 1 | 프론트 코드의 API 경로·필드명과 이 명세가 맞는지 | 2026-09-24 기준 프론트(React, CRA, 포트 3000)는 화면만 있고 API 호출 없음. 회원가입 필드는 SignUp.js에 맞춰 4.1 수정 완료. 나머지 화면은 연동할 때 4장 기준으로 맞춤 |
+| 1 | 프론트 코드의 API 경로·필드명과 이 명세가 맞는지 | 2026-11-01 기준 프론트(React, CRA, 포트 3000)는 `api/client.js` 로 연동 중이고 proxy 는 8080. 로그인·홈·캘린더·시간표·학사관리·로드맵·마이페이지의 필드는 4장과 맞음. `SignUp.js` 는 `passwordConfirm`·`termsAgreed` 를 아직 안 보내고, 동시 호출 때 refresh 를 호출마다 부른다(FRONTEND_GUIDE 3·5장) |
 | 2 | 홈 주간일정: 회의록 1차 "오늘이 맨 왼쪽" vs 디자인 "월요일 시작" | 월요일 시작(디자인). 바뀌면 `week` 시작일만 변경 |
 | 3 | 이수내역 입력 화면이 디자인에 없음 | 학사관리에 "과목 추가" 모달 필요 → 디자인팀 요청 |
 | 4 | 가입 이메일을 학교메일(@khu.ac.kr)로 제한할지 | 제한 안 함 |
@@ -944,7 +945,7 @@ Schedule 엔티티는 V1 schedules 컬럼과 정확히 일치, 응답에 type(EV
 | 14 | 서버가 꺼져 있던 동안 놓친 알림 (T11) | 10분 이내 것만 발송, 더 오래된 것은 버림 |
 | 15 | 알림 발송 실패 재시도 (T11) | 안 함(경고 로그만, 404·410 은 구독 삭제) |
 | 16 | 중핵교과·기초교과 → GEN_REQUIRED (T12) | 추정. 근거: 성적표 이수구분 코드 14(중핵교과) = 3.1 "교양 필수교과 14, 16". 기초교과 코드는 확인 필요 |
-| 17 | 가져오기 이수구분: 성적표 vs 교육과정 마스터가 다를 때 (T12) | **결정(2026-10-08): 성적표 우선**(keepClassification), 다르면 경고 |
+| 17 | 가져오기 이수구분: 성적표 vs 교육과정 마스터가 다를 때 (T12) | **결정(2026-10-08): 성적표 우선**(keepClassification), 다르면 경고. 2026-11-01: 저장한 뒤 성적만 고쳐도 성적표 이수구분을 유지한다(학수번호를 바꿀 때만 다시 판별) |
 | 18 | 같은 파일 재업로드 (T12) | **결정(2026-10-08): 학기 단위 교체(REPLACE)** |
 | 19 | PDF 가져오기 (T12) | **결정(2026-10-08): 거절.** PDFBox 로 확인한 결과 한글은 읽히지만 표 구조(2줄 칸·세로 병합된 학기·빈 칸)가 사라져 신뢰할 수 없음. 원본 PDF 의 칸 테두리로 표를 재구성하는 방법은 여러 학기 성적표 샘플이 생기면 재검토 |
 | 20 | 평점 척도·반올림 (T13) | **결정(2026-10-16): 4.3 만점, 소수 셋째 자리 반올림**(성적표로 확인). **2026-10-31: 사용자가 준 학교 등급표로 전체 평점 확정**, 마이너스 등급(A-·B-·C-·D-)을 입력·파일 가져오기·평점에 추가. 등급표의 점수 칸(100, 96 …)은 쓰는 곳이 없어 넣지 않는다 |

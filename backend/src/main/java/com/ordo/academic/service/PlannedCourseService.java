@@ -9,6 +9,7 @@ import com.ordo.global.error.ErrorCode;
 import com.ordo.user.domain.User;
 import com.ordo.user.repository.UserRepository;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,7 @@ public class PlannedCourseService {
         List<PlannedCourse> courses = request.courses().stream()
                 .map(course -> PlannedCourse.builder().user(user).academicYear(course.year()).term(course.term())
                         .courseName(course.courseName().strip())
-                        .courseCode(course.courseCode() == null || course.courseCode().isBlank() ? null : course.courseCode().strip())
+                        .courseCode(course.courseCode() == null || course.courseCode().isBlank() ? null : course.courseCode().strip().toUpperCase(Locale.ROOT))
                         .classification(course.classification()).credits(course.credits()).build())
                 .toList();
         if (courses.stream().map(PlannedCourseService::sameCourseKey).distinct().count() != courses.size()) {

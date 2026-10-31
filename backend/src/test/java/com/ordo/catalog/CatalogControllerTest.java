@@ -120,7 +120,7 @@ class CatalogControllerTest {
             "/api/catalog/majors?admissionYear=0", "/api/catalog/majors?admissionYear=2026&collegeId=-1",
             "/api/catalog/courses", "/api/catalog/courses?majorId=-1",
             "/api/catalog/courses?majorId=54&page=-1", "/api/catalog/courses?majorId=54&size=0",
-            "/api/catalog/courses?majorId=54&size=101",
+            "/api/catalog/courses?majorId=54&size=101", "/api/catalog/courses?majorId=54&page=21474837",
             "/api/catalog/courses?majorId=54&classification=UNKNOWN",
             "/api/catalog/requirements?majorId=54", "/api/catalog/general-education?admissionYear=-1"
     })

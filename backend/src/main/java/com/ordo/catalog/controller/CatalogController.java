@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
 @SecurityRequirements
 public class CatalogController {
 
+    private static final int MAX_PAGE = Integer.MAX_VALUE / 100;  // page × size(최대 100)가 int 를 넘으면 조회 시작 위치를 만들 수 없다
+
     private final CatalogService catalogService;
 
     @Operation(summary = "단과대 목록")
@@ -75,7 +77,7 @@ public class CatalogController {
             @RequestParam @Positive Long majorId,
             @RequestParam(required = false) @Size(max = 100) String q,
             @RequestParam(required = false) Classification classification,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "0") @Min(0) @Max(MAX_PAGE) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         return ApiResponse.ok(catalogService.searchCourses(majorId, q, classification, page, size));
     }

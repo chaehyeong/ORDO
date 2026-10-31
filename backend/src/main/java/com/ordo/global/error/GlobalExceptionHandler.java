@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 @Slf4j
 @RestControllerAdvice
@@ -32,8 +33,8 @@ public class GlobalExceptionHandler {
         return toResponse(ErrorCode.INVALID_INPUT, message.isEmpty() ? ErrorCode.INVALID_INPUT.getMessage() : message);
     }
 
-    // JSON 형식 오류, 파라미터 타입 불일치
-    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    // JSON 형식 오류, 파라미터 타입 불일치, 깨진 multipart (크기 초과는 아래에서 따로 처리)
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class, MultipartException.class})
     public ResponseEntity<ApiResponse<Void>> handleUnreadable(Exception e) {
         return toResponse(ErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getMessage());
     }

@@ -134,6 +134,22 @@ class AuthServiceTest {
     }
 
     @Test
+    void signupRejectsPasswordOverBcryptLimit() {
+        Map<String, Object> json = validSignupJson();
+        String tooLong = "가".repeat(24) + "a1";  // 74바이트
+        json.put("password", tooLong);
+        json.put("passwordConfirm", tooLong);
+        assertThat(VALIDATOR.validate(MAPPER.convertValue(json, SignupRequest.class)))
+                .extracting(violation -> violation.getPropertyPath().toString())
+                .containsExactly("passwordLengthValid");
+
+        String fits = "가".repeat(23) + "a1";  // 71바이트
+        json.put("password", fits);
+        json.put("passwordConfirm", fits);
+        assertThat(VALIDATOR.validate(MAPPER.convertValue(json, SignupRequest.class))).isEmpty();
+    }
+
+    @Test
     void signupWithoutTermsAgreedFieldFails() {
         Map<String, Object> json = validSignupJson();
         json.remove("termsAgreed");

@@ -1,5 +1,6 @@
 package com.ordo.timetable.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ordo.global.common.Term;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -28,8 +29,8 @@ public record TimetableEntryBulkRequest(
             @NotBlank @Size(max = 100) String courseName,
             @Size(max = 20) String courseCode,
             @Min(1) @Max(7) Integer dayOfWeek,
-            LocalTime startTime,
-            LocalTime endTime,
+            @JsonFormat(pattern = "HH:mm") LocalTime startTime,  // 가져오기 미리보기 응답에도 이 모양으로 나간다
+            @JsonFormat(pattern = "HH:mm") LocalTime endTime,
             @Size(max = 100) String location,
             @Size(max = 50) String professor,
             @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "#RRGGBB 형식이어야 합니다.") String color,

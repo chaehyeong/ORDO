@@ -104,6 +104,15 @@ class PlannedCourseServiceTest {
     }
 
     @Test
+    void sameCodeInLowercaseInATermChangesNothing() {
+        given(userRepository.getReferenceById(1L)).willReturn(user());
+
+        assertInvalidAndNothingChanged(request(
+                course(2027, Term.FIRST, "타이포그래피1", "VID1004", null, 3),
+                course(2027, Term.FIRST, "타이포그래피1", "vid1004", null, 3)));
+    }
+
+    @Test
     void sameNameWithoutCodeTwiceInATermChangesNothing() {
         given(userRepository.getReferenceById(1L)).willReturn(user());
 

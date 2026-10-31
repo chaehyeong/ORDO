@@ -19,7 +19,8 @@ import org.springframework.test.context.jdbc.SqlConfig;
 @Import(CatalogService.class)
 @Sql(scripts = {"/db/migration/V2__seed_catalog.sql", "/db/migration/V15__fix_course_names.sql",
         "/db/migration/V16__fix_sports_practice_course_units.sql", "/db/migration/V18__seed_micro_degrees.sql",
-        "/db/migration/V19__add_exploration_seminar.sql", "/db/migration/V20__add_general_education_2020_2023.sql"},
+        "/db/migration/V19__add_exploration_seminar.sql", "/db/migration/V20__add_general_education_2020_2023.sql",
+        "/db/migration/V21__fix_postmodern_music_minor_total.sql"},
         config = @SqlConfig(encoding = "UTF-8"))
 class CatalogSeedTest {
 
@@ -54,6 +55,12 @@ class CatalogSeedTest {
         assertThat(options).filteredOn(option -> option.id().equals(35L)).singleElement()
                 .satisfies(option -> assertThat(option.requiredCredits()).isNull());
         assertThat(options).noneMatch(option -> option.id().equals(55L));
+        // V21: 포스트모던음악학과 합계 칸 오류 교정 (교육과정 p1177)
+        assertThat(options).filteredOn(option -> option.id().equals(41L)).singleElement().satisfies(option -> {
+            assertThat(option.requiredCredits()).isEqualTo(12);
+            assertThat(option.electiveCredits()).isEqualTo(21);
+            assertThat(option.totalCredits()).isEqualTo(33);
+        });
         assertThat(service.getMinors(2025, null)).hasSize(51);
         assertThat(service.getMinors(2026, 3L)).allSatisfy(option -> assertThat(option.collegeId()).isEqualTo(3L));
         assertThat(service.getMinors(2010, null)).isEmpty();
