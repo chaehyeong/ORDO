@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +52,9 @@ public class RemainingCourseService {
         Major doubleMajor = user.getDoubleMajor();
         List<String> courseUnits = Stream.of(user.getMajor(), doubleMajor).filter(Objects::nonNull)
                 .map(Major::getCourseUnit).filter(Objects::nonNull).toList();
-        List<RemainingCourse> courses = Stream.concat(generalCourses(summary), majorCourses(userId, courseUnits))
+        Function<Course, Classification> classification = doubleMajor == null ? Course::getClassification
+                : course -> DoubleMajorCalculation.classificationOf(summary.admissionYear(), course, course.getClassification());
+        List<RemainingCourse> courses = Stream.concat(generalCourses(summary), majorCourses(userId, courseUnits, classification))
                 .sorted(DISPLAY_ORDER)
                 .toList();
         return new RemainingCoursesResponse(summary.total().remaining(), courseUnits.size() == (doubleMajor == null ? 1 : 2), courses);
@@ -71,8 +74,8 @@ public class RemainingCourseService {
                         course.getCredits(), course.getRecommendedGrade(), null, null));
     }
 
-    // 두 전공에 같은 과목이 있으면 제1전공 쪽 1행만 남긴다
-    private Stream<RemainingCourse> majorCourses(Long userId, List<String> courseUnits) {
+    // 두 전공에 같은 과목이 있으면 제1전공 쪽 1행만 남긴다. 다전공 과목표에서 빠져 일반선택이 된 과목은 넣지 않는다
+    private Stream<RemainingCourse> majorCourses(Long userId, List<String> courseUnits, Function<Course, Classification> classification) {
         if (courseUnits.isEmpty()) {
             return Stream.empty();
         }
@@ -88,10 +91,11 @@ public class RemainingCourseService {
         return courseUnits.stream()
                 .flatMap(courseUnit -> courseRepository
                         .findByUnitNameAndClassificationIn(courseUnit, AcademicProgressService.MAJOR_CLASSIFICATIONS).stream())
+                .filter(course -> classification.apply(course) != Classification.GENERAL_ELECTIVE)
                 .filter(course -> seenCodes.add(course.getCourseCode()))
                 .filter(course -> !takenCodes.contains(course.getCourseCode())
                         && !namesWithoutCode.contains(AcademicProgressService.withoutSpaces(course.getName())))
-                .map(course -> new RemainingCourse(course.getName(), course.getCourseCode(), course.getClassification(),
+                .map(course -> new RemainingCourse(course.getName(), course.getCourseCode(), classification.apply(course),
                         course.getCredits(), course.getTargetGrade(), course.getOpenSemester(), course.getUnitName()));
     }
 }

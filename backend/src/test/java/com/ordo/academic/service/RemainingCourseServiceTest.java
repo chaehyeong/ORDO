@@ -205,6 +205,39 @@ class RemainingCourseServiceTest {
     }
 
     @Test
+    void doubleMajorTableDropsLeftOutCoursesPerUnitAndMovesComputerEngineeringRequired() {
+        String computerEngineering = "컴퓨터공학부 컴퓨터공학과";
+        String softwareConvergence = "소프트웨어융합학과";
+        given(completedCourseRepository.findByUserId(1L)).willReturn(List.of());
+        User user = givenProfile(computerEngineering, List.of(), List.of(), List.of(
+                major("AMTH1001", "미분방정식", Classification.MAJOR_BASIC, "1", 3, computerEngineering),
+                major("AMTH1009", "미분적분학", Classification.MAJOR_BASIC, "1", 3, computerEngineering),
+                major("SWCON253", "기계학습", Classification.MAJOR_REQUIRED, "2", 3, computerEngineering)));
+        user.changeDoubleMajor(majorOf(softwareConvergence));
+        List<Course> secondCourses = List.of(
+                major("AMTH1001", "미분방정식", Classification.MAJOR_BASIC, "1", 3, softwareConvergence),
+                major("CSE301", "운영체제", Classification.MAJOR_REQUIRED, "3", 3, softwareConvergence));
+        given(courseRepository.findByUnitNameAndClassificationIn(softwareConvergence, MAJOR_CLASSIFICATIONS)).willReturn(secondCourses);
+
+        assertThat(remainingCourseService.getRemainingCourses(1L).courses())
+                .extracting(RemainingCourse::courseCode, RemainingCourse::classification, RemainingCourse::unitName)
+                .containsExactlyInAnyOrder(
+                        tuple("AMTH1009", Classification.MAJOR_BASIC, computerEngineering),
+                        tuple("AMTH1001", Classification.MAJOR_BASIC, softwareConvergence),
+                        tuple("SWCON253", Classification.MAJOR_ELECTIVE, computerEngineering));
+    }
+
+    @Test
+    void singleMajorKeepsCoursesOutsideDoubleMajorTable() {
+        String computerEngineering = "컴퓨터공학부 컴퓨터공학과";
+        given(completedCourseRepository.findByUserId(1L)).willReturn(List.of());
+        givenProfile(computerEngineering, List.of(), List.of(), List.of(
+                major("AMTH1001", "미분방정식", Classification.MAJOR_BASIC, "1", 3, computerEngineering)));
+
+        assertThat(remainingCourseService.getRemainingCourses(1L).courses()).extracting(RemainingCourse::courseCode).containsExactly("AMTH1001");
+    }
+
+    @Test
     void incompleteProfileIsPassedOn() {
         given(academicProgressService.getSummary(1L)).willThrow(new BusinessException(ErrorCode.PROFILE_INCOMPLETE));
 
