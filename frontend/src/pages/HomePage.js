@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { categoryColors } from "../constants/categoryColors";
 import frodo from "../assets/frodo2.png";
-import { FiChevronRight, FiBell, FiBook } from "react-icons/fi";
+import { FiChevronRight, FiChevronLeft, FiBell, FiBook } from "react-icons/fi"; // [수정] FiChevronLeft 추가
 import Sidebar from "../components/Sidebar";
 import "./HomePage.css";
 
@@ -20,6 +20,9 @@ const TIMELINE_SOURCES = ['TIMETABLE', 'SCHEDULE', 'ECAMPUS'];
 function Home() {
     const [home, setHome] = useState(null);
     const [error, setError] = useState('');
+    // [수정] 오늘 일정 박스에서 보고 있는 날짜 (0 = 오늘, 1 = 내일, -1 = 어제)
+    const [dayOffset, setDayOffset] = useState(0);
+    const [dayTimeline, setDayTimeline] = useState(null);
 
     // 홈 화면 데이터는 /api/home 한 번으로 다 받는다
     useEffect(() => {
@@ -31,6 +34,22 @@ function Home() {
             }
         });
     }, []);
+
+    // [수정] 다른 날짜는 /api/home?date= 로 그날 timeline 만 따로 받는다 (주간 일정·D-Day 는 오늘 기준 그대로)
+    useEffect(() => {
+        if (dayOffset === 0) {
+            setDayTimeline(null);
+            return;
+        }
+        const target = new Date();
+        target.setDate(target.getDate() + dayOffset);
+        let ignore = false;
+        api(`/api/home?date=${toDateKey(target)}`).then((res) => {
+            if (ignore) return;
+            setDayTimeline(res.success ? res.data.timeline : []);
+        });
+        return () => { ignore = true; };
+    }, [dayOffset]);
 
     if (error) return <div className="layout"><Sidebar /><div className="page">{error}</div></div>;
     if (!home) return <div className="layout"><Sidebar /><div className="page">불러오는 중...</div></div>;
@@ -50,7 +69,17 @@ function Home() {
 
     // 오늘 일정 (과제는 빼고, 서버가 이미 시간순으로 정렬해서 준다)
 
-    const todayItems = home.timeline
+    // [수정] 화살표로 고른 날짜의 timeline (오늘이면 처음 받은 home.timeline)
+    const isOtherDay = dayOffset !== 0;
+    const timeline = isOtherDay ? (dayTimeline ?? []) : home.timeline;
+    const viewDate = new Date(today);
+    viewDate.setDate(viewDate.getDate() + dayOffset);
+    const dayTitle = dayOffset === 0 ? '오늘 일정'
+        : dayOffset === 1 ? '내일 일정'
+        : dayOffset === -1 ? '어제 일정'
+        : `${viewDate.getMonth() + 1}/${viewDate.getDate()} 일정`;
+
+    const todayItems = timeline
         .filter((t) => TIMELINE_SOURCES.includes(t.source) && t.category !== 'ASSIGNMENT')
         .map((t) => ({
             key: `${t.source}-${t.id ?? t.title}`,
@@ -61,7 +90,8 @@ function Home() {
             category: CATEGORY_LABELS[t.category],
         }));
     const nowMinutes = today.getHours() * 60 + today.getMinutes();
-    const activeKey = todayItems.find((item) => item.endTime && toMinutes(item.endTime) >= nowMinutes)?.key;
+    // [수정] 진행 중 강조는 오늘을 볼 때만
+    const activeKey = isOtherDay ? null : todayItems.find((item) => item.endTime && toMinutes(item.endTime) >= nowMinutes)?.key;
 
     // 졸업 진행률 (학과·입학년도가 없으면 graduation 이 null)
 
@@ -176,11 +206,22 @@ function Home() {
 
                     <section className="box today-box">
                         <div className="today-header">
-                            <h5 className="today-title">오늘 일정</h5>
+                            <div className="today-nav">
+                                {/* [수정] 오늘 일정 → 화살표로 날짜 이동 */}
+                                <button type="button" className="today-arrow" onClick={() => setDayOffset((d) => d - 1)} aria-label="이전 날">
+                                    <FiChevronLeft />
+                                </button>
+                                <h5 className="today-title">{dayTitle}</h5>
+                                <button type="button" className="today-arrow" onClick={() => setDayOffset((d) => d + 1)} aria-label="다음 날">
+                                    <FiChevronRight />
+                                </button>
+                            </div>
                             <Link to="/calendar" className="today-btn">일정 수정하기 <FiChevronRight /></Link>
                         </div>
-                        {todayItems.length === 0 ? (
-                            <p className="today-empty">오늘은 일정이 없어요.</p>
+                        {isOtherDay && dayTimeline === null ? (
+                            <p className="today-empty">불러오는 중...</p>
+                        ) : todayItems.length === 0 ? (
+                            <p className="today-empty">{dayOffset === 0 ? '오늘은' : dayOffset === 1 ? '내일은' : '이 날은'} 일정이 없어요.</p>
                         ) : (
                             <ul className="today-list">
                                 {todayItems.map((item, i) => (

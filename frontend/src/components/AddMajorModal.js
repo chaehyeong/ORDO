@@ -36,7 +36,7 @@ function AddMajorModal({ admissionYear, excludeIds = [], onClose, onSubmit }) {
     return (
         <div className="dm-backdrop" onClick={onClose}>
             <div className="dm-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-                <h2 className="dm-title">다전공 추가하기</h2>
+                <h2 className="dm-title">다전공/부전공 추가하기</h2>
 
                 <label className="dm-label" htmlFor="dm-department">학과 선택하기</label>
                 <div className="dm-select-wrap">

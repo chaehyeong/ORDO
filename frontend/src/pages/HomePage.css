@@ -147,6 +147,26 @@
     margin: 0;
     font-weight: bold;
 }
+/* [수정] 오늘 일정 날짜 이동 화살표 */
+.today-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.today-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    padding: 2px;
+    font-size: 18px;
+    color: #39B19D;
+    cursor: pointer;
+}
+.today-arrow:hover {
+    opacity: 0.7;
+}
 .today-btn {
     display: inline-flex;
     align-items: center;
