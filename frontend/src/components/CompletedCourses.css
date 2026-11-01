@@ -1,6 +1,7 @@
 /* ---------- 이수한 과목 ---------- */
 .completed-header {
     display: flex;
+    flex-wrap: wrap; /* 창이 좁으면 버튼을 다음 줄로 */
     align-items: center;
     justify-content: space-between;
     gap: 16px;
@@ -38,6 +39,11 @@
     font-weight: bold;
     white-space: nowrap;
     cursor: pointer;
+}
+
+.completed-header-btns {
+    display: flex;
+    gap: 12px;
 }
 
 /* 필터 (연도 / 학기 / 이수구분) */

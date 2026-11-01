@@ -42,7 +42,8 @@ export function FilterSelect({ value, onChange, allLabel, options }) {
 // 이수한 과목 박스
 // courses = GET /api/academic/completed-courses 응답 data, onAdd = "이수한 과목 추가하기" 버튼을 눌렀을 때
 // onEdit(course) = 수정 버튼, onDelete(course) = 삭제 버튼 (줄에 마우스를 올리면 보임)
-function CompletedCourses({ courses, onAdd, onEdit, onDelete }) {
+// importButton = "이수한 과목 추가하기" 옆에 놓을 파일 불러오기 버튼
+function CompletedCourses({ courses, onAdd, onEdit, onDelete, importButton }) {
     const [year, setYear] = useState('');
     const [term, setTerm] = useState('');
     const [classification, setClassification] = useState('');
@@ -83,9 +84,12 @@ function CompletedCourses({ courses, onAdd, onEdit, onDelete }) {
                     <h4 className="completed-title">이수한 과목</h4>
                     <span className="completed-total">총 {totalCredits}학점</span>
                 </div>
-                <button type="button" className="completed-add-btn" onClick={onAdd}>
-                    +이수한 과목 추가하기
-                </button>
+                <div className="completed-header-btns">
+                    {importButton}
+                    <button type="button" className="completed-add-btn" onClick={onAdd}>
+                        +이수한 과목 추가하기
+                    </button>
+                </div>
             </div>
 
             <div className="completed-filters">

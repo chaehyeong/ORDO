@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import Sidebar from "../components/Sidebar";
 import AddCourseModal from "../components/AddCourseModal";
+import ImportButton from "../components/ImportButton";
 import "./TimeTable.css";
 
 const DAYS = ["월", "화", "수", "목", "금"];
@@ -64,6 +65,7 @@ function TimeTable() {
     const [showModal, setShowModal] = useState(false);
     const [editingCourse, setEditingCourse] = useState(null); // 수정 중인 수업 (있으면 수정 창)
     const [error, setError] = useState("");
+    const [reloadKey, setReloadKey] = useState(0); // 1 올리면 시간표를 다시 불러온다
 
     const [year, term] = semester.split("-");
 
@@ -81,7 +83,7 @@ function TimeTable() {
             }
         });
         return () => { ignore = true; };
-    }, [year, term]);
+    }, [year, term, reloadKey]);
 
     // 서버가 고른 학기의 수업만 주므로 학기로 거를 필요가 없다
     const semesterCourses = courses;
@@ -128,6 +130,17 @@ function TimeTable() {
             setShowModal(false);
         } else {
             alert(res.error.message); // 예: 시간이 겹치는 수업이 있으면 TIMETABLE_OVERLAP
+        }
+    };
+
+    // 파일로 저장한 뒤: 파일의 학기로 이동해 다시 불러온다
+    const handleImported = (saved) => {
+        const savedSemester = `${saved.year}-${Object.keys(TERMS).find((n) => TERMS[n] === saved.term)}`;
+        if (SEMESTERS.includes(savedSemester)) {
+            setSemester(savedSemester);
+            setReloadKey((k) => k + 1);
+        } else {
+            alert("저장했어요. 이 학기는 목록에 없어 여기서는 볼 수 없어요.");
         }
     };
 
@@ -183,6 +196,7 @@ function TimeTable() {
                             <option key={s} value={s}>{semesterLabel(s)}</option>
                         ))}
                     </select>
+                    <ImportButton kind="TIMETABLE" label="수강신청확인서 불러오기" className="tt-add-btn" onSaved={handleImported} />
                     <button className="tt-add-btn" onClick={() => setShowModal(true)}>수업 추가</button>
                 </div>
 

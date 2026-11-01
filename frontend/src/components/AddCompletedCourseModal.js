@@ -3,7 +3,7 @@ import { FiChevronDown, FiX } from "react-icons/fi";
 import { CLASSIFICATION_LABELS, TERM_LABELS } from "./CompletedCourses";
 import "./AddCompletedCourseModal.css";
 
-const GRADES = ['A+', 'A0', 'A-', 'B+', 'B0', 'B-', 'C+', 'C0', 'C-', 'D+', 'D0', 'D-', 'F', 'P', 'NP'];
+export const GRADES = ['A+', 'A0', 'A-', 'B+', 'B0', 'B-', 'C+', 'C0', 'C-', 'D+', 'D0', 'D-', 'F', 'P', 'NP'];
 
 // 배분이수 영역 이름 (서버는 번호 1~5만 저장한다. BACKEND_SPEC.md 3.1)
 export const DISTRIBUTION_AREAS = {
