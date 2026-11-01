@@ -87,7 +87,7 @@ function CompletedCourses({ courses, onAdd, onEdit, onDelete, importButton }) {
                 <div className="completed-header-btns">
                     {importButton}
                     <button type="button" className="completed-add-btn" onClick={onAdd}>
-                        +이수한 과목 추가하기
+                        + 이수한 과목 추가하기
                     </button>
                 </div>
             </div>
