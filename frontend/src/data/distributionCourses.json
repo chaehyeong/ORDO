@@ -1,0 +1,2712 @@
+{
+  "source": {
+    "title": "2026학년도 교육과정 - 국제캠퍼스 교양교육과정 편성표",
+    "fileName": "2026 교육과정(전체).pdf",
+    "sha256": "d7059a2c44e2d2e83b803c2c1082e49e8c536cc1177d7a6fd0bbbc15177f47e8",
+    "pages": [
+      27,
+      35
+    ],
+    "year": 2026,
+    "campus": "국제캠퍼스",
+    "note": "편성 과목 목록이며 학기별 실제 개설 여부를 보장하지 않음. 영역 번호는 원문에 없어 추정하지 않음."
+  },
+  "courses": [
+    {
+      "id": 7,
+      "courseName": "21세기금융세계화와불평등",
+      "courseCode": "GED11029",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 8,
+      "courseName": "4차산업의이해와IOT기술 활용과분석",
+      "courseCode": "IPE108",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 9,
+      "courseName": "AI크리에이션: 관계,공간,감각의재구성",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 10,
+      "courseName": "Exploring Industry, Ideology, and Identity Through the Marvel Cinematic Universe",
+      "courseCode": "GED11017",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 11,
+      "courseName": "Greek Mythology and Creative Writing",
+      "courseCode": "GED11018",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 12,
+      "courseName": "On Justice",
+      "courseCode": "GED1501",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 13,
+      "courseName": "SDG5성평등",
+      "courseCode": "GED11028",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 14,
+      "courseName": "SF영화와미래정치",
+      "courseCode": "GED1458",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 15,
+      "courseName": "SF영화의상상력:미래의평화와윤리",
+      "courseCode": "GED1502",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 16,
+      "courseName": "가면의축제:동서양연희의문명사",
+      "courseCode": "GED1301",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 17,
+      "courseName": "건강한노화",
+      "courseCode": "GED1125",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 18,
+      "courseName": "경계와접경의인류학",
+      "courseCode": "GED2976",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 19,
+      "courseName": "경제학적사유의원리",
+      "courseCode": "GED1405",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 20,
+      "courseName": "고령화사회의뇌이야기",
+      "courseCode": "GED11075",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 21,
+      "courseName": "고양이의물리학:자연계의숨은법칙",
+      "courseCode": "GED1202",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 22,
+      "courseName": "고전과여성",
+      "courseCode": "GED1353",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 23,
+      "courseName": "고전명작과예술의문명사",
+      "courseCode": "GED1989",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 24,
+      "courseName": "고전읽기:SF소설",
+      "courseCode": "GED11062",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 25,
+      "courseName": "고전읽기:감시와처벌",
+      "courseCode": "GED11050",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 26,
+      "courseName": "고전읽기:같기도하고, 아니같기도하고",
+      "courseCode": "GED11058",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 27,
+      "courseName": "고전읽기:계몽의변증법",
+      "courseCode": "GED11051",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 28,
+      "courseName": "고전읽기:공감의시대",
+      "courseCode": "GED11064",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 29,
+      "courseName": "고전읽기:과학혁명의구조",
+      "courseCode": "GED11048",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 30,
+      "courseName": "고전읽기:그리스비극",
+      "courseCode": "GED1801",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 31,
+      "courseName": "고전읽기:김수영",
+      "courseCode": "GED1802",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 32,
+      "courseName": "고전읽기:꿈의해석",
+      "courseCode": "GED11059",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 33,
+      "courseName": "고전읽기:나쓰메소세키",
+      "courseCode": "GED1824",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 34,
+      "courseName": "고전읽기:노자장자",
+      "courseCode": "GED1803",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 27
+    },
+    {
+      "id": 35,
+      "courseName": "고전읽기:논어",
+      "courseCode": "GED1804",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 36,
+      "courseName": "고전읽기:돈의철학",
+      "courseCode": "GED11052",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 37,
+      "courseName": "고전읽기:루쉰",
+      "courseCode": "GED1830",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 38,
+      "courseName": "고전읽기:무라카미하루키",
+      "courseCode": "GED1807",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 39,
+      "courseName": "고전읽기:박경리토지",
+      "courseCode": "GED1835",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 40,
+      "courseName": "고전읽기:박지원",
+      "courseCode": "GED1808",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 41,
+      "courseName": "고전읽기:보르헤스",
+      "courseCode": "GED1836",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 42,
+      "courseName": "고전읽기:부분과전체",
+      "courseCode": "GED11049",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 43,
+      "courseName": "고전읽기:불경",
+      "courseCode": "GED1809",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 44,
+      "courseName": "고전읽기:비트겐슈타인",
+      "courseCode": "GED1837",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 45,
+      "courseName": "고전읽기:사기",
+      "courseCode": "GED1838",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 46,
+      "courseName": "고전읽기:사르트르",
+      "courseCode": "GED1839",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 47,
+      "courseName": "고전읽기:삼국유사",
+      "courseCode": "GED1810",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 48,
+      "courseName": "고전읽기:성서",
+      "courseCode": "GED1811",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 49,
+      "courseName": "고전읽기:셰익스피어",
+      "courseCode": "GED1812",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 50,
+      "courseName": "고전읽기:슬픈열대",
+      "courseCode": "GED11054",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 51,
+      "courseName": "고전읽기:시적인간과생태적인간",
+      "courseCode": "GED11061",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 52,
+      "courseName": "고전읽기:아르키메데스",
+      "courseCode": "GED11103",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 53,
+      "courseName": "고전읽기:아리스토텔레스",
+      "courseCode": "GED1841",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 54,
+      "courseName": "고전읽기:유클리드원론",
+      "courseCode": "GED11104",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 55,
+      "courseName": "고전읽기:율곡",
+      "courseCode": "GED1846",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 56,
+      "courseName": "고전읽기:이기적유전자vs. 생명의음악",
+      "courseCode": "GED1831",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 57,
+      "courseName": "고전읽기:인간의조건",
+      "courseCode": "GED11055",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 58,
+      "courseName": "고전읽기:인도신화",
+      "courseCode": "GED1813",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 59,
+      "courseName": "고전읽기:자본론",
+      "courseCode": "GED1814",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 60,
+      "courseName": "고전읽기:정약용",
+      "courseCode": "GED1848",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 61,
+      "courseName": "고전읽기:종의기원",
+      "courseCode": "GED1850",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 62,
+      "courseName": "고전읽기:차라투스트라는 이렇게말했다",
+      "courseCode": "GED1805",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 63,
+      "courseName": "고전읽기:총균쇠",
+      "courseCode": "GED11056",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 64,
+      "courseName": "고전읽기:침묵의봄",
+      "courseCode": "GED11057",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 65,
+      "courseName": "고전읽기:카뮈",
+      "courseCode": "GED1852",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 66,
+      "courseName": "고전읽기:카프카",
+      "courseCode": "GED1816",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 67,
+      "courseName": "고전읽기:칼세이건",
+      "courseCode": "GED11040",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 68,
+      "courseName": "고전읽기:코란",
+      "courseCode": "GED1853",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 69,
+      "courseName": "고전읽기:코스모스",
+      "courseCode": "GED11060",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 70,
+      "courseName": "고전읽기:톨스토이",
+      "courseCode": "GED1817",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 71,
+      "courseName": "고전읽기:특이점이온다",
+      "courseCode": "GED11063",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 72,
+      "courseName": "고전읽기:페미니즘",
+      "courseCode": "GED1725",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 73,
+      "courseName": "고전읽기:평전",
+      "courseCode": "GED1345",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 74,
+      "courseName": "고전읽기:프란츠파농",
+      "courseCode": "GED1855",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 28
+    },
+    {
+      "id": 75,
+      "courseName": "고전읽기:프로이트",
+      "courseCode": "GED1819",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 76,
+      "courseName": "고전읽기:플라톤",
+      "courseCode": "GED1856",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 77,
+      "courseName": "고전읽기:한비자,묵자",
+      "courseCode": "GED1857",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 78,
+      "courseName": "고전읽기:황순원",
+      "courseCode": "GED1820",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 79,
+      "courseName": "공간과권력으로보는세계",
+      "courseCode": "GED1529",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 80,
+      "courseName": "공감의인류학:감정이입과의인화",
+      "courseCode": "GED1305",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 81,
+      "courseName": "공동체윤리의빛과그늘",
+      "courseCode": "GED1503",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 82,
+      "courseName": "공생:세포에서사회까지",
+      "courseCode": "GED1101",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 83,
+      "courseName": "공정경쟁과소비자보호",
+      "courseCode": "GED1450",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 84,
+      "courseName": "공학기초수학",
+      "courseCode": "GED1539",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 85,
+      "courseName": "과학시간에물어보고싶었지만 묻지못했던질문들: 자연과학의철학적문제들",
+      "courseCode": "GED1226",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 86,
+      "courseName": "과학예술문화의만남",
+      "courseCode": "GED1306",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 87,
+      "courseName": "과학적사고란무엇인가",
+      "courseCode": "GED1204",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 88,
+      "courseName": "관계의기술",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 89,
+      "courseName": "관계의생태론:문화인류학",
+      "courseCode": "GED1997",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 90,
+      "courseName": "구별의정치학:인종,계급,성",
+      "courseCode": "GED1602",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 91,
+      "courseName": "국가폭력과트라우마",
+      "courseCode": "GED1860",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 92,
+      "courseName": "국제사회와법",
+      "courseCode": "GED11047",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 93,
+      "courseName": "국화와칼:만들어진일본의전통",
+      "courseCode": "GED1603",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 94,
+      "courseName": "그리스신화와철학",
+      "courseCode": "GED1664",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 95,
+      "courseName": "그림속의인문학",
+      "courseCode": "GED1996",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 96,
+      "courseName": "근대의시선과공간:뮤지엄과엑스포",
+      "courseCode": "GED11026",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 97,
+      "courseName": "글,그림그리고문화콘텐츠",
+      "courseCode": "GED11021",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 98,
+      "courseName": "글로벌라틴아메리카",
+      "courseCode": "GED1861",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 99,
+      "courseName": "글로벌전통문화",
+      "courseCode": "GED1651",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 100,
+      "courseName": "긍정심리학:인성의강점을이해하기",
+      "courseCode": "GED1126",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 101,
+      "courseName": "기술혁신과전략의융합",
+      "courseCode": "GED1466",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 102,
+      "courseName": "기초미분적분학",
+      "courseCode": "GED1540",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 103,
+      "courseName": "기후와역사",
+      "courseCode": "GED1630",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 104,
+      "courseName": "길과문명:초원길비단길바닷길",
+      "courseCode": "GED1998",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 105,
+      "courseName": "뇌속의나:인식의해부학",
+      "courseCode": "GED1128",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 106,
+      "courseName": "니덤의수수께끼: 근대문명의빛과그림자",
+      "courseCode": "GED11038",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 107,
+      "courseName": "다양성과교차성의젠더문화",
+      "courseCode": "GED1723",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 108,
+      "courseName": "다이나믹한국근현대사",
+      "courseCode": "GED1631",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 109,
+      "courseName": "대안사회구상하기",
+      "courseCode": "GED1415",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 110,
+      "courseName": "대학생을위한실용금융",
+      "courseCode": "GED1468",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 111,
+      "courseName": "데이터분석과정보시각화",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 112,
+      "courseName": "데이터액티비즘",
+      "courseCode": "GED11086",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 113,
+      "courseName": "도덕의과학",
+      "courseCode": "GED11009",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 29
+    },
+    {
+      "id": 114,
+      "courseName": "돈의발명:조개에서도토리까지",
+      "courseCode": "GED1416",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 115,
+      "courseName": "동물을통해배우는인류학",
+      "courseCode": "GED1977",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 116,
+      "courseName": "동아시아문명론",
+      "courseCode": "GED1508",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 117,
+      "courseName": "동아시아의서양문명수용론",
+      "courseCode": "GED1509",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 118,
+      "courseName": "동양고전수필의향기",
+      "courseCode": "GED1334",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 119,
+      "courseName": "동양사상과과학기술",
+      "courseCode": "GED1206",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 120,
+      "courseName": "동의보감을통한몸과마음의이해",
+      "courseCode": "GED1136",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 121,
+      "courseName": "동학다시읽기",
+      "courseCode": "GED11006",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 122,
+      "courseName": "두세계의만남:영어와한국어",
+      "courseCode": "GED11073",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 123,
+      "courseName": "두얼굴의인류사:전쟁과평화",
+      "courseCode": "GED1511",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 124,
+      "courseName": "디아스포라",
+      "courseCode": "GED1454",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 125,
+      "courseName": "디지털문법과젠더코드",
+      "courseCode": "GED11082",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 126,
+      "courseName": "디지털사회의문화",
+      "courseCode": "GED1606",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 127,
+      "courseName": "디지털협업과커뮤니케이션: AI시대의정보흐름과활용",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 128,
+      "courseName": "뛰는중국따라잡기:현대중국알기",
+      "courseCode": "GED1418",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 129,
+      "courseName": "라틴아메리카문학과예술",
+      "courseCode": "GED1862",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 130,
+      "courseName": "라틴어와서구문명",
+      "courseCode": "GED1994",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 131,
+      "courseName": "롤러코스터의과학:퍼텐셜",
+      "courseCode": "GED11014",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 132,
+      "courseName": "르네상스:예술의혁명",
+      "courseCode": "GED1309",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 133,
+      "courseName": "마녀사냥:그광기의역사",
+      "courseCode": "GED1965",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 134,
+      "courseName": "마음의탄생:뇌,의식,마음",
+      "courseCode": "GED1103",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 135,
+      "courseName": "마음챙김과비폭력대화",
+      "courseCode": "GED11011",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 136,
+      "courseName": "만성질병과건강관리",
+      "courseCode": "GED11015",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 137,
+      "courseName": "만화로세상보기",
+      "courseCode": "GED1736",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 138,
+      "courseName": "매체와메시지:미디어의이해",
+      "courseCode": "GED1346",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 139,
+      "courseName": "메카-필로소피아:인간화된기계와 기계화된인간사이",
+      "courseCode": "GED1970",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 140,
+      "courseName": "명작에취하다:예술감상법",
+      "courseCode": "GED1358",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 141,
+      "courseName": "모두를위한물리학",
+      "courseCode": "GED1246",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 142,
+      "courseName": "모두를위한인공지능과윤리적실제",
+      "courseCode": "GED11043",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 143,
+      "courseName": "몸과생명",
+      "courseCode": "GED1104",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 144,
+      "courseName": "몸의노래:의료인문학",
+      "courseCode": "GED1982",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 145,
+      "courseName": "몸의발견",
+      "courseCode": "GED1105",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 146,
+      "courseName": "무대를장악하라:아이디어제안, 설득,그리고발표",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 147,
+      "courseName": "문명감염그리고진화",
+      "courseCode": "GED1987",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 148,
+      "courseName": "문명과세계체제그리고인류의미래: 근대이후세계의형성과그너머",
+      "courseCode": "GED1661",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 149,
+      "courseName": "문명의충돌과조화",
+      "courseCode": "GED1513",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 150,
+      "courseName": "문명전환기퀀텀리더십",
+      "courseCode": "GED1534",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 151,
+      "courseName": "문명전환시대의정치: 포스트민주주의와포퓰리즘",
+      "courseCode": "GED1974",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 30
+    },
+    {
+      "id": 152,
+      "courseName": "문명패러다임의혁명: 서구근대화과정의현재적이해",
+      "courseCode": "GED11019",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 153,
+      "courseName": "문학과아픔:신화에서SF까지",
+      "courseCode": "GED1981",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 154,
+      "courseName": "문화세계의변혁,안드로이드세상",
+      "courseCode": "GED1245",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 155,
+      "courseName": "문화유산과역사지리",
+      "courseCode": "GED1609",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 156,
+      "courseName": "미국드라마로보는초강대국의정치",
+      "courseCode": "GED1535",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 157,
+      "courseName": "미디어아트와문화",
+      "courseCode": "GED1311",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 158,
+      "courseName": "미래,기술,경영",
+      "courseCode": "GED11042",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 159,
+      "courseName": "미래를질문하는예술",
+      "courseCode": "GED11041",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 160,
+      "courseName": "미래사회와도시계획",
+      "courseCode": "GED1727",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 161,
+      "courseName": "미래학과미래마인드",
+      "courseCode": "GED1643",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 162,
+      "courseName": "미지의문명:융합과공존의 두터운세계",
+      "courseCode": "GED1632",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 163,
+      "courseName": "민주주의피트니스",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 164,
+      "courseName": "배터리:문명을움직이는작은상자",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 165,
+      "courseName": "법,질서,국가",
+      "courseCode": "GED1419",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 166,
+      "courseName": "불교와정신분석학",
+      "courseCode": "GED1337",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 167,
+      "courseName": "불편한진실:기후변화",
+      "courseCode": "GED1208",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 168,
+      "courseName": "비만의사회학",
+      "courseCode": "GED1452",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 169,
+      "courseName": "비판적사고란무엇인가",
+      "courseCode": "GED1703",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 170,
+      "courseName": "빅데이터를통한세상바로알기",
+      "courseCode": "GED1244",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 171,
+      "courseName": "빅데이터와스포츠산업",
+      "courseCode": "GED1721",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 172,
+      "courseName": "빛의물리학:세상을보는또다른눈",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 173,
+      "courseName": "사고와논리:개념,명제,논증",
+      "courseCode": "GED1704",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 174,
+      "courseName": "사농공상:역사의주연과조연",
+      "courseCode": "GED1611",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 175,
+      "courseName": "사람뇌의이해",
+      "courseCode": "GED1129",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 176,
+      "courseName": "사막과함께살기: 기후변화와전환사회",
+      "courseCode": "GED1237",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 177,
+      "courseName": "삼국지인문학",
+      "courseCode": "GED1650",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 178,
+      "courseName": "상징,은유,반어:복잡성의시학",
+      "courseCode": "GED1314",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 179,
+      "courseName": "생각과앎의힘",
+      "courseCode": "GED1971",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 180,
+      "courseName": "생명,영원한블루오션",
+      "courseCode": "GED1106",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 181,
+      "courseName": "생명과생명공학:자본,국가, 과학,정치",
+      "courseCode": "GED1107",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 182,
+      "courseName": "생명과학의미래",
+      "courseCode": "GED1108",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 183,
+      "courseName": "생명윤리,찬성과반대",
+      "courseCode": "GED1531",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 184,
+      "courseName": "생명의그물망:인간,동식물,환경,지구",
+      "courseCode": "GED1109",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 185,
+      "courseName": "생명의언어",
+      "courseCode": "GED1544",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 186,
+      "courseName": "생명의역사35억년:세포의춤",
+      "courseCode": "GED1110",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 187,
+      "courseName": "생명이란무엇인가:물질과정보의 이중주",
+      "courseCode": "GED1121",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 188,
+      "courseName": "생태독성학퍼즐의비밀:환경오염과 바이오필리아의교차점탐구",
+      "courseCode": "GED11076",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 31
+    },
+    {
+      "id": 189,
+      "courseName": "생활속의금융",
+      "courseCode": "GED11030",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 190,
+      "courseName": "서양사상의번역과동아시아의근대",
+      "courseCode": "GED1614",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 191,
+      "courseName": "설득의기술",
+      "courseCode": "GED11106",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 192,
+      "courseName": "설탕과소금:사소한것들의역사",
+      "courseCode": "GED1615",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 193,
+      "courseName": "세계금융사",
+      "courseCode": "GED1645",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 194,
+      "courseName": "세계속의한국:국토와인간",
+      "courseCode": "GED1616",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 195,
+      "courseName": "세계속한국의생존과파워",
+      "courseCode": "GED11031",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 196,
+      "courseName": "세계의공동체:사례연구",
+      "courseCode": "GED1422",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 197,
+      "courseName": "세계의평화주의자들",
+      "courseCode": "GED1516",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 198,
+      "courseName": "세상속의수학",
+      "courseCode": "GED11012",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 199,
+      "courseName": "소리언어의해부와실습",
+      "courseCode": "GED1339",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 200,
+      "courseName": "소셜네트워크:소통과집단지성",
+      "courseCode": "GED1617",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 201,
+      "courseName": "수사학과영작문",
+      "courseCode": "GED1865",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 202,
+      "courseName": "수와문명:문명을바꾼수학적발견",
+      "courseCode": "GED1707",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 203,
+      "courseName": "수학과세상",
+      "courseCode": "GED1543",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 204,
+      "courseName": "숨겨진패턴",
+      "courseCode": "GED1990",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 205,
+      "courseName": "숲과생활",
+      "courseCode": "GED11022",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 206,
+      "courseName": "스마트식생활과건강",
+      "courseCode": "GED1113",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 207,
+      "courseName": "스토리를구성하는요소",
+      "courseCode": "GED11068",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 208,
+      "courseName": "스포츠경쟁력과자기계발",
+      "courseCode": "GED1135",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 209,
+      "courseName": "스포츠와정치",
+      "courseCode": "GED1426",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 210,
+      "courseName": "시는어떻게내게로오는가",
+      "courseCode": "GED1318",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 211,
+      "courseName": "시로읽는팔도지리",
+      "courseCode": "GED1238",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 212,
+      "courseName": "시민과학:과학하는시민",
+      "courseCode": "GED11077",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 213,
+      "courseName": "시민생활과법",
+      "courseCode": "GED1663",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 214,
+      "courseName": "시와문명전환: 지속성은어떻게가능한가",
+      "courseCode": "GED2977",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 215,
+      "courseName": "신화와문화:동서양",
+      "courseCode": "GED1634",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 216,
+      "courseName": "실크로드와누들로드: 문명의창조와전달",
+      "courseCode": "GED1618",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 217,
+      "courseName": "십자가와초승달:기독교와이슬람",
+      "courseCode": "GED1517",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 218,
+      "courseName": "씨네페미니즘의롱테이크",
+      "courseCode": "GED11046",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 219,
+      "courseName": "아버지의자화상:한국현대사의발자취",
+      "courseCode": "GED1619",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 220,
+      "courseName": "악기의탄생:동서양음악의문명사",
+      "courseCode": "GED1320",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 221,
+      "courseName": "애타주의(altruism):상호성의윤리",
+      "courseCode": "GED1518",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 222,
+      "courseName": "야담으로읽는한국역사와문화",
+      "courseCode": "GED1655",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 223,
+      "courseName": "약과건강",
+      "courseCode": "GED11083",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 224,
+      "courseName": "언어와문학의이해",
+      "courseCode": "GED1868",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 225,
+      "courseName": "언어와비언어:이미지,상징,아이콘",
+      "courseCode": "GED1321",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 226,
+      "courseName": "언어의경계:신성한가,속된가?",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 227,
+      "courseName": "에너지문제와과학기술의역할",
+      "courseCode": "GED11074",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 32
+    },
+    {
+      "id": 228,
+      "courseName": "여성의몸,사이보그,시간성",
+      "courseCode": "GED11085",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 229,
+      "courseName": "여성의문학문학속여성",
+      "courseCode": "GED11045",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 230,
+      "courseName": "여성학개론",
+      "courseCode": "GED1869",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 231,
+      "courseName": "여행을통한인간의삶의가치증진",
+      "courseCode": "GED1657",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 232,
+      "courseName": "역사학적해석의방법들",
+      "courseCode": "GED1620",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 233,
+      "courseName": "영국희극:아이러니,블랙유머,풍자",
+      "courseCode": "GED1646",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 234,
+      "courseName": "영미문학읽기:소설과영화가로지르기",
+      "courseCode": "GED1341",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 235,
+      "courseName": "영미아동문학산책",
+      "courseCode": "GED1347",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 236,
+      "courseName": "영어로본한국사회",
+      "courseCode": "GED1342",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 237,
+      "courseName": "영토의경계와흔적:이민,이주,이동",
+      "courseCode": "GED1621",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 238,
+      "courseName": "영화로보는스포츠문화",
+      "courseCode": "GED1656",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 239,
+      "courseName": "영화로읽는도시인문학: 환동해도시와문화지리",
+      "courseCode": "GED1665",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 240,
+      "courseName": "영화와문학",
+      "courseCode": "GED1349",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 241,
+      "courseName": "영화와소설에나타난한국인의서사",
+      "courseCode": "GED1361",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 242,
+      "courseName": "예술을통한공동체만들기",
+      "courseCode": "GED1432",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 243,
+      "courseName": "예술치료의원리와실제",
+      "courseCode": "GED1940",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 244,
+      "courseName": "예측하는미래:통계와확률",
+      "courseCode": "GED1710",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 245,
+      "courseName": "우리가만들어가는통일",
+      "courseCode": "GED1532",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 246,
+      "courseName": "우리문화유전자읽기",
+      "courseCode": "GED1343",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 247,
+      "courseName": "우리시대페미니즘의의제와전망",
+      "courseCode": "GED1463",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 248,
+      "courseName": "우주:별을잊은그대에게",
+      "courseCode": "GED1240",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 249,
+      "courseName": "우주탐사:당면한미래",
+      "courseCode": "GED1250",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 250,
+      "courseName": "운동과건강",
+      "courseCode": "GED11016",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 251,
+      "courseName": "원자의춤",
+      "courseCode": "GED1215",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 252,
+      "courseName": "위기의생태계와미래",
+      "courseCode": "GED1228",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 253,
+      "courseName": "위대한정치:초인의미학",
+      "courseCode": "GED1973",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 254,
+      "courseName": "유럽문화와도시문명",
+      "courseCode": "GED1666",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 255,
+      "courseName": "유럽문화의이해",
+      "courseCode": "GED1622",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 256,
+      "courseName": "율법을넘어서:윤리적보편주의",
+      "courseCode": "GED1520",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 257,
+      "courseName": "음식과문화:글로벌& 로컬트렌드와이슈",
+      "courseCode": "GED1363",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 258,
+      "courseName": "음식의윤리학",
+      "courseCode": "GED1979",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 259,
+      "courseName": "음악과권력:충돌혹은타협의역사",
+      "courseCode": "GED1526",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 260,
+      "courseName": "의료와법률",
+      "courseCode": "GED1131",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 261,
+      "courseName": "의미의탄생:언어",
+      "courseCode": "GED1324",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 262,
+      "courseName": "의생명과학속위대한발견과미래",
+      "courseCode": "GED1132",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 263,
+      "courseName": "이동의자유와원격사회",
+      "courseCode": "GED11081",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 264,
+      "courseName": "이미지와재현의젠더분석",
+      "courseCode": "GED11065",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 265,
+      "courseName": "이성의함정:마음은항상합리적인가",
+      "courseCode": "GED11105",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 266,
+      "courseName": "인간,장소,지명",
+      "courseCode": "GED1638",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 267,
+      "courseName": "인간과도구:기술문명의전개",
+      "courseCode": "GED1216",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 33
+    },
+    {
+      "id": 268,
+      "courseName": "인간과생활속의로봇",
+      "courseCode": "GED1217",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 269,
+      "courseName": "인간과식물",
+      "courseCode": "GED1116",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 270,
+      "courseName": "인간관계의생명론",
+      "courseCode": "GED1122",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 271,
+      "courseName": "인간-컴퓨터중심세계",
+      "courseCode": "GED1711",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 272,
+      "courseName": "인간행동의이해:심리학",
+      "courseCode": "GED1360",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 273,
+      "courseName": "인공지능과라이프3.0",
+      "courseCode": "GED1999",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 274,
+      "courseName": "인공지능과예술",
+      "courseCode": "GED1542",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 275,
+      "courseName": "인공지능을위한선형대수",
+      "courseCode": "GED11013",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 276,
+      "courseName": "인공진화론,기술의시대를 살아가는지혜",
+      "courseCode": "GED11080",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 277,
+      "courseName": "인구와주거",
+      "courseCode": "GED11037",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 278,
+      "courseName": "인권과기억",
+      "courseCode": "GED11072",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 279,
+      "courseName": "인류역사를바꾼첨단재료",
+      "courseCode": "GED1242",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 280,
+      "courseName": "인류의큰걸음: 과학사의위대한발견들",
+      "courseCode": "GED1230",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 281,
+      "courseName": "인류학과음식문화",
+      "courseCode": "GED1647",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 282,
+      "courseName": "인문학과문화콘텐츠",
+      "courseCode": "GED1325",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 283,
+      "courseName": "인체와생명",
+      "courseCode": "GED1123",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 284,
+      "courseName": "인터넷과법",
+      "courseCode": "GED1434",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 285,
+      "courseName": "일본대중문화의이해",
+      "courseCode": "GED1871",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 286,
+      "courseName": "적정기술:브리콜뢰르의꿈",
+      "courseCode": "GED11078",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 287,
+      "courseName": "전기와자기의만남",
+      "courseCode": "GED1992",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 288,
+      "courseName": "전쟁과평화속여성인권",
+      "courseCode": "GED11071",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 289,
+      "courseName": "정신분석과성차의발견",
+      "courseCode": "GED1726",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 290,
+      "courseName": "정의란무엇인가",
+      "courseCode": "GED1527",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 291,
+      "courseName": "정치의인문학적탐색",
+      "courseCode": "GED1447",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 292,
+      "courseName": "정치학적사유의원리",
+      "courseCode": "GED1435",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 293,
+      "courseName": "제논의역설에서카오스이론까지: 무한과유한의변증법",
+      "courseCode": "GED1713",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 294,
+      "courseName": "젠더,섹슈얼리티,문학",
+      "courseCode": "GED1326",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 295,
+      "courseName": "젠더로읽는진화심리학",
+      "courseCode": "GED11079",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 296,
+      "courseName": "젠더와역사:평등과차이의정치사",
+      "courseCode": "GED1640",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 297,
+      "courseName": "좋은에너지나쁜에너지다른에너지",
+      "courseCode": "GED1984",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 298,
+      "courseName": "주체와유토피아:우토푸스 (Utopus)의꿈",
+      "courseCode": "GED1648",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 299,
+      "courseName": "지구화시대의미학극장",
+      "courseCode": "GED1739",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 300,
+      "courseName": "지속가능한평화를위한국제질서",
+      "courseCode": "GED1731",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 301,
+      "courseName": "진화와인간본성",
+      "courseCode": "GED1119",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 302,
+      "courseName": "질병의진화적이해:우리는왜아픈걸까",
+      "courseCode": "GED1966",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 303,
+      "courseName": "질적연구와데이터분석",
+      "courseCode": "GED1719",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 304,
+      "courseName": "짝짓기의진화심리학",
+      "courseCode": "GED1362",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 305,
+      "courseName": "천개의공감:현대인의심리분석",
+      "courseCode": "GED1327",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 34
+    },
+    {
+      "id": 306,
+      "courseName": "철학의눈으로본의학",
+      "courseCode": "GED1983",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 307,
+      "courseName": "철학자를위한물리학",
+      "courseCode": "GED1538",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 308,
+      "courseName": "청춘을위한영화예찬",
+      "courseCode": "GED11020",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 309,
+      "courseName": "캠퍼스식물의이해",
+      "courseCode": "GED11039",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 310,
+      "courseName": "커뮤니케이션과디자인",
+      "courseCode": "GED1329",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 311,
+      "courseName": "코딩하는아티스트",
+      "courseCode": "GED1991",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 312,
+      "courseName": "큰맥락에서사고하기: 시스템다이나믹스",
+      "courseCode": "GED1248",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 313,
+      "courseName": "통계의진실과오류",
+      "courseCode": "GED1715",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 314,
+      "courseName": "통합적사고론",
+      "courseCode": "GED1716",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 315,
+      "courseName": "특허와지적재산권",
+      "courseCode": "GED1223",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 316,
+      "courseName": "패션디자인의세계",
+      "courseCode": "GED1951",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 317,
+      "courseName": "평화와갈등",
+      "courseCode": "GED1528",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 318,
+      "courseName": "포스트휴먼시대의의료와인간",
+      "courseCode": "GED1980",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 319,
+      "courseName": "폭력과치유",
+      "courseCode": "GED1124",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 320,
+      "courseName": "폭력의진화:통섭적관점",
+      "courseCode": "GED11027",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 321,
+      "courseName": "프로그래밍을통한논리적사유연습",
+      "courseCode": "GED1717",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 322,
+      "courseName": "프로그래밍입문",
+      "courseCode": "GED1537",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 323,
+      "courseName": "하이쿠의세계",
+      "courseCode": "GED1873",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 324,
+      "courseName": "하천문화의이해와르네상스",
+      "courseCode": "GED1235",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 325,
+      "courseName": "한국고전문학과영상",
+      "courseCode": "GED11024",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 326,
+      "courseName": "한국근현대사의이해",
+      "courseCode": "GED1626",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 327,
+      "courseName": "한국문학과세계문학",
+      "courseCode": "GED1975",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 328,
+      "courseName": "한국문화의이해",
+      "courseCode": "GED1730",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 329,
+      "courseName": "한국사회의정치적이슈들",
+      "courseCode": "GED1437",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 330,
+      "courseName": "한국의역사와문화",
+      "courseCode": "GED11053",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 331,
+      "courseName": "한국의이슈와경제",
+      "courseCode": "GED11067",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 332,
+      "courseName": "핵없는세계를위한국제사회의노력",
+      "courseCode": "GED1732",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 333,
+      "courseName": "행복의생명과학적이해",
+      "courseCode": "GED1134",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 334,
+      "courseName": "행복이란무엇인가",
+      "courseCode": "GED1440",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 335,
+      "courseName": "현대도시론",
+      "courseCode": "GED1461",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 336,
+      "courseName": "현대동아시아의평화와인권",
+      "courseCode": "GED11070",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 337,
+      "courseName": "현대사회와과학",
+      "courseCode": "GED1225",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 338,
+      "courseName": "현대한국사회의다양성이해: 민족성과서브컬처",
+      "courseCode": null,
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 339,
+      "courseName": "호모무지쿠스:음악으로경계넘나들기",
+      "courseCode": "GED1649",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 340,
+      "courseName": "호모에티쿠스:윤리적인간의탄생",
+      "courseCode": "GED1524",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 341,
+      "courseName": "환경과건강",
+      "courseCode": "GED11084",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 342,
+      "courseName": "환경과과학기술",
+      "courseCode": "GED1232",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    },
+    {
+      "id": 343,
+      "courseName": "황하와장강:중국역사의발자취",
+      "courseCode": "GED1628",
+      "classification": "GEN_DISTRIBUTION",
+      "credits": 3,
+      "sourcePage": 35
+    }
+  ]
+}

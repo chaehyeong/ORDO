@@ -25,7 +25,7 @@ function RoadMap() {
     const [showAddCourse, setShowAddCourse] = useState(false);
     const [editingCourse, setEditingCourse] = useState(null); // 수정 창에 띄울 과목
     const [plans, setPlans] = useState([]);
-    const [showAddPlan, setShowAddPlan] = useState(false);
+    const [planMode, setPlanMode] = useState(null);
     const [error, setError] = useState('');
     const [reloadKey, setReloadKey] = useState(0); // 1 올리면 전부 다시 불러온다
 
@@ -123,7 +123,7 @@ function RoadMap() {
             return `${termLabel(course)}에 이미 있는 과목이에요.`;
         }
         handlePlansChange([...plans, { ...course, id: Date.now() }]);
-        setShowAddPlan(false);
+        setPlanMode(null);
         return null;
     };
 
@@ -176,7 +176,8 @@ function RoadMap() {
                         terms={planTerms}
                         plans={plans}
                         onChange={handlePlansChange}
-                        onAddClick={() => setShowAddPlan(true)}
+                        onAddClick={() => setPlanMode('manual')}
+                        onDistributionAddClick={() => setPlanMode('distribution')}
                         onReset={handleResetPlans}
                     />
                 </section>
@@ -192,8 +193,8 @@ function RoadMap() {
                     onSubmit={handleEditCourse}
                 />
             )}
-            {showAddPlan && (
-                <AddPlanCourseModal terms={planTerms} onClose={() => setShowAddPlan(false)} onSubmit={handleAddPlanCourse} />
+            {planMode && (
+                <AddPlanCourseModal initialMode={planMode} terms={planTerms} onClose={() => setPlanMode(null)} onSubmit={handleAddPlanCourse} />
             )}
         </div>
     );

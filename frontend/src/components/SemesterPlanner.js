@@ -50,7 +50,7 @@ export function getPlanTerms(gpa, plans) {
 
 // 학기별 배치하기 박스
 // plans = 배치된 과목 목록 (PUT /api/academic/plans 요청의 courses 모양 + id), onChange(새 목록)
-function SemesterPlanner({ terms, plans, onChange, onAddClick, onReset }) {
+function SemesterPlanner({ terms, plans, onChange, onAddClick, onDistributionAddClick, onReset }) {
     const [overKey, setOverKey] = useState(null);
     const [notice, setNotice] = useState('');
 
@@ -113,6 +113,7 @@ function SemesterPlanner({ terms, plans, onChange, onAddClick, onReset }) {
                     <span className="planner-desc">과목을 드래그해서 원하는 학기에 배치해 보세요.</span>
                 </div>
                 <div className="planner-actions">
+                    <button type="button" className="planner-btn" onClick={onDistributionAddClick}>배분이수 선택</button>
                     <button type="button" className="planner-btn" onClick={onAddClick}>수업 추가</button>
                     <button type="button" className="planner-btn" onClick={onReset} disabled={plans.length === 0}>초기화</button>
                 </div>

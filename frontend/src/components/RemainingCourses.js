@@ -5,6 +5,7 @@ import "./RemainingCourses.css";
 // 이수구분별 카드 색 (배경 / 태그 글자). 목록에 없는 값(직접 추가한 수업 등)은 DEFAULT_COLOR
 export const CLASSIFICATION_COLORS = {
     GEN_REQUIRED: { bg: '#F9D3D3', text: '#D95B5B' },
+    GEN_DISTRIBUTION: { bg: '#D7EFEA', text: '#2F9D8A' },
     MAJOR_BASIC: { bg: '#D3DEFA', text: '#4F74D1' },
     MAJOR_REQUIRED: { bg: '#E2D3F7', text: '#8752D1' },
     MAJOR_ELECTIVE: { bg: '#FBF0B8', text: '#B89400' },
