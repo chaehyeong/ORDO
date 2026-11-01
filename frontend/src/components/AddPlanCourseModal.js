@@ -6,12 +6,11 @@ import { termLabel } from "./SemesterPlanner";
 import "./AddCompletedCourseModal.css";
 
 // 학기별 배치하기 "수업 추가" 창 (남은 과목 목록에 없는 수업을 직접 넣을 때)
-// 이수한 과목 추가 창과 같은 오른쪽 패널 모양. 백엔드가 받는 값: 과목명, 학수번호, 이수구분, 학점
+// 이수한 과목 추가 창과 같은 오른쪽 패널 모양. 백엔드가 받는 값: 과목명, 이수구분, 학점
 // onSubmit(course)가 오류 문구를 돌려주면 창에 표시하고, 없으면 닫힌다
 function AddPlanCourseModal({ terms, onClose, onSubmit }) {
     const [termKey, setTermKey] = useState(terms.length ? `${terms[0].year}-${terms[0].term}` : '');
     const [courseName, setCourseName] = useState('');
-    const [courseCode, setCourseCode] = useState('');
     const [classification, setClassification] = useState('');
     const [credits, setCredits] = useState('');
     const [error, setError] = useState('');
@@ -34,7 +33,6 @@ function AddPlanCourseModal({ terms, onClose, onSubmit }) {
             year: term.year,
             term: term.term,
             courseName: courseName.trim(),
-            courseCode: courseCode.trim() || null,
             classification: classification || null,
             credits: creditsNum,
         });
@@ -62,9 +60,6 @@ function AddPlanCourseModal({ terms, onClose, onSubmit }) {
 
                     <label className="acc-label">과목명</label>
                     <input className="acc-input" value={courseName} onChange={(e) => { setCourseName(e.target.value); setError(''); }} placeholder="예) 평면디자인" maxLength={100} autoFocus />
-
-                    <label className="acc-label">과목코드 (선택)</label>
-                    <input className="acc-input" value={courseCode} onChange={(e) => { setCourseCode(e.target.value); setError(''); }} placeholder="예) D901023" maxLength={20} />
 
                     <label className="acc-label">이수구분 (선택)</label>
                     <Select value={classification} onChange={setClassification} placeholder="선택해주세요.">

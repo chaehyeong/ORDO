@@ -17,7 +17,7 @@ const services = [
     {
         key: 'academic',
         color: 'yellow',
-        title: '학사 관리',
+        title: '전공 관리',
         desc: ['다전공, 부전공, 마이크로디그리까지', '한눈에 알아볼 수 있어요'],
         icon: (
             <FiBook />
@@ -26,7 +26,7 @@ const services = [
     {
         key: 'ai',
         color: 'green',
-        title: '학점 관리',
+        title: '학사 관리',
         desc: ['이수 학점과 평점을 관리하고', '졸업까지 남은 길을 보여줘요.'],
         icon: (
             <FiPieChart />
