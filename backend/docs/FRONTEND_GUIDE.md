@@ -31,6 +31,7 @@
 | T5 시간표 | ✅ 완료 (A) | `feat/timetable` (feat/schedule 위에서 작업) |
 | T10 e캠퍼스 과제 마감 연동 | ✅ 완료 (A) | `feat/ecampus` (feat/timetable 위에서 작업) |
 | T12 성적·시간표 파일 가져오기 (xlsx·csv·txt) | ✅ 완료 (A), PDF 는 받지 않음 | `feat/import` (feat/home 위에서 작업) |
+| T22 파일 가져오기 화면 | ✅ 완료 (A), 프론트 수정은 사용자 승인 | `feat/file-import-ui`. `components/ImportButton.js` |
 | T11 일정 알림 웹푸시 | ✅ 구현 (A), 휴대폰 확인은 배포 후 | `feat/web-push` (feat/home-assignments 위에서 작업). 프론트 할 일은 4장 "일정 알림 웹푸시" |
 | T8 홈 · T9 마이페이지 요약 | ✅ 완료 (A) | `feat/home` (feat/academic 위에서 작업) |
 | T6·T7 이수내역 · 이수현황 계산 | ✅ 완료 (A, B 대신) | `feat/academic` (feat/ecampus 위에서 작업) |
@@ -551,6 +552,8 @@ micro-degrees.data: [{ id, name, scope, collegeName, hostDepartment,
 ### 파일 가져오기 `import` (🔒, T12)
 
 학교 시스템에서 받은 **수강신청확인서**(→ 시간표)나 **전체 성적 보기**(→ 이수내역) 파일을 올리면 저장하지 않고 미리보기를 준다. 사용자가 확인·수정한 뒤 bulk API 로 저장한다.
+
+화면은 T22 에서 만들었다. 시간표의 `수강신청확인서 불러오기`와 졸업 로드맵의 `성적표 불러오기`(`ImportButton`)가 아래 흐름을 처리한다.
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|

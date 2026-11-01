@@ -1,0 +1,64 @@
+/* 모양은 옆 추가 버튼의 클래스를 그대로 쓴다 */
+.import-btn {
+    white-space: nowrap;
+}
+
+.import-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* ---------- 파일 가져오기 확인 창 (틀은 AddCourseModal.css 를 쓴다) ---------- */
+.import-summary {
+    margin: 8px 0 16px;
+    color: #39B19D;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.import-list {
+    max-height: 280px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.import-row {
+    padding: 10px 12px;
+    border-bottom: 1px solid #dfe5e4;
+}
+
+.import-name {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.import-meta {
+    display: block;
+    margin-top: 2px;
+    color: #6f7777;
+    font-size: 13px;
+}
+
+.import-select {
+    display: block;
+    height: 40px;
+    margin-top: 8px;
+}
+
+.import-warning,
+.import-notice {
+    margin: 12px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.import-warning {
+    color: #6f7777;
+}
+
+.import-notice {
+    color: #e5484d;
+}

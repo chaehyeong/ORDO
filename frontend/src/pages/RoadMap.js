@@ -3,6 +3,7 @@ import Sidebar from "../components/Sidebar";
 import SemesterCurve from "../components/SemesterCurve";
 import CompletedCourses from "../components/CompletedCourses";
 import AddCompletedCourseModal from "../components/AddCompletedCourseModal";
+import ImportButton from "../components/ImportButton";
 import RemainingCourses, { courseKey } from "../components/RemainingCourses";
 import SemesterPlanner, { getPlanTerms, sameTerm, termLabel } from "../components/SemesterPlanner";
 import AddPlanCourseModal from "../components/AddPlanCourseModal";
@@ -155,6 +156,14 @@ function RoadMap() {
                         onAdd={() => setShowAddCourse(true)}
                         onEdit={setEditingCourse}
                         onDelete={handleDeleteCourse}
+                        importButton={
+                            <ImportButton
+                                kind="GRADES"
+                                label="성적표 불러오기"
+                                className="completed-add-btn"
+                                onSaved={() => setReloadKey((k) => k + 1)}
+                            />
+                        }
                     />
                 </section>
 
