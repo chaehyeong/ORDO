@@ -55,6 +55,14 @@ public class AcademicProgressService {
     private static final String STARTUP_SEMINAR = "창업세미나:스타트업에서빅테크까지";
     private static final Set<String> STARTUP_SEMINAR_UNITS = Set.of("기계공학부", "산업경영공학과", "원자력공학과", "화학공학과",
             "신소재공학과", "사회기반시스템공학과", "건축공학과", "건축학과");
+    // 빅뱅에서문명까지를 전공기초로 대체하는 단위는 필수교양에서 뺀다 (p22 제4조①, p40 별표4). 반도체공학과는 표에 없다
+    private static final String BIG_BANG = "빅뱅에서문명까지";
+    private static final Set<String> BIG_BANG_EXEMPT_UNITS = Set.of("기계공학부", "산업경영공학과", "원자력공학과", "화학공학과",
+            "신소재공학과", "사회기반시스템공학과", "건축공학과", "환경학전공", "환경공학전공", "건축학과",
+            "응용수학과", "응용물리학과", "응용화학과", "우주과학과",
+            "식물·환경신소재공학과", "식품생명공학과", "원예생명공학과", "유전생명학과", "한방생명공학과", "스마트팜과학과", "융합바이오·신소재공학과",
+            "전자공학부 전자공학과", "생체의공학과",
+            "컴퓨터공학부 컴퓨터공학과", "컴퓨터공학부 인공지능학과", "소프트웨어융합학과");
     private static final int MULTI_PROGRAM_REQUIRED_FROM = 2026;  // 2026학년도 입학자부터 다전공·부전공·MD 중 1개 이상 (교육과정 p115)
     private static final Set<Classification> OTHER = Set.of(
             Classification.GENERAL_ELECTIVE, Classification.TEACHING, Classification.TEACHING_MAJOR);
@@ -108,7 +116,7 @@ public class AcademicProgressService {
         GraduationRequirement secondRequirement = graduationRequirementRepository
                 .findByMajorIdAndAdmissionYear(second.getId(), user.getAdmissionYear())
                 .orElseThrow(() -> new BusinessException(ErrorCode.REQUIREMENT_NOT_FOUND));
-        return new DoubleMajorCalculation(second, secondRequirement, majorCourses(user.getMajor()), majorCourses(second));
+        return new DoubleMajorCalculation(user.getAdmissionYear(), second, secondRequirement, majorCourses(user.getMajor()), majorCourses(second));
     }
 
     private Set<String> minorOnlyKeys(Long userId, Major major) {
@@ -149,12 +157,16 @@ public class AcademicProgressService {
         Collection<CompletedCourse> recognized = recognize(courses);
         Map<Classification, Integer> earned = new EnumMap<>(Classification.class);
         recognized.forEach(c -> earned.merge(
-                movesToOther(c, doubleMajor, minorOnly) ? Classification.GENERAL_ELECTIVE : c.getClassification(),
+                movesToOther(c, doubleMajor, minorOnly) ? Classification.GENERAL_ELECTIVE
+                        : doubleMajor == null ? c.getClassification() : doubleMajor.firstMajorClassification(c),
                 c.getCredits(), Integer::sum));
         int areaCount = (int) recognized.stream()
                 .filter(c -> c.getClassification() == Classification.GEN_DISTRIBUTION && c.getDistributionArea() != null)
                 .map(CompletedCourse::getDistributionArea).distinct().count();
         int otherEarned = OTHER.stream().mapToInt(c -> earned.getOrDefault(c, 0)).sum();
+
+        int exemptCredits = requiredCourses.stream().filter(r -> bigBangExempt(major, r))
+                .mapToInt(GeneralEducationRequiredCourse::getCredits).sum();
 
         boolean hasDoubleMajor = doubleMajor != null;
         Integer basicRequired = hasDoubleMajor ? requirement.getDoubleBasicCredits() : requirement.getBasicCredits();
@@ -162,7 +174,7 @@ public class AcademicProgressService {
         Integer electiveRequired = hasDoubleMajor ? requirement.getDoubleElectiveCredits() : requirement.getElectiveCredits();
 
         List<Area> areas = List.of(
-                area("GEN_REQUIRED", "필수교양", earned, Classification.GEN_REQUIRED, generalEducation.getRequiredCredits()),
+                area("GEN_REQUIRED", "필수교양", earned, Classification.GEN_REQUIRED, generalEducation.getRequiredCredits() - exemptCredits),
                 new Area("GEN_DISTRIBUTION", "배분이수", earned.getOrDefault(Classification.GEN_DISTRIBUTION, 0),
                         generalEducation.getDistributionCredits(), areaCount, generalEducation.getDistributionMinAreas()),
                 area("GEN_FREE", "자유이수", earned, Classification.GEN_FREE, generalEducation.getFreeCredits()),
@@ -173,7 +185,7 @@ public class AcademicProgressService {
 
         int totalRequired = zeroIfNull(requirement.getTotalCredits());
         int majorRequired = zeroIfNull(hasDoubleMajor ? requirement.getDoubleTotalCredits() : requirement.getMajorTotalCredits());
-        int generalRequired = generalEducation.getTotalCredits();
+        int generalRequired = generalEducation.getTotalCredits() - exemptCredits;
         int majorEarned = sum(earned, Classification.MAJOR_BASIC, Classification.MAJOR_REQUIRED, Classification.MAJOR_ELECTIVE);
         int generalEarned = sum(earned, Classification.GEN_REQUIRED, Classification.GEN_DISTRIBUTION, Classification.GEN_FREE);
         List<Group> groups = List.of(
@@ -190,6 +202,7 @@ public class AcademicProgressService {
                 .filter(c -> c.getClassification() == Classification.GEN_REQUIRED)
                 .map(c -> withoutSpaces(c.getCourseName())).collect(Collectors.toSet());
         List<RequiredCourse> requiredGeneralCourses = requiredCourses.stream()
+                .filter(r -> !bigBangExempt(major, r))
                 .map(r -> new RequiredCourse(r.getCourseName(), r.getCredits(),
                         EXPLORATION_SEMINAR.equals(r.getCourseName())
                                 ? seminarDone(recognized, major)
@@ -204,6 +217,11 @@ public class AcademicProgressService {
 
         return new ProgressSummary(admissionYear, new MajorInfo(major.getId(), major.getDisplayName()), total, areas,
                 groups, requiredGeneralCourses, checks(admissionYear, requirement), graduatable, approximate);
+    }
+
+    // ponytail: 대체 과목이 전공기초라 이수 여부를 보지 않는다. 생체의공·응용수학 다전공은 그 과목이 다전공 전공기초에서 빠져도 뺀다. 명세 5장 9번
+    private static boolean bigBangExempt(Major major, GeneralEducationRequiredCourse course) {
+        return BIG_BANG.equals(course.getCourseName()) && major.getCourseUnit() != null && BIG_BANG_EXEMPT_UNITS.contains(major.getCourseUnit());
     }
 
     // 자유이수로 기록되고 전공탐색2 는 전공선택이라 이수구분으로 거르지 않는다 (명세 5장 9번)

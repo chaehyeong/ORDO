@@ -2,6 +2,7 @@ package com.ordo.academic.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.withSettings;
@@ -61,6 +62,8 @@ class AcademicProgressServiceTest {
     UserMinorRepository userMinorRepository;
     @InjectMocks
     AcademicProgressService academicProgressService;
+
+    static final String COMPUTER_ENGINEERING = "컴퓨터공학부 컴퓨터공학과";
 
     final Major major = lenientMock(Major.class);
     final GraduationRequirement requirement = requirement(130, 12, 42, 27, 81);
@@ -466,7 +469,7 @@ class AcademicProgressServiceTest {
     void secondMajorWithoutCourseUnitShowsRequirementOnly() {
         Major noCourses = lenientMock(Major.class);
         given(noCourses.getCourseUnit()).willReturn(null);
-        DoubleMajorCalculation calculation = new DoubleMajorCalculation(noCourses, secondRequirement, firstCourses, List.of());
+        DoubleMajorCalculation calculation = new DoubleMajorCalculation(2026, noCourses, secondRequirement, firstCourses, List.of());
         List<CompletedCourse> courses = List.of(course("FD101", "드로잉", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST));
 
         DoubleMajorResponse second = calculation.progress(courses);
@@ -612,6 +615,122 @@ class AcademicProgressServiceTest {
         assertThat(area(summary, "OTHER").earned()).isEqualTo(3);
     }
 
+    @Test
+    void firstMajorCoursesLeftOutOfDoubleMajorTableMove() {
+        ProgressSummary summary = calculateComputerEngineeringFirst(2026);
+
+        assertThat(area(summary, "MAJOR_BASIC").earned()).isEqualTo(3);
+        assertThat(area(summary, "MAJOR_REQUIRED").earned()).isEqualTo(3);
+        assertThat(area(summary, "MAJOR_ELECTIVE").earned()).isEqualTo(3);
+        assertThat(area(summary, "OTHER").earned()).isEqualTo(3);
+        assertThat(summary.total().earned()).isEqualTo(12);
+    }
+
+    // 표는 2026 교육과정이라 다른 학번은 성적표 이수구분 그대로
+    @Test
+    void doubleMajorTableAppliesOnlyToCatalogYear() {
+        ProgressSummary summary = calculateComputerEngineeringFirst(2025);
+
+        assertThat(area(summary, "MAJOR_BASIC").earned()).isEqualTo(6);
+        assertThat(area(summary, "MAJOR_REQUIRED").earned()).isEqualTo(6);
+        assertThat(area(summary, "OTHER").earned()).isZero();
+    }
+
+    @Test
+    void transcriptElectiveStaysEvenWhenLeftOutOfTable() {
+        Course left = master(COMPUTER_ENGINEERING, "SWCON253", "기계학습", Classification.MAJOR_REQUIRED);
+        DoubleMajorCalculation calculation = new DoubleMajorCalculation(2026, secondMajor, secondRequirement, List.of(left), List.of());
+
+        assertThat(calculation.firstMajorClassification(course("SWCON253", "기계학습", 3, Classification.MAJOR_ELECTIVE, null, "A0", 2026, Term.FIRST)))
+                .isEqualTo(Classification.MAJOR_ELECTIVE);
+    }
+
+    @Test
+    void singleMajorIsNotChangedByDoubleMajorTable() {
+        given(major.getCourseUnit()).willReturn(COMPUTER_ENGINEERING);
+
+        ProgressSummary summary = calculate(List.of(
+                course("AMTH1001", "미분방정식", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST),
+                course("SWCON253", "기계학습", 3, Classification.MAJOR_REQUIRED, null, "A0", 2026, Term.FIRST)));
+
+        assertThat(area(summary, "MAJOR_BASIC").earned()).isEqualTo(3);
+        assertThat(area(summary, "MAJOR_REQUIRED").earned()).isEqualTo(3);
+    }
+
+    @Test
+    void secondMajorCountsOnlyDesignatedCourses() {
+        given(secondMajor.getCourseUnit()).willReturn("소프트웨어융합학과");
+        DoubleMajorCalculation calculation = new DoubleMajorCalculation(2026, secondMajor, secondRequirement, List.of(), List.of(
+                master("소프트웨어융합학과", "CSE103", "객체지향프로그래밍", Classification.MAJOR_REQUIRED),
+                master("소프트웨어융합학과", "CSE301", "운영체제", Classification.MAJOR_REQUIRED)));
+
+        DoubleMajorResponse second = calculation.progress(List.of(
+                course("CSE103", "객체지향프로그래밍", 3, Classification.GENERAL_ELECTIVE, null, "A0", 2026, Term.FIRST),
+                course("CSE301", "운영체제", 3, Classification.GENERAL_ELECTIVE, null, "A0", 2026, Term.FIRST)));
+
+        assertThat(second.courses()).extracting(DoubleMajorResponse.CourseItem::courseCode).containsExactly("CSE103");
+        assertThat(second.total().earned()).isEqualTo(3);
+    }
+
+    @Test
+    void computerEngineeringAsSecondMajorMovesLeftOutRequiredToElective() {
+        DoubleMajorCalculation calculation = new DoubleMajorCalculation(2026, secondMajor, secondRequirement, List.of(), List.of(
+                master(COMPUTER_ENGINEERING, "SWCON253", "기계학습", Classification.MAJOR_REQUIRED)));
+
+        DoubleMajorResponse second = calculation.progress(List.of(
+                course("SWCON253", "기계학습", 3, Classification.GENERAL_ELECTIVE, null, "A0", 2026, Term.FIRST)));
+
+        assertThat(second.courses()).singleElement()
+                .satisfies(c -> assertThat(c.classification()).isEqualTo(Classification.MAJOR_ELECTIVE));
+    }
+
+    @Test
+    void bigBangIsDroppedForExemptUnitWithoutChangingGraduationTotal() {
+        Major exempt = lenientMock(Major.class);
+        given(exempt.getCourseUnit()).willReturn(COMPUTER_ENGINEERING);
+
+        ProgressSummary summary = calculateWithBigBang(exempt);
+
+        assertThat(summary.requiredGeneralCourses()).extracting(ProgressSummary.RequiredCourse::name).containsExactly("인간의가치탐색");
+        assertThat(area(summary, "GEN_REQUIRED").required()).isEqualTo(14);
+        assertThat(summary.groups()).extracting(ProgressSummary.Group::key, ProgressSummary.Group::required).containsExactly(
+                tuple("MAJOR", 81), tuple("GENERAL", 26), tuple("OTHER", 23));
+        assertThat(summary.total().required()).isEqualTo(130);
+    }
+
+    @Test
+    void bigBangStaysForUnitsNotInTheTable() {
+        for (String unit : new String[] {"시각디자인학과", "전자공학부 반도체공학과", null}) {
+            Major kept = lenientMock(Major.class);
+            given(kept.getCourseUnit()).willReturn(unit);
+
+            ProgressSummary summary = calculateWithBigBang(kept);
+
+            assertThat(summary.requiredGeneralCourses()).hasSize(2);
+            assertThat(area(summary, "GEN_REQUIRED").required()).isEqualTo(17);
+        }
+    }
+
+    private ProgressSummary calculateWithBigBang(Major studentMajor) {
+        return AcademicProgressService.calculate(2026, studentMajor, requirement, generalEducation, false,
+                List.of(requiredCourse("인간의가치탐색", 3), requiredCourse("빅뱅에서문명까지", 3)), List.of(), null, Set.of());
+    }
+
+    // 컴공(제1전공) 지정 과목 2개와 빠진 전공기초·전공필수 각 1개
+    private ProgressSummary calculateComputerEngineeringFirst(int admissionYear) {
+        List<Course> computerEngineering = List.of(
+                master(COMPUTER_ENGINEERING, "AMTH1009", "미분적분학", Classification.MAJOR_BASIC),
+                master(COMPUTER_ENGINEERING, "AMTH1001", "미분방정식", Classification.MAJOR_BASIC),
+                master(COMPUTER_ENGINEERING, "CSE301", "운영체제", Classification.MAJOR_REQUIRED),
+                master(COMPUTER_ENGINEERING, "SWCON253", "기계학습", Classification.MAJOR_REQUIRED));
+        return AcademicProgressService.calculate(admissionYear, major, firstRequirement, generalEducation, false, requiredCourses,
+                List.of(course("AMTH1009", "미분적분학", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST),
+                        course("AMTH1001", "미분방정식", 3, Classification.MAJOR_BASIC, null, "A0", 2026, Term.FIRST),
+                        course("CSE301", "운영체제", 3, Classification.MAJOR_REQUIRED, null, "A0", 2026, Term.FIRST),
+                        course("SWCON253", "기계학습", 3, Classification.MAJOR_REQUIRED, null, "A0", 2026, Term.FIRST)),
+                new DoubleMajorCalculation(admissionYear, secondMajor, secondRequirement, computerEngineering, secondCourses), Set.of());
+    }
+
     private ProgressSummary calculate(List<CompletedCourse> courses) {
         return AcademicProgressService.calculate(2026, major, requirement, generalEducation, false, requiredCourses, courses, null, Set.of());
     }
@@ -641,7 +760,7 @@ class AcademicProgressServiceTest {
     }
 
     private DoubleMajorCalculation doubleMajor() {
-        return new DoubleMajorCalculation(secondMajor, secondRequirement, firstCourses, secondCourses);
+        return new DoubleMajorCalculation(2026, secondMajor, secondRequirement, firstCourses, secondCourses);
     }
 
     /** 총 130 = 교양 29 + 제1전공 42(6·36) + 제2전공 42(9·12·21) + 일반선택 17 */
@@ -714,7 +833,12 @@ class AcademicProgressServiceTest {
     }
 
     private static Course master(String code, String name, Classification classification) {
+        return master("시각디자인학과", code, name, classification);
+    }
+
+    private static Course master(String unit, String code, String name, Classification classification) {
         Course c = lenientMock(Course.class);
+        given(c.getUnitName()).willReturn(unit);
         given(c.getCourseCode()).willReturn(code);
         given(c.getName()).willReturn(name);
         given(c.getClassification()).willReturn(classification);
